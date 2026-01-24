@@ -60,7 +60,7 @@ export async function POST(request: Request) {
 
         const appName = settings?.app_name || 'GestorPro';
         const headerColor = settings?.header_color || '#2563EB';
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.example.com';
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://task-fbolivar.vercel.app');
 
         // Configure transporter
         const transporter = nodemailer.createTransport({
@@ -150,7 +150,7 @@ export async function POST(request: Request) {
                                             <table role="presentation" style="width: 100%; border-collapse: collapse; background: #fef2f2; border-radius: 12px; border-left: 4px solid #ef4444; margin-bottom: 30px;">
                                                 <tr>
                                                     <td style="padding: 16px 20px;">
-                                                        <p style="margin: 0; color: #991b1b; font-size: 14px; font-weight: 600;">⚠️ Importante</p>
+                                                            <p style="margin: 0; color: #991b1b; font-size: 14px; font-weight: 600;">⚠️ Importante</p>
                                                         <p style="margin: 8px 0 0; color: #7f1d1d; font-size: 13px; line-height: 1.5;">
                                                             Por seguridad, deberás cambiar tu contraseña en el primer inicio de sesión.
                                                         </p>
