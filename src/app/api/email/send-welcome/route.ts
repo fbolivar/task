@@ -60,7 +60,7 @@ export async function POST(request: Request) {
 
         const appName = settings?.app_name || 'GestorPro';
         const headerColor = settings?.header_color || '#2563EB';
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://task-fbolivar.vercel.app');
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://task-eosin-nu.vercel.app';
 
         // Configure transporter
         const transporter = nodemailer.createTransport({
