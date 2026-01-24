@@ -27,8 +27,9 @@ export function useUsers() {
     }, []);
 
     const createUser = async (data: UserFormData) => {
-        await userService.createUser(data);
+        const result = await userService.createUser(data);
         await fetchData(); // Refresh list
+        return result;
     };
 
     const updateUser = async (id: string, data: UserFormData) => {

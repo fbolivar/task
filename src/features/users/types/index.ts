@@ -15,6 +15,7 @@ export interface UserProfile {
     role_id: string | null;
     has_all_entities_access: boolean;
     is_active: boolean;
+    must_change_password?: boolean;
     created_at: string;
     role?: Role;
     profile_entities?: { entity: EntityShort }[];

@@ -39,8 +39,11 @@ export const thresholdService = {
         const supabase = createClient();
         const { data, error } = await supabase
             .from('entity_thresholds')
-            .update({ ...updates, updated_at: new Date().toISOString() })
-            .eq('entity_id', entityId)
+            .upsert({
+                entity_id: entityId, // Ensure entity_id is present for match
+                ...updates,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'entity_id' })
             .select()
             .single();
 

@@ -1,6 +1,27 @@
 import { createClient } from '@/lib/supabase/client';
 import { Entity, EntityFormData } from '../types';
 
+const mapFormDataToPayload = (form: EntityFormData) => {
+    // Force numeric conversion to avoid issues with strings from DB
+    return {
+        name: String(form.name || '').trim(),
+        type: form.type,
+        contact_info: {
+            email: String(form.email || '').trim(),
+            phone: String(form.phone || '').trim()
+        },
+        website: form.website ? String(form.website).trim() : null,
+        address: form.address ? String(form.address).trim() : null,
+        contact_name: form.contact_name ? String(form.contact_name).trim() : null,
+        contact_email: form.contact_email ? String(form.contact_email).trim() : null,
+        budget_q1: Number(form.budget_q1) || 0,
+        budget_q2: Number(form.budget_q2) || 0,
+        budget_q3: Number(form.budget_q3) || 0,
+        budget_q4: Number(form.budget_q4) || 0,
+        logo_url: form.logo_url && String(form.logo_url).trim() !== '' ? String(form.logo_url).trim() : null,
+    };
+};
+
 export const entityService = {
     async getEntities(): Promise<Entity[]> {
         const supabase = createClient();
@@ -9,7 +30,10 @@ export const entityService = {
             .select('*')
             .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+            console.error('Service: Error fetching entities', error);
+            throw error;
+        }
         return data || [];
     },
 
@@ -19,7 +43,7 @@ export const entityService = {
             .from('entities')
             .select('*')
             .eq('id', id)
-            .single();
+            .maybeSingle();
 
         if (error) return null;
         return data;
@@ -27,7 +51,7 @@ export const entityService = {
 
     async createEntity(entity: EntityFormData): Promise<Entity> {
         const supabase = createClient();
-        const payload = this.mapFormDataToPayload(entity);
+        const payload = mapFormDataToPayload(entity);
 
         const { data, error } = await supabase
             .from('entities')
@@ -35,23 +59,34 @@ export const entityService = {
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) {
+            console.error('Service: Error creating entity', error);
+            throw error;
+        }
         return data;
     },
 
     async updateEntity(id: string, entity: EntityFormData): Promise<Entity> {
         const supabase = createClient();
-        const payload = this.mapFormDataToPayload(entity);
+        const payload = mapFormDataToPayload(entity);
 
+        // Remove .single() and use .select() to see result
         const { data, error } = await supabase
             .from('entities')
             .update(payload)
             .eq('id', id)
-            .select()
-            .single();
+            .select();
 
-        if (error) throw error;
-        return data;
+        if (error) {
+            console.error('Service: Error updating entity', error);
+            throw error;
+        }
+
+        if (!data || data.length === 0) {
+            throw new Error(`No se encontró la entidad con ID ${id} para actualizar. Verifique permisos RLS.`);
+        }
+
+        return data[0];
     },
 
     async deleteEntity(id: string): Promise<void> {
@@ -86,21 +121,5 @@ export const entityService = {
         });
 
         return results;
-    },
-
-    mapFormDataToPayload(form: EntityFormData) {
-        return {
-            name: form.name,
-            type: form.type,
-            contact_info: { email: form.email, phone: form.phone },
-            website: form.website || null,
-            address: form.address || null,
-            contact_name: form.contact_name || null,
-            contact_email: form.contact_email || null,
-            budget_q1: form.budget_q1 || 0,
-            budget_q2: form.budget_q2 || 0,
-            budget_q3: form.budget_q3 || 0,
-            budget_q4: form.budget_q4 || 0,
-        };
     }
 };

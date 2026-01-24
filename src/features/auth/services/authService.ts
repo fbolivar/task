@@ -85,6 +85,7 @@ export const authService = {
                 id: userId,
                 email: user.email,
                 full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuario',
+                role_id: 'c1664b71-4a07-41c4-944d-e4d2a464c595' // Default to Operativo
             })
             .select('*, role:roles(*)')
             .single();

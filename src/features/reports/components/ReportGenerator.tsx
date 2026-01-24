@@ -11,6 +11,7 @@ import {
     Users
 } from 'lucide-react';
 import { ProjectData, ReportStats } from '../types';
+import { useSettings } from '@/shared/contexts/SettingsContext';
 
 interface ReportGeneratorProps {
     projects: ProjectData[];
@@ -20,6 +21,8 @@ interface ReportGeneratorProps {
 }
 
 export function ReportGenerator({ projects, onGenerate, stats, loading }: ReportGeneratorProps) {
+    const { t } = useSettings();
+
     return (
         <div className="space-y-6">
             <div className="glass-card overflow-hidden border-primary/10 shadow-xl">
@@ -32,19 +35,19 @@ export function ReportGenerator({ projects, onGenerate, stats, loading }: Report
                                 <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
                                     <Target className="w-5 h-5" />
                                 </div>
-                                <h3 className="font-black text-lg">Parámetros de Análisis</h3>
+                                <h3 className="font-black text-lg">{t('reports.analysisParams')}</h3>
                             </div>
 
                             <div className="space-y-4">
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Foco del Proyecto</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{t('reports.projectFocus')}</label>
                                     <div className="relative">
                                         <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                         <select
                                             id="report-project"
                                             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-bold appearance-none"
                                         >
-                                            <option value="all">Todos los proyectos activos</option>
+                                            <option value="all">{t('reports.allActiveProjects')}</option>
                                             {projects.map(p => (
                                                 <option key={p.id} value={p.id}>{p.name} ({p.entity_name})</option>
                                             ))}
@@ -54,7 +57,7 @@ export function ReportGenerator({ projects, onGenerate, stats, loading }: Report
 
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-1.5">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Desde</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{t('reports.from')}</label>
                                         <input
                                             type="date"
                                             id="report-start"
@@ -62,7 +65,7 @@ export function ReportGenerator({ projects, onGenerate, stats, loading }: Report
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Hasta</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{t('reports.to')}</label>
                                         <input
                                             type="date"
                                             id="report-end"
@@ -86,7 +89,7 @@ export function ReportGenerator({ projects, onGenerate, stats, loading }: Report
                                     ) : (
                                         <FileDown className="w-5 h-5 group-hover:translate-y-1 transition-transform" />
                                     )}
-                                    <span className="font-bold">Generar Reporte Ejecutivo</span>
+                                    <span className="font-bold">{t('reports.generateBtn')}</span>
                                 </button>
                             </div>
                         </div>
@@ -97,26 +100,26 @@ export function ReportGenerator({ projects, onGenerate, stats, loading }: Report
                                 <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
                                     <div className="flex items-center justify-between mb-4">
                                         <h3 className="font-black text-lg flex items-center gap-2">
-                                            Vista Previa de Métricas
-                                            <span className="text-[10px] px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded-full">Actualizado</span>
+                                            {t('reports.previewTitle')}
+                                            <span className="text-[10px] px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded-full">{t('reports.updated')}</span>
                                         </h3>
                                     </div>
 
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                         <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
-                                            <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-1">Total Tareas</p>
+                                            <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-1">{t('reports.totalTasks')}</p>
                                             <p className="text-2xl font-black text-foreground">{stats.total_tasks}</p>
                                         </div>
                                         <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
-                                            <p className="text-[10px] font-black uppercase tracking-wider text-emerald-600/70 mb-1">Completadas</p>
+                                            <p className="text-[10px] font-black uppercase tracking-wider text-emerald-600/70 mb-1">{t('reports.completed')}</p>
                                             <p className="text-2xl font-black text-emerald-600">{stats.completed_tasks}</p>
                                         </div>
                                         <div className="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10">
-                                            <p className="text-[10px] font-black uppercase tracking-wider text-blue-600/70 mb-1">Avance Promedio</p>
+                                            <p className="text-[10px] font-black uppercase tracking-wider text-blue-600/70 mb-1">{t('reports.avgProgress')}</p>
                                             <p className="text-2xl font-black text-blue-600">{stats.avg_progress}%</p>
                                         </div>
                                         <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10">
-                                            <p className="text-[10px] font-black uppercase tracking-wider text-amber-600/70 mb-1">Pendientes</p>
+                                            <p className="text-[10px] font-black uppercase tracking-wider text-amber-600/70 mb-1">{t('reports.pending')}</p>
                                             <p className="text-2xl font-black text-amber-600">{stats.pending_tasks}</p>
                                         </div>
                                     </div>
@@ -125,9 +128,9 @@ export function ReportGenerator({ projects, onGenerate, stats, loading }: Report
                                     <div className="space-y-4">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-muted-foreground">
-                                                <Users className="w-3.5 h-3.5" /> Métricas de Desempeño Avanzadas
+                                                <Users className="w-3.5 h-3.5" /> {t('reports.advancedMetrics')}
                                             </div>
-                                            <span className="text-[10px] font-bold text-muted-foreground italic">Basado en Hitogramas de Ejecución</span>
+                                            <span className="text-[10px] font-bold text-muted-foreground italic">{t('reports.basedOn')}</span>
                                         </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             {stats.team_efficacy.slice(0, 6).map((member, i) => (
@@ -137,7 +140,7 @@ export function ReportGenerator({ projects, onGenerate, stats, loading }: Report
                                                             <p className="text-xs font-black truncate">{member.full_name}</p>
                                                             <div className="flex items-center gap-2 mt-0.5">
                                                                 <span className="text-[9px] font-bold text-muted-foreground bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                                                                    {member.load} activas
+                                                                    {member.load} {t('reports.active')}
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -148,7 +151,7 @@ export function ReportGenerator({ projects, onGenerate, stats, loading }: Report
 
                                                     <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-50 dark:border-slate-800">
                                                         <div className="space-y-1">
-                                                            <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Puntualidad</p>
+                                                            <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">{t('reports.punctuality')}</p>
                                                             <div className="flex items-center gap-1.5">
                                                                 <div className="flex-1 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                                                     <div className="h-full bg-blue-500 rounded-full" style={{ width: `${member.punctuality}%` }} />
@@ -157,7 +160,7 @@ export function ReportGenerator({ projects, onGenerate, stats, loading }: Report
                                                             </div>
                                                         </div>
                                                         <div className="space-y-1">
-                                                            <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Eficiencia</p>
+                                                            <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">{t('reports.efficiency')}</p>
                                                             <div className="flex items-center gap-1.5">
                                                                 <div className="flex-1 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                                                     <div className="h-full bg-purple-500 rounded-full" style={{ width: `${Math.min(member.efficiency, 100)}%` }} />
@@ -176,7 +179,7 @@ export function ReportGenerator({ projects, onGenerate, stats, loading }: Report
                                     <div className="w-16 h-16 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mb-4">
                                         <FileLineChart className="w-8 h-8 text-slate-300" />
                                     </div>
-                                    <p className="text-sm font-bold text-slate-400">Configura los parámetros para previsualizar las métricas ejecutivas antes de exportar.</p>
+                                    <p className="text-sm font-bold text-slate-400">{t('reports.configurePreview')}</p>
                                 </div>
                             )}
                         </div>

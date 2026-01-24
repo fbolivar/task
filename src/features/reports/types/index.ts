@@ -34,4 +34,5 @@ export interface ProjectData {
     name: string;
     entity_id: string;
     entity_name?: string;
+    entity_logo_url?: string | null;
 }

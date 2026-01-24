@@ -43,7 +43,7 @@ export function useEntities() {
             const updated = await entityService.updateEntity(id, data);
             setEntities(prev => prev.map(e => e.id === id ? updated : e));
             return updated;
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error updating entity:', error);
             throw error;
         }

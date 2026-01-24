@@ -44,7 +44,13 @@ export function useTasks() {
             setTasks(prev => prev.map(t => t.id === id ? updated : t));
             return updated;
         } catch (err: any) {
-            console.error('Error updating task:', err);
+            console.error('Error updating task:', {
+                message: err.message,
+                details: err.details,
+                hint: err.hint,
+                code: err.code,
+                fullError: err
+            });
             throw err;
         }
     };
@@ -59,6 +65,16 @@ export function useTasks() {
         }
     };
 
+    const archiveTask = async (id: string) => {
+        try {
+            await taskService.archiveTask(id);
+            setTasks(prev => prev.filter(t => t.id !== id));
+        } catch (err: any) {
+            console.error('Error archiving task:', err);
+            throw err;
+        }
+    };
+
     return {
         tasks,
         loading,
@@ -67,5 +83,6 @@ export function useTasks() {
         createTask,
         updateTask,
         deleteTask,
+        archiveTask,
     };
 }

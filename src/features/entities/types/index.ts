@@ -16,6 +16,7 @@ export interface Entity {
     budget_q2: number;
     budget_q3: number;
     budget_q4: number;
+    logo_url: string | null;
     created_at: string;
 }
 
@@ -32,4 +33,5 @@ export interface EntityFormData {
     budget_q2: number;
     budget_q3: number;
     budget_q4: number;
+    logo_url: string;
 }

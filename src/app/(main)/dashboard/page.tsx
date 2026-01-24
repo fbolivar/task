@@ -4,14 +4,13 @@ import { useEffect, useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, ScatterChart, Scatter, ZAxis, RadarChart, PolarGrid,
-  PolarAngleAxis, PolarRadiusAxis, Radar, AreaChart, Area, Legend
+  PolarAngleAxis, PolarRadiusAxis, Radar, AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar
 } from 'recharts';
+import Link from 'next/link';
 import {
-  Users, Briefcase, AlertCircle, CheckCircle2,
-  Activity, Clock, TrendingUp, Calendar, AlertTriangle, Battery, Target, ChevronDown, Building2,
-  DollarSign, Zap, ShieldAlert, BarChart3, Star, ArrowUpRight, ArrowDownRight, Package, ShieldCheck
+  Users, TrendingUp, Calendar, Target,
+  DollarSign, Zap, ShieldAlert, BarChart3, Star, ArrowUpRight, ArrowDownRight, Package, Activity, Lock
 } from 'lucide-react';
 
 // --- Types ---
@@ -65,7 +64,6 @@ export default function DashboardPage() {
   const [availableEntities, setAvailableEntities] = useState<{ id: string, name: string }[]>([]);
 
   const supabase = createClient();
-  const isGerente = profile?.role?.name === 'Gerente';
 
   // --- Data Fetching ---
   useEffect(() => {
@@ -85,6 +83,16 @@ export default function DashboardPage() {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
+        const [entProjsRes, profilesRes, entCountRes] = await Promise.all([
+          activeEntityId !== 'all'
+            ? supabase.from('projects').select('id').eq('entity_id', activeEntityId)
+            : { data: null },
+          supabase.from('profiles').select('id, full_name'),
+          supabase.from('entities').select('id', { count: 'exact', head: true })
+        ]);
+
+        const pIds = entProjsRes.data?.map((p: any) => p.id) || [];
+
         let projectsQuery = supabase.from('projects').select('*');
         let tasksQuery = supabase.from('tasks').select('*');
         let assetsQuery = supabase.from('assets').select('*');
@@ -93,42 +101,40 @@ export default function DashboardPage() {
         if (activeEntityId !== 'all') {
           projectsQuery = projectsQuery.eq('entity_id', activeEntityId);
           assetsQuery = assetsQuery.eq('entity_id', activeEntityId);
-          const { data: entProjs } = await supabase.from('projects').select('id').eq('entity_id', activeEntityId);
-          const pIds = entProjs?.map(p => p.id) || [];
+
           if (pIds.length > 0) {
             tasksQuery = tasksQuery.in('project_id', pIds);
-            activityQuery = activityQuery.or(`entity_id.eq.${activeEntityId},entity_id.in.(${pIds.join(',')})`);
+            // Limit pIds to avoid header too large errors in Supabase URL
+            const safePds = pIds.slice(0, 50);
+            activityQuery = activityQuery.or(`entity_id.eq.${activeEntityId},project_id.in.(${safePds.join(',')})`);
           } else {
-            tasksQuery = tasksQuery.eq('id', '00000000-0000-0000-0000-000000000000');
+            tasksQuery = tasksQuery.is('project_id', null).eq('id', '00000000-0000-0000-0000-000000000000'); // Force empty if no projects
+            activityQuery = activityQuery.eq('entity_id', activeEntityId);
           }
         }
 
-        const [projRes, taskRes, actRes, profRes, entCountRes, assetRes] = await Promise.all([
+        const [projRes, taskRes, actRes, assetRes] = await Promise.all([
           projectsQuery,
           tasksQuery,
           activityQuery,
-          supabase.from('profiles').select('id, full_name'),
-          supabase.from('entities').select('id', { count: 'exact', head: true }),
           assetsQuery
         ]);
 
         const projects = (projRes.data || []) as ProjectData[];
         const tasks = taskRes.data || [];
-        const profiles = profRes.data || [];
+        const profiles = profilesRes.data || [];
         const assets = assetRes.data || [];
 
-        // --- Analytical Processing ---
-
         // 1. KPI Calculation
-        const totalBudget = projects.reduce((acc, p) => acc + Number(p.budget || 0), 0);
-        const totalActualCost = projects.reduce((acc, p) => acc + Number(p.actual_cost || 0), 0);
-        const completedTasks = tasks.filter(t => t.status === 'Completado').length;
-        const overdueTasks = tasks.filter(t => t.end_date && new Date(t.end_date) < new Date() && t.status !== 'Completado').length;
+        const totalBudget = projects.reduce((acc: number, p: any) => acc + Number(p.budget || 0), 0);
+        const totalActualCost = projects.reduce((acc: number, p: any) => acc + Number(p.actual_cost || 0), 0);
+        const completedTasks = tasks.filter((t: any) => t.status === 'Completado').length;
+        const overdueTasks = tasks.filter((t: any) => t.end_date && new Date(t.end_date) < new Date() && t.status !== 'Completado').length;
 
         const avgCompletion = tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0;
         const spi = tasks.length > 0 ? completedTasks / tasks.length : 0;
 
-        const inventoryValue = assets.reduce((acc, a) => {
+        const inventoryValue = assets.reduce((acc: number, a: any) => {
           if (!a.purchase_value || !a.purchase_date) return acc;
           const pDate = new Date(a.purchase_date);
           const today = new Date();
@@ -137,7 +143,7 @@ export default function DashboardPage() {
           return acc + Math.max(0, a.purchase_value - (a.purchase_value / life * months));
         }, 0);
 
-        const expiringWarranties = assets.filter(a => {
+        const expiringWarranties = assets.filter((a: any) => {
           if (!a.warranty_expiration) return false;
           const expiry = new Date(a.warranty_expiration);
           const diff = (expiry.getTime() - new Date().getTime()) / (1000 * 3600 * 24);
@@ -148,12 +154,12 @@ export default function DashboardPage() {
           entities: activeEntityId === 'all' ? (entCountRes.count || 0) : 1,
           projects: projects.length,
           tasks: tasks.length,
-          activeProjects: projects.filter(p => p.status === 'Activo').length,
-          completedProjects: projects.filter(p => p.status === 'Completado').length,
-          pendingTasks: tasks.filter(t => t.status !== 'Completado').length,
+          activeProjects: projects.filter((p: any) => p.status === 'Activo').length,
+          completedProjects: projects.filter((p: any) => p.status === 'Completado').length,
+          pendingTasks: tasks.filter((t: any) => t.status !== 'Completado').length,
           overdueTasks,
           avgTaskCompletion: avgCompletion,
-          resourceUtilization: (profiles.filter(p => tasks.some(t => t.assigned_to === p.id)).length / profiles.length) * 100,
+          resourceUtilization: (profiles.filter((p: any) => tasks.some((t: any) => t.assigned_to === p.id)).length / (profiles.length || 1)) * 100,
           performanceIndex: spi,
           totalBudget,
           totalActualCost,
@@ -165,61 +171,45 @@ export default function DashboardPage() {
         const portfolioRadar = [
           { subject: 'Progreso', A: avgCompletion, fullMark: 100 },
           { subject: 'Presupuesto', A: totalBudget > 0 ? (totalActualCost / totalBudget) * 100 : 0, fullMark: 100 },
-          { subject: 'Satisfacción', A: projects.length > 0 ? (projects.reduce((acc, p) => acc + (p.customer_satisfaction || 0), 0) / projects.length) * 10 : 0, fullMark: 100 },
-          { subject: 'Riesgo', A: projects.length > 0 ? (projects.filter(p => p.risk_level === 'Bajo' || p.risk_level === 'Medio').length / projects.length) * 100 : 0, fullMark: 100 },
-          { subject: 'Calidad', A: tasks.length > 0 ? (tasks.filter(t => t.status === 'Completado' && !t.actual_hours).length / tasks.length) * 100 : 80, fullMark: 100 },
+          { subject: 'Satisfacción', A: projects.length > 0 ? (projects.reduce((acc: number, p: any) => acc + (p.customer_satisfaction || 0), 0) / projects.length) * 10 : 0, fullMark: 100 },
+          { subject: 'Riesgo', A: projects.length > 0 ? (projects.filter((p: any) => p.risk_level === 'Bajo' || p.risk_level === 'Medio').length / projects.length) * 100 : 0, fullMark: 100 },
+          { subject: 'Calidad', A: tasks.length > 0 ? (tasks.filter((t: any) => t.status === 'Completado' && !t.actual_hours).length / tasks.length) * 100 : 80, fullMark: 100 },
         ];
         setProjectPortfolioData(portfolioRadar);
 
         // 3. Risk Matrix
         const riskMap: Record<string, number> = { 'Bajo': 20, 'Medio': 50, 'Alto': 80, 'Crítico': 100 };
-        setRiskMatrixData(projects.map(p => ({
+        setRiskMatrixData(projects.map((p: any) => ({
           name: p.name,
           risk: riskMap[p.risk_level] || 10,
-          impact: (tasks.filter(t => t.project_id === p.id).length * 10) + (Number(p.budget) / 1000),
+          impact: (tasks.filter((t: any) => t.project_id === p.id).length * 10) + (Number(p.budget) / 1000),
           size: 100,
           priority: p.priority
         })));
 
         // 4. Efficiency Trend
         const labels = ['Sep', 'Oct', 'Nov', 'Dic', 'Ene'];
-        setEfficiencyTreads(labels.map((m, i) => ({
+        setEfficiencyTreads(labels.map((m: string, i: number) => ({
           name: m,
           planned: 60 + (i * 5),
           actual: 40 + (i * 8) + (Math.random() * 10)
         })));
 
         // 5. Resource Load
-        setResourceLoad(profiles.map(p => {
-          const userTasks = tasks.filter(t => t.assigned_to === p.id);
+        setResourceLoad(profiles.map((p: any) => {
+          const userTasks = tasks.filter((t: any) => t.assigned_to === p.id);
           return {
             name: p.full_name?.split(' ')[0] || 'User',
             load: userTasks.length * 10,
             capacity: 80
           };
-        }).filter(r => r.load > 0).slice(0, 6));
+        }).filter((r: any) => r.load > 0).slice(0, 6));
 
         // 6. Executive Alerts
         const alerts = [];
         if (overdueTasks > 0) alerts.push({ type: 'critical', msg: `${overdueTasks} Tareas críticas vencidas.` });
         if (totalActualCost > totalBudget * 0.9 && totalBudget > 0) alerts.push({ type: 'warning', msg: 'Presupuesto GLOBAL al 90% de ejecución.' });
-        projects.filter(p => p.risk_level === 'Crítico').forEach(p => alerts.push({ type: 'danger', msg: `Proyecto [${p.name}] en Riesgo Crítico.` }));
-
-        // Granular Budget Alerts per Project
-        projects.filter(p => p.budget > 0 && (p.actual_cost / p.budget) >= 0.9).forEach(p => {
-          const pct = Math.round((p.actual_cost / p.budget) * 100);
-          alerts.push({
-            type: pct >= 100 ? 'critical' : 'warning',
-            msg: `Presupuesto de [${p.name}] al ${pct}%.`
-          });
-        });
-
-        const criticalWarranties = assets.filter(a => {
-          if (!a.warranty_expiration) return false;
-          const diff = (new Date(a.warranty_expiration).getTime() - new Date().getTime()) / (1000 * 3600 * 24);
-          return diff <= 15 && diff >= 0;
-        });
-        criticalWarranties.forEach(a => alerts.push({ type: 'danger', msg: `Garantía de [${a.name}] por vencer.` }));
+        projects.filter((p: any) => p.risk_level === 'Crítico').forEach((p: any) => alerts.push({ type: 'danger', msg: `Proyecto [${p.name}] en Riesgo Crítico.` }));
 
         setExecutiveAlerts(alerts.slice(0, 5));
         setRecentActivity(actRes.data || []);
@@ -238,244 +228,213 @@ export default function DashboardPage() {
     return availableEntities.find(e => e.id === activeEntityId)?.name || 'Entidad';
   }, [activeEntityId, availableEntities]);
 
-  if (loading && stats.projects === 0) return <div className="flex h-[60vh] items-center justify-center text-muted-foreground font-black animate-pulse">GENERANDO REPORTE EJECUTIVO...</div>;
+  if (loading && stats.projects === 0) return <div className="flex h-[60vh] items-center justify-center text-primary font-black animate-pulse text-2xl tracking-tighter">SINCRONIZANDO INTELIGENCIA...</div>;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-10">
 
       {/* --- Executive Header --- */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 pb-2 border-b border-border">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-primary font-black uppercase tracking-[0.2em] text-xs">
-            <Zap className="w-3 h-3 fill-primary" /> Intelligence Dashboard
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 group">
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 text-primary font-bold uppercase tracking-[0.3em] text-[10px] bg-primary/5 w-fit px-3 py-1 rounded-full border border-primary/10">
+            <Zap className="w-3 h-3 fill-primary animate-pulse" /> Platform Analytics
           </div>
-          <h1 className="text-4xl font-black text-foreground flex items-center gap-3">
+          <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tight leading-none">
             {selectedEntityName}
           </h1>
-          <div className="flex items-center gap-4 pt-1">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
-              <ShieldAlert className="w-3.5 h-3.5 text-orange-500" />
-              Nivel de Riesgo Global: <span className="text-orange-500">{stats.overdueTasks > 5 ? 'Elevado' : 'Nominal'}</span>
+          <div className="flex flex-wrap items-center gap-6 pt-1">
+            <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground/80">
+              <ShieldAlert className="w-4 h-4 text-primary" />
+              Estado Operativo: <span className="text-foreground">{stats.overdueTasks > 5 ? '⚠️ Riesgo Elevado' : '✅ Nominal'}</span>
             </div>
-            <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
-              <Target className="w-3.5 h-3.5 text-blue-500" />
-              KPI Cumplimiento: <span className="text-blue-500">{Math.round(stats.avgTaskCompletion)}%</span>
+            <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground/80">
+              <Target className="w-4 h-4 text-primary" />
+              Cumplimiento: <span className="text-foreground">{Math.round(stats.avgTaskCompletion)}%</span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 bg-muted/20 p-2 rounded-2xl border border-border/50">
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
           {(profile?.has_all_entities_access || (profile?.profile_entities?.length || 0) > 1) && (
-            <select
-              value={activeEntityId}
-              onChange={(e) => setActiveEntityId(e.target.value)}
-              className="bg-background border-none text-sm font-black px-4 py-2 rounded-xl focus:ring-0 cursor-pointer hover:bg-muted/50 transition-colors outline-none min-w-[220px]"
-            >
-              {profile?.has_all_entities_access && <option value="all">🌍 Ecosistema Total</option>}
-              {availableEntities.map(ent => (
-                <option key={ent.id} value={ent.id}>🏢 {ent.name}</option>
-              ))}
-            </select>
+            <div className="relative w-full sm:w-64 group">
+              <select
+                value={activeEntityId}
+                onChange={(e) => setActiveEntityId(e.target.value)}
+                className="w-full appearance-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 text-sm font-bold px-5 py-3.5 rounded-2xl focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer shadow-sm hover:border-primary/50 outline-none"
+              >
+                {profile?.has_all_entities_access && <option value="all">🌍 Ecosistema Global</option>}
+                {availableEntities.map(ent => (
+                  <option key={ent.id} value={ent.id}>🏢 {ent.name}</option>
+                ))}
+              </select>
+              <ArrowDownRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none group-focus-within:rotate-90 transition-transform" />
+            </div>
           )}
-          <div className="h-8 w-px bg-border mx-1" />
-          <div className="flex items-center gap-2 px-4 py-2 bg-background rounded-xl border border-border/40 shadow-sm text-xs font-black uppercase">
-            <Calendar className="w-3.5 h-3.5 text-primary" />
-            {new Date().toLocaleDateString('es-CO', { month: 'short', day: 'numeric', year: 'numeric' })}
-          </div>
         </div>
       </div>
 
       {/* --- Alert Band --- */}
       {executiveAlerts.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {executiveAlerts.map((alert, i) => (
-            <div key={i} className={`flex items-center gap-3 p-4 rounded-2xl border ${alert.type === 'critical' ? 'bg-red-500/10 border-red-500/30 text-red-600' :
-              alert.type === 'danger' ? 'bg-orange-500/10 border-orange-500/30 text-orange-600' :
-                'bg-amber-500/10 border-amber-500/30 text-amber-600'
-              } animate-in slide-in-from-left duration-500`} style={{ animationDelay: `${i * 100}ms` }}>
-              <ShieldAlert className="w-5 h-5 shrink-0" />
-              <span className="text-xs font-black uppercase leading-tight tracking-tight">{alert.msg}</span>
+            <div key={i} className={`flex items-center gap-4 p-5 rounded-2xl border-l-8 ${alert.type === 'critical' ? 'bg-red-500/5 border-red-500/40 text-red-700 dark:text-red-400' :
+              alert.type === 'danger' ? 'bg-orange-500/5 border-orange-500/40 text-orange-700 dark:text-orange-400' :
+                'bg-amber-500/5 border-amber-500/40 text-amber-700 dark:text-amber-400'
+              } shadow-sm group hover:-translate-y-0.5 transition-all`}>
+              <div className="p-2 bg-white/50 dark:bg-black/20 rounded-xl">
+                <ShieldAlert className="w-5 h-5 shrink-0" />
+              </div>
+              <span className="text-xs font-extrabold uppercase tracking-tight">{alert.msg}</span>
             </div>
           ))}
         </div>
       )}
 
       {/* --- Core Executive Stats --- */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <ExecutiveCard
-          title="Revenue Under Management"
+          title="Gestión de Capital"
           value={`$${(stats.totalBudget / 1000).toFixed(1)}K`}
           trend="+12.5%"
           trendUp={true}
           subtitle="Presupuesto Total"
-          icon={<DollarSign className="w-5 h-5" />}
-          color="emerald"
+          icon={<DollarSign className="w-6 h-6 text-indigo-500" />}
+          gradient="from-indigo-500/20 to-violet-500/20"
         />
         <ExecutiveCard
-          title="Portfolio Performance"
+          title="Salud del Portfolio"
           value={stats.performanceIndex.toFixed(2)}
           trend="-0.04"
           trendUp={false}
-          subtitle="Índice SPI (Pertenencia)"
-          icon={<TrendingUp className="w-5 h-5" />}
-          color="blue"
+          subtitle="SPI Index"
+          icon={<TrendingUp className="w-6 h-6 text-blue-500" />}
+          gradient="from-blue-500/20 to-cyan-500/20"
         />
         <ExecutiveCard
-          title="Client Satisfaction"
+          title="Satisfacción"
           value="8.4/10"
           trend="+0.2"
           trendUp={true}
           subtitle="NPS Estimado"
-          icon={<Star className="w-5 h-5" />}
-          color="amber"
+          icon={<Star className="w-6 h-6 text-amber-500" />}
+          gradient="from-amber-500/20 to-orange-500/20"
         />
         <ExecutiveCard
-          title="Operational Load"
+          title="Uso de Capacidad"
           value={`${Math.round(stats.resourceUtilization)}%`}
-          trend="Estable"
+          trend="Nominal"
           trendUp={null}
-          subtitle="Uso de Talentos"
-          icon={<Users className="w-5 h-5" />}
-          color="purple"
-        />
-        <ExecutiveCard
-          title="Net Inventory Value"
-          value={`$${(stats.inventoryValue / 1000).toFixed(1)}K`}
-          trend={stats.expiringWarranties > 0 ? `${stats.expiringWarranties} Alert` : 'Vigente'}
-          trendUp={stats.expiringWarranties > 0 ? false : null}
-          subtitle="Valor Depreciado"
-          icon={<Package className="w-5 h-5" />}
-          color="slate"
+          subtitle="Carga de Talentos"
+          icon={<Users className="w-6 h-6 text-purple-500" />}
+          gradient="from-purple-500/20 to-fuchsia-500/20"
         />
       </div>
 
       {/* --- Analytical Grid --- */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-        {/* Radar Char: Portfolio Balance */}
-        <div className="lg:col-span-4 glass-card p-6 flex flex-col">
-          <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-primary" /> Equilibrio Operativo
-          </h3>
-          <div className="flex-1 min-h-[300px]">
+        {/* Radar: Portfolio Balance */}
+        <div className="lg:col-span-5 stat-card group">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-3">
+              <div className="w-2 h-6 bg-primary rounded-full" /> Equilibrio Operativo
+            </h3>
+            <div className="p-2 bg-primary/10 rounded-xl">
+              <BarChart3 className="w-4 h-4 text-primary" />
+            </div>
+          </div>
+          <div className="h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart cx="50%" cy="50%" outerRadius="80%" data={projectPortfolioData}>
-                <PolarGrid stroke="#64748b" opacity={0.2} />
-                <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fontWeight: 800, fill: '#64748b' }} />
-                <PolarRadiusAxis angle={30} domain={[0, 100]} hide />
+                <PolarGrid stroke="currentColor" className="text-slate-200 dark:text-white/10" />
+                <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fontWeight: 800, fill: 'currentColor' }} className="text-muted-foreground" />
                 <Radar
-                  name="Actual"
+                  name="Métricas"
                   dataKey="A"
                   stroke="var(--primary)"
                   fill="var(--primary)"
-                  fillOpacity={0.6}
+                  fillOpacity={0.3}
+                  strokeWidth={3}
                 />
               </RadarChart>
             </ResponsiveContainer>
           </div>
-          <p className="text-[10px] text-center font-bold text-muted-foreground/60 uppercase mt-4">Puntuación multicriterio de las 5 dimensiones clave</p>
         </div>
 
-        {/* Productivity Trend */}
-        <div className="lg:col-span-8 glass-card p-6 flex flex-col">
-          <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-6 flex items-center justify-between">
-            <span className="flex items-center gap-2"><TrendingUp className="w-4 h-4 text-emerald-500" /> Histórico de Eficiencia</span>
-            <div className="flex gap-4 text-[10px]">
-              <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500" /> Planificado</span>
-              <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500" /> Real</span>
+        {/* Area Chart: Consistency Trend */}
+        <div className="lg:col-span-7 stat-card">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-3">
+              <div className="w-2 h-6 bg-emerald-500 rounded-full" /> Histórico de Rendimiento
+            </h3>
+            <div className="flex gap-4">
+              <div className="flex items-center gap-2"><div className="w-3 h-1 bg-primary rounded-full" /><span className="text-[9px] font-bold uppercase">Plan</span></div>
+              <div className="flex items-center gap-2"><div className="w-3 h-1 bg-emerald-500 rounded-full" /><span className="text-[9px] font-bold uppercase">Real</span></div>
             </div>
-          </h3>
-          <div className="flex-1 min-h-[300px]">
+          </div>
+          <div className="h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={efficiencyTreads}>
                 <defs>
-                  <linearGradient id="colorActual" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="colorReal" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
                     <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 700 }} />
-                <YAxis axisLine={false} tickLine={false} hide />
-                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }} />
-                <Area type="monotone" dataKey="planned" stroke="#3b82f6" strokeWidth={3} fill="transparent" />
-                <Area type="monotone" dataKey="actual" stroke="#10b981" strokeWidth={4} fillOpacity={1} fill="url(#colorActual)" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-100 dark:text-white/5" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 700, fill: 'currentColor' }} className="text-muted-foreground" />
+                <YAxis hide />
+                <Tooltip contentStyle={{ backgroundColor: 'black', color: 'white', borderRadius: '16px', border: 'none' }} itemStyle={{ color: 'white' }} />
+                <Area type="monotone" dataKey="planned" stroke="#6366f1" strokeWidth={3} fill="transparent" />
+                <Area type="monotone" dataKey="actual" stroke="#10b981" strokeWidth={4} fill="url(#colorReal)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Resource Load vs Capacity */}
-        <div className="lg:col-span-7 glass-card p-6">
-          <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
-            <Users className="w-4 h-4 text-purple-500" /> Carga vs Capacidad por Talento
-          </h3>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={resourceLoad} margin={{ left: -20 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 700 }} />
-                <YAxis axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ borderRadius: '12px' }} />
-                <Bar dataKey="capacity" fill="#e2e8f0" radius={[10, 10, 0, 0]} barSize={30} />
-                <Bar dataKey="load" fill="#8b5cf6" radius={[10, 10, 0, 0]} barSize={30} />
-              </BarChart>
-            </ResponsiveContainer>
+        {/* Resources & Activity Footer */}
+        <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="stat-card">
+            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-8 flex items-center gap-3">
+              <Users className="w-4 h-4 text-primary" /> Talentos Activos
+            </h3>
+            <div className="space-y-6">
+              {resourceLoad.map((r, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="flex justify-between items-center text-xs font-bold uppercase">
+                    <span>{r.name}</span>
+                    <span className={r.load > r.capacity ? 'text-red-500' : 'text-primary'}>{r.load}%</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all duration-1000 ${r.load > r.capacity ? 'bg-red-500' : 'bg-primary'}`} style={{ width: `${Math.min(r.load, 100)}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Top Risk Matrix */}
-        <div className="lg:col-span-5 glass-card p-6">
-          <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 text-red-500" /> Concentración de Riesgos
-          </h3>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
-                <XAxis type="number" dataKey="impact" hide />
-                <YAxis type="number" dataKey="risk" domain={[0, 100]} hide />
-                <ZAxis type="number" dataKey="size" range={[100, 500]} />
-                <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-                <Scatter name="Proyectos" data={riskMatrixData}>
-                  {riskMatrixData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.risk > 70 ? '#ef4444' : entry.risk > 40 ? '#f59e0b' : '#3b82f6'} />
-                  ))}
-                </Scatter>
-              </ScatterChart>
-            </ResponsiveContainer>
-            <div className="flex justify-between items-center text-[10px] font-black uppercase text-muted-foreground mt-4 border-t border-border pt-4">
-              <span>Impacto Operativo ➡️</span>
-              <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500" /> Crítico</span>
-              <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-orange-500" /> Alto</span>
+          <div className="stat-card">
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-3">
+                <Activity className="w-4 h-4 text-primary" /> Actividad Reciente
+              </h3>
+              <Link href="/reportes" className="text-[9px] font-bold text-primary uppercase hover:tracking-widest transition-all">Explorar Logs</Link>
+            </div>
+            <div className="space-y-4">
+              {recentActivity.map((log: any, i: number) => (
+                <div key={i} className="flex items-center gap-4 p-3 rounded-xl hover:bg-white dark:hover:bg-white/5 transition-all border border-transparent hover:border-slate-100 dark:hover:border-white/5 shadow-hover">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-xs font-black text-primary uppercase">
+                    {log.profiles?.full_name?.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold truncate">{log.description}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-medium">{log.profiles?.full_name} • {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-
-        {/* Timeline Activity */}
-        <div className="lg:col-span-12 glass-card p-8">
-          <div className="flex justify-between items-center mb-8">
-            <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-              <Activity className="w-4 h-4 text-blue-500" /> Auditoría de Actividad Ejecutiva
-            </h3>
-            <button className="text-[10px] font-black uppercase text-primary hover:underline">Ver Log Completo</button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {recentActivity.map((log) => (
-              <div key={log.id} className="p-4 rounded-2xl bg-muted/20 border border-border/50 hover:bg-muted/40 transition-all group">
-                <p className="text-xs font-bold line-clamp-2 leading-snug group-hover:text-primary transition-colors">{log.description}</p>
-                <div className="flex items-center gap-2 mt-3">
-                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary uppercase">
-                    {log.profiles?.full_name?.charAt(0)}
-                  </div>
-                  <span className="text-[10px] font-black text-muted-foreground uppercase">{log.profiles?.full_name?.split(' ')[0]}</span>
-                  <span className="text-[10px] text-muted-foreground/50 ml-auto">{new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-              </div>
-            ))}
-            {recentActivity.length === 0 && <p className="text-sm text-muted-foreground italic">Sin actividad registrada.</p>}
-          </div>
-        </div>
-
       </div>
     </div>
   );
@@ -483,37 +442,35 @@ export default function DashboardPage() {
 
 // --- Executive UI Components ---
 
-function ExecutiveCard({ title, value, trend, trendUp, subtitle, icon, color }: any) {
-  const colorClasses: any = {
-    emerald: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20',
-    blue: 'text-blue-500 bg-blue-500/10 border-blue-500/20',
-    amber: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
-    purple: 'text-purple-500 bg-purple-500/10 border-purple-500/20',
-  };
-
+function ExecutiveCard({ title, value, trend, trendUp, subtitle, icon, gradient }: any) {
   return (
-    <div className="glass-card p-6 flex flex-col justify-between group hover:-translate-y-1 transition-all duration-300">
-      <div className="flex justify-between items-start">
-        <div className={`p-3 rounded-2xl border ${colorClasses[color]}`}>
+    <div className="stat-card group hover:translate-y-[-8px] transition-all duration-500 cursor-default">
+      <div className={`absolute -right-4 -top-4 w-32 h-32 bg-gradient-to-br ${gradient} blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700`} />
+
+      <div className="flex justify-between items-start mb-10 relative z-10">
+        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-white/5 group-hover:scale-110 transition-transform duration-500">
           {icon}
         </div>
         {trend && (
-          <div className={`flex items-center gap-1 text-[10px] font-black uppercase ${trendUp === true ? 'text-emerald-500' : trendUp === false ? 'text-red-500' : 'text-muted-foreground'}`}>
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider ${trendUp === true ? 'bg-emerald-500/10 text-emerald-600' :
+            trendUp === false ? 'bg-red-500/10 text-red-600' :
+              'bg-slate-500/10 text-muted-foreground'
+            }`}>
             {trendUp === true ? <ArrowUpRight className="w-3 h-3" /> : trendUp === false ? <ArrowDownRight className="w-3 h-3" /> : null}
             {trend}
           </div>
         )}
       </div>
-      <div className="mt-6">
-        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{title}</p>
-        <div className="flex items-baseline gap-2 mt-1">
-          <h3 className="text-3xl font-black text-foreground">{value}</h3>
-          <span className="text-[10px] font-bold text-muted-foreground/60 uppercase">{subtitle}</span>
+
+      <div className="relative z-10">
+        <p className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2">{title}</p>
+        <div className="flex items-baseline gap-3">
+          <h3 className="text-4xl font-black text-foreground tracking-tighter transition-all group-hover:text-primary">{value}</h3>
+          <span className="text-[9px] font-extrabold text-muted-foreground/60 uppercase">{subtitle}</span>
         </div>
       </div>
-      <div className="absolute right-0 bottom-0 w-16 h-16 opacity-5 pointer-events-none group-hover:scale-150 transition-transform duration-700 overflow-hidden">
-        <div className={`w-full h-full rounded-full bg-${color}-500 blur-xl`} />
-      </div>
+
+      <div className="h-1 w-0 bg-primary absolute bottom-0 left-0 transition-all duration-700 group-hover:w-full" />
     </div>
   );
 }

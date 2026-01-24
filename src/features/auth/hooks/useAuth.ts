@@ -33,7 +33,7 @@ export function useAuth() {
                 }
 
                 // Listen for changes
-                const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
+                const { data } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
                     if (mounted) {
                         setUser(session?.user ?? null);
                         if (session?.user) {
@@ -67,6 +67,16 @@ export function useAuth() {
         try {
             setLoading(true);
             await authService.signIn(credentials);
+
+            // Force load profile before redirect
+            const supabase = createClient();
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                setUser(session.user);
+                const userProfile = await authService.getProfile(session.user.id);
+                setProfile(userProfile);
+            }
+
             router.push('/dashboard');
         } catch (error) {
             throw error;

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Task, TaskFormData, TaskPriority, TaskStatus, TaskSubStatus } from '../types';
 import { createClient } from '@/lib/supabase/client';
+import { useSettings } from '@/shared/contexts/SettingsContext';
 
 interface TaskModalProps {
     isOpen: boolean;
@@ -35,11 +36,14 @@ const initialFormData: TaskFormData = {
 };
 
 export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
+    const { t } = useSettings();
     const [formData, setFormData] = useState<TaskFormData>(initialFormData);
     const [projects, setProjects] = useState<{ id: string, name: string }[]>([]);
     const [users, setUsers] = useState<{ id: string, full_name: string }[]>([]);
     const [loading, setLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+
+    // ... (useEffect hooks match but ensure no translation logic here) ...
 
     useEffect(() => {
         if (task) {
@@ -99,7 +103,7 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                         </div>
                         <div>
                             <h3 className="text-xl font-bold text-foreground">
-                                {task ? 'Editar Tarea' : 'Nueva Tarea'}
+                                {task ? t('tasks.edit') : t('tasks.new')}
                             </h3>
                             <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">Planificación Operativa</p>
                         </div>
@@ -111,7 +115,7 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-5">
                     <div className="space-y-1.5 focus-within:ring-2 focus-within:ring-primary/10 rounded-xl transition-all">
-                        <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Título de la Tarea</label>
+                        <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">{t('tasks.form.title')}</label>
                         <input
                             type="text"
                             value={formData.title}
@@ -124,16 +128,15 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div className="space-y-1.5">
-                            <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Proyecto</label>
+                            <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">{t('tasks.form.project')}</label>
                             <div className="relative">
                                 <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                 <select
                                     value={formData.project_id || ''}
                                     onChange={(e) => setFormData({ ...formData, project_id: e.target.value || null })}
                                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:border-primary transition-all text-sm font-medium appearance-none"
-                                    required
                                 >
-                                    <option value="">Seleccionar Proyecto...</option>
+                                    <option value="">{t('general.none')}</option>
                                     {projects.map(p => (
                                         <option key={p.id} value={p.id}>{p.name}</option>
                                     ))}
@@ -142,7 +145,7 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Asignado a</label>
+                            <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">{t('tasks.form.assignedTo')}</label>
                             <div className="relative">
                                 <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                 <select
@@ -150,7 +153,7 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                                     onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value || null })}
                                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:border-primary transition-all text-sm font-medium appearance-none"
                                 >
-                                    <option value="">Sin asignar</option>
+                                    <option value="">{t('tasks.form.unassigned')}</option>
                                     {users.map(u => (
                                         <option key={u.id} value={u.id}>{u.full_name}</option>
                                     ))}
@@ -161,7 +164,7 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                         <div className="space-y-1.5">
-                            <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Prioridad</label>
+                            <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">{t('general.priority')}</label>
                             <select
                                 value={formData.priority}
                                 onChange={(e) => setFormData({ ...formData, priority: e.target.value as TaskPriority })}
@@ -170,12 +173,11 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                                 <option value="Baja">Baja</option>
                                 <option value="Media">Media</option>
                                 <option value="Alta">Alta</option>
-                                <option value="Urgente">Urgente</option>
                             </select>
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Estado</label>
+                            <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">{t('tasks.form.status')}</label>
                             <select
                                 value={formData.status}
                                 onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })}
@@ -183,14 +185,13 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                             >
                                 <option value="Pendiente">Pendiente</option>
                                 <option value="En Progreso">En Progreso</option>
-                                <option value="En Revisión">En Revisión</option>
+                                <option value="Revisión">Revisión</option>
                                 <option value="Completado">Completado</option>
-                                <option value="Cancelado">Cancelado</option>
                             </select>
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Detalle de Riesgo</label>
+                            <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">{t('tasks.form.risk')}</label>
                             <select
                                 value={formData.sub_status}
                                 onChange={(e) => setFormData({ ...formData, sub_status: e.target.value as TaskSubStatus })}
@@ -205,7 +206,7 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Fecha de Entrega</label>
+                        <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">{t('tasks.form.dueDate')}</label>
                         <div className="relative">
                             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <input
@@ -218,7 +219,7 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Notas Adicionales</label>
+                        <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">{t('tasks.form.notes')}</label>
                         <textarea
                             value={formData.notes || ''}
                             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -234,7 +235,7 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                             onClick={onClose}
                             className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-6 py-2.5 rounded-xl text-sm font-bold flex-1 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                         >
-                            Cancelar
+                            {t('general.cancel')}
                         </button>
                         <button
                             type="submit"
@@ -246,7 +247,7 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                             ) : (
                                 <Save className="w-4 h-4" />
                             )}
-                            {task ? 'Guardar Cambios' : 'Crear Tarea'}
+                            {task ? t('general.save') : t('general.create')}
                         </button>
                     </div>
                 </form>

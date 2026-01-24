@@ -9,8 +9,6 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SettingsProvider>
-      <AppLayout>{children}</AppLayout>
-    </SettingsProvider>
+    <AppLayout>{children}</AppLayout>
   );
 }

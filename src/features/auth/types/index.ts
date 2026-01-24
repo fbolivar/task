@@ -32,6 +32,7 @@ export interface Profile {
     whatsapp_number: string | null;
     created_at: string;
     has_all_entities_access: boolean;
+    must_change_password?: boolean;
     role?: Role;
     profile_entities?: { entity: { id: string; name: string } }[];
 }

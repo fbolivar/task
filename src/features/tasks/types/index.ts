@@ -1,6 +1,6 @@
-export type TaskStatus = 'Pendiente' | 'En Progreso' | 'En Revisión' | 'Completado' | 'Cancelado';
+export type TaskStatus = 'Pendiente' | 'En Progreso' | 'Revisión' | 'Completado';
 export type TaskSubStatus = 'En Tiempo' | 'En Riesgo' | 'Demorado' | 'Bloqueado';
-export type TaskPriority = 'Baja' | 'Media' | 'Alta' | 'Urgente';
+export type TaskPriority = 'Baja' | 'Media' | 'Alta';
 
 export interface Assignee {
     id: string;
@@ -25,6 +25,7 @@ export interface Task {
     end_date: string | null;
     assigned_to: string | null;
     created_at: string;
+    archived?: boolean;
     project?: ProjectShort;
     assignee?: Assignee;
 }

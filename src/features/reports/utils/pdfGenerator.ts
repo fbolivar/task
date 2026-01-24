@@ -2,11 +2,12 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { ReportStats } from '../types';
 
-export const generateExecutivePDF = (
+export const generateExecutivePDF = async (
     stats: ReportStats,
     projectName: string,
     startDate: string,
-    endDate: string
+    endDate: string,
+    entityLogoUrl?: string | null
 ) => {
     const doc = new jsPDF();
     const primaryColor: [number, number, number] = [37, 99, 235]; // Tailwind blue-600
@@ -15,6 +16,18 @@ export const generateExecutivePDF = (
     // Header with Design
     doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
     doc.rect(0, 0, 210, 50, 'F');
+
+    // Add Logo if available
+    if (entityLogoUrl) {
+        try {
+            // Add a white rounded rectangle as background for the logo
+            doc.setFillColor(255, 255, 255);
+            doc.roundedRect(165, 10, 30, 30, 5, 5, 'F');
+            doc.addImage(entityLogoUrl, 'PNG', 167, 12, 26, 26);
+        } catch (e) {
+            console.error('Error adding logo to PDF:', e);
+        }
+    }
 
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(24);

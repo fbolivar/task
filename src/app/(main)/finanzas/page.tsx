@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, DollarSign, Download, Filter, Search } from 'lucide-react';
+import { Plus, DollarSign, Download, Filter, Search, Sparkles } from 'lucide-react';
 import { useFinance } from '@/features/finance/hooks/useFinance';
 import { FinancialSummary } from '@/features/finance/components/FinancialSummary';
 import { FinancialList } from '@/features/finance/components/FinancialList';
@@ -9,12 +9,17 @@ import { FinancialModal } from '@/features/finance/components/FinancialModal';
 import { generateFinancialReport } from '@/features/finance/utils/financeReportGenerator';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { createClient } from '@/lib/supabase/client';
+import { useSettings } from '@/shared/contexts/SettingsContext';
+
+import { FinancialRecord } from '@/features/finance/types';
 
 export default function FinancePage() {
-    const { records, loading, summary, addRecord, deleteRecord } = useFinance();
+    const { t } = useSettings();
+    const { records, loading, summary, addRecord, updateRecord, deleteRecord } = useFinance();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [activeEntityName, setActiveEntityName] = useState('Consolidado');
+    const [editingRecord, setEditingRecord] = useState<FinancialRecord | null>(null);
     const activeEntityId = useAuthStore(state => state.activeEntityId);
 
     // Fetch entity name for the report
@@ -31,6 +36,24 @@ export default function FinancePage() {
         fetchName();
     });
 
+    const handleEdit = (record: FinancialRecord) => {
+        setEditingRecord(record);
+        setIsModalOpen(true);
+    };
+
+    const handleSave = async (data: any) => {
+        if (editingRecord) {
+            await updateRecord(editingRecord.id, data);
+        } else {
+            await addRecord(data);
+        }
+    };
+
+    const handleOpenCreate = () => {
+        setEditingRecord(null);
+        setIsModalOpen(true);
+    };
+
     const filteredRecords = records.filter(r =>
         r.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         r.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -38,45 +61,50 @@ export default function FinancePage() {
     );
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-700">
+        <div className="flex flex-col gap-10 animate-reveal max-w-7xl mx-auto pb-20">
             {/* --- Header --- */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-primary font-black uppercase tracking-[0.2em] text-xs">
-                        <DollarSign className="w-3 h-3 fill-primary" /> Intelligence Finance
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+                <div className="flex items-center gap-5 group">
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full transition-all group-hover:scale-150 duration-700" />
+                        <div className="relative w-16 h-16 rounded-3xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white shadow-2xl shadow-primary/30 group-hover:rotate-6 transition-transform duration-500">
+                            <DollarSign className="w-8 h-8" />
+                        </div>
                     </div>
-                    <h1 className="text-4xl font-black text-foreground flex items-center gap-3">
-                        Rentabilidad <span className="text-primary">&</span> Presupuestos
-                    </h1>
-                    <p className="text-muted-foreground text-sm font-bold uppercase tracking-tight">
-                        Control patrimonial y flujo de caja por entidad
-                    </p>
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/70">Intelligence Finance</span>
+                        </div>
+                        <h1 className="text-4xl font-black text-foreground tracking-tight leading-none">{t('finance.title')}</h1>
+                        <p className="text-muted-foreground font-medium text-sm mt-3 uppercase tracking-widest opacity-60">{t('finance.desc')}</p>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <div className="relative group">
-                        <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                <div className="flex items-center gap-4 w-full md:w-auto">
+                    <div className="relative flex-1 group">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-all duration-300 group-focus-within:scale-110" />
                         <input
                             type="text"
-                            placeholder="Buscar transacciones..."
+                            placeholder={t('finance.searchPlaceholder')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="bg-muted/20 border border-border/50 rounded-2xl pl-11 pr-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 w-[280px] transition-all"
+                            className="w-full md:w-[320px] pl-12 pr-6 py-4 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border border-slate-200 dark:border-white/5 rounded-2xl focus:ring-4 focus:ring-primary/10 transition-all text-sm font-semibold outline-none shadow-sm"
                         />
                     </div>
                     <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="bg-primary text-white p-3 md:px-6 md:py-3 rounded-2xl font-black uppercase text-xs shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all flex items-center gap-2"
+                        onClick={handleOpenCreate}
+                        className="btn-primary"
                     >
-                        <Plus className="w-4 h-4" />
-                        <span className="hidden md:inline">Nueva Transacción</span>
+                        <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+                        <span className="hidden md:inline font-bold tracking-wide">{t('finance.new')}</span>
                     </button>
                     <button
                         onClick={() => generateFinancialReport(filteredRecords, summary, activeEntityName)}
-                        className="p-3 bg-muted/20 border border-border/50 rounded-2xl hover:bg-muted/40 transition-colors"
+                        className="p-4 bg-white/50 dark:bg-white/5 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-white/5 hover:bg-primary/10 hover:text-primary hover:scale-110 transition-all shadow-sm"
                         title="Exportar Reporte de Rentabilidad (PDF)"
                     >
-                        <Download className="w-4 h-4 text-muted-foreground" />
+                        <Download className="w-5 h-5" />
                     </button>
                 </div>
             </div>
@@ -85,34 +113,37 @@ export default function FinancePage() {
             <FinancialSummary summary={summary} />
 
             {/* --- Control Bar --- */}
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                    <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                        <Filter className="w-4 h-4" /> Movimientos de Caja
+            <div className="flex items-center justify-between gap-4 mt-4">
+                <div className="flex items-center gap-4">
+                    <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                        <Filter className="w-4 h-4" />
+                    </div>
+                    <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                        {t('finance.cashFlow')}
                     </h2>
-                    <span className="bg-muted px-2 py-0.5 rounded-md text-[10px] font-black text-muted-foreground">
-                        {filteredRecords.length} REGISTROS
+                    <span className="bg-primary/10 px-3 py-1 rounded-full text-[9px] font-black text-primary uppercase tracking-widest border border-primary/10">
+                        {filteredRecords.length} {t('finance.records')}
                     </span>
                 </div>
-                {/* Future: Add date range filters here */}
             </div>
 
             {/* --- Data List --- */}
             {loading ? (
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 gap-6">
                     {[1, 2, 3].map(i => (
-                        <div key={i} className="glass-card p-8 animate-pulse bg-muted/20 h-24" />
+                        <div key={i} className="card-premium h-32 animate-pulse bg-slate-100/50 dark:bg-white/5" />
                     ))}
                 </div>
             ) : (
-                <FinancialList records={filteredRecords} onDelete={deleteRecord} />
+                <FinancialList records={filteredRecords} onDelete={deleteRecord} onEdit={handleEdit} />
             )}
 
             {/* --- Creation Modal --- */}
             <FinancialModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onSave={addRecord}
+                onSave={handleSave}
+                initialData={editingRecord}
             />
         </div>
     );

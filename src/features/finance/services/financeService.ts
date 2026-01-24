@@ -36,6 +36,19 @@ export const financeService = {
         return data;
     },
 
+    async updateFinancialRecord(id: string, record: Partial<Omit<FinancialRecord, 'id' | 'created_at' | 'updated_at'>>): Promise<FinancialRecord> {
+        const supabase = createClient();
+        const { data, error } = await supabase
+            .from('project_financial_records')
+            .update(record)
+            .eq('id', id)
+            .select('*, project:projects(name), entity:entities(name)')
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
     async getBudgetLines(projectId: string): Promise<BudgetLine[]> {
         const supabase = createClient();
         const { data, error } = await supabase
@@ -59,7 +72,7 @@ export const financeService = {
 
         if (fetchError) throw fetchError;
 
-        const totalActualCost = records?.reduce((acc, r) => acc + Number(r.amount), 0) || 0;
+        const totalActualCost = records?.reduce((acc: number, r: any) => acc + Number(r.amount), 0) || 0;
 
         // Update projects table
         const { error: updateError } = await supabase

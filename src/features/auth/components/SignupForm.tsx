@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { signupSchema, SignupCredentials } from '../types';
+import { useSettings } from '@/shared/contexts/SettingsContext';
 
 export function SignupForm() {
     const { signUp, loading } = useAuth();
+    const { t } = useSettings();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
@@ -23,9 +25,9 @@ export function SignupForm() {
                 const zodError = err as { issues: Array<{ message: string }> };
                 setError(zodError.issues[0].message);
             } else if (err instanceof Error) {
-                setError(err.message || 'Error al registrarse');
+                setError(err.message || t('auth.signupError'));
             } else {
-                setError('Error al registrarse');
+                setError(t('auth.signupError'));
             }
         }
     };
@@ -40,7 +42,7 @@ export function SignupForm() {
 
             <div>
                 <label htmlFor="fullName" className="block text-sm font-medium mb-1">
-                    Nombre Completo
+                    {t('auth.fullName')}
                 </label>
                 <input
                     id="fullName"
@@ -48,14 +50,14 @@ export function SignupForm() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     className="input"
-                    placeholder="Juan Pérez"
+                    placeholder={t('auth.fullNamePlaceholder')}
                     required
                 />
             </div>
 
             <div>
                 <label htmlFor="email" className="block text-sm font-medium mb-1">
-                    Email
+                    {t('auth.email')}
                 </label>
                 <input
                     id="email"
@@ -63,14 +65,14 @@ export function SignupForm() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="input"
-                    placeholder="tu@email.com"
+                    placeholder={t('auth.emailPlaceholder')}
                     required
                 />
             </div>
 
             <div>
                 <label htmlFor="password" className="block text-sm font-medium mb-1">
-                    Contraseña
+                    {t('auth.password')}
                 </label>
                 <input
                     id="password"
@@ -78,7 +80,7 @@ export function SignupForm() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="input"
-                    placeholder="••••••••"
+                    placeholder={t('auth.passwordPlaceholder')}
                     required
                 />
             </div>
@@ -88,7 +90,7 @@ export function SignupForm() {
                 disabled={loading}
                 className="btn-primary w-full"
             >
-                {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
+                {loading ? t('auth.signingUp') : t('auth.signupBtn')}
             </button>
         </form>
     );

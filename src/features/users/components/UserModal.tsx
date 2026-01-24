@@ -40,6 +40,7 @@ export function UserModal({ isOpen, onClose, onSave, user, roles, entities }: Us
     const [formData, setFormData] = useState<UserFormData>(initialFormData);
     const [isSaving, setIsSaving] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (user) {
@@ -55,6 +56,7 @@ export function UserModal({ isOpen, onClose, onSave, user, roles, entities }: Us
         } else {
             setFormData(initialFormData);
         }
+        setError(null); // Clear error when modal opens/changes
     }, [user, isOpen]);
 
     const toggleEntity = (entityId: string) => {
@@ -68,13 +70,15 @@ export function UserModal({ isOpen, onClose, onSave, user, roles, entities }: Us
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError(null);
         try {
             setIsSaving(true);
             await onSave(formData);
             onClose();
-        } catch (error) {
-            console.error('Error in user saving:', error);
-            alert(error instanceof Error ? error.message : 'Error al guardar usuario');
+        } catch (err) {
+            console.error('Error in user saving:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Error al guardar usuario';
+            setError(errorMessage);
         } finally {
             setIsSaving(false);
         }
@@ -115,6 +119,26 @@ export function UserModal({ isOpen, onClose, onSave, user, roles, entities }: Us
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 grid grid-cols-1 md:grid-cols-2 gap-10 bg-white dark:bg-slate-900">
+                    {/* Error Display */}
+                    {error && (
+                        <div className="md:col-span-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div className="w-8 h-8 bg-red-100 dark:bg-red-900/40 rounded-full flex items-center justify-center flex-shrink-0">
+                                <span className="text-red-500 font-bold">!</span>
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-red-600 dark:text-red-400 text-sm font-semibold">Error al guardar usuario</p>
+                                <p className="text-red-500 dark:text-red-300 text-xs mt-1">{error}</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setError(null)}
+                                className="text-red-400 hover:text-red-600 transition-colors"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
+
                     {/* Left Column: Core Data */}
                     <div className="space-y-8">
                         <SectionTitle title="Información Primaria" />

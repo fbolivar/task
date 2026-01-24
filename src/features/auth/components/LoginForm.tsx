@@ -8,7 +8,7 @@ import { Lock, Mail, ArrowRight, Sparkles } from 'lucide-react';
 
 export function LoginForm() {
     const { signIn, loading } = useAuth();
-    const settings = useSettings();
+    const { t, ...settings } = useSettings();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -25,9 +25,9 @@ export function LoginForm() {
                 const zodError = err as { issues: Array<{ message: string }> };
                 setError(zodError.issues[0].message);
             } else if (err instanceof Error) {
-                setError(err.message || 'Error al iniciar sesión');
+                setError(err.message || t('auth.loginError'));
             } else {
-                setError('Error al iniciar sesión');
+                setError(t('auth.loginError'));
             }
         }
     };
@@ -45,46 +45,31 @@ export function LoginForm() {
                     <div className="absolute bottom-40 right-20 w-96 h-96 bg-white rounded-full blur-3xl" />
                 </div>
 
-                {/* Logo & App Name */}
-                <div className="relative z-10 flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl overflow-hidden">
-                        {settings.logo_url ? (
-                            <img src={settings.logo_url} alt="Logo" className="w-full h-full object-cover" />
-                        ) : (
-                            <span className="text-white font-black text-2xl">{settings.app_name.charAt(0)}</span>
-                        )}
-                    </div>
-                    <div>
-                        <h1 className="text-white font-black text-2xl tracking-tight">{settings.app_name}</h1>
-                        <p className="text-white/60 text-sm font-medium">ERP Empresarial</p>
-                    </div>
-                </div>
-
                 {/* Center Content */}
                 <div className="relative z-10 space-y-6">
                     <div className="flex items-center gap-2 text-white/80">
                         <Sparkles className="w-5 h-5" />
-                        <span className="text-sm font-bold uppercase tracking-widest">Plataforma Inteligente</span>
+                        <span className="text-sm font-bold uppercase tracking-widest">{t('auth.tagline')}</span>
                     </div>
                     <h2 className="text-5xl font-black text-white leading-tight">
-                        Gestiona tu<br />
-                        <span className="text-white/80">ecosistema empresarial</span>
+                        {t('auth.headline')}<br />
+                        <span className="text-white/80">{t('auth.headlineSub')}</span>
                     </h2>
                     <p className="text-white/60 text-lg max-w-md leading-relaxed">
-                        Controla proyectos, finanzas, inventario y equipo desde una única plataforma potenciada con inteligencia artificial.
+                        {t('auth.description')}
                     </p>
 
                     <div className="flex gap-4 pt-4">
                         <div className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-xl">
-                            <p className="text-white/60 text-xs uppercase tracking-widest">Proyectos</p>
+                            <p className="text-white/60 text-xs uppercase tracking-widest">{t('auth.projects')}</p>
                             <p className="text-white font-black text-xl">∞</p>
                         </div>
                         <div className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-xl">
-                            <p className="text-white/60 text-xs uppercase tracking-widest">Usuarios</p>
+                            <p className="text-white/60 text-xs uppercase tracking-widest">{t('auth.users')}</p>
                             <p className="text-white font-black text-xl">∞</p>
                         </div>
                         <div className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-xl">
-                            <p className="text-white/60 text-xs uppercase tracking-widest">Seguridad</p>
+                            <p className="text-white/60 text-xs uppercase tracking-widest">{t('auth.security')}</p>
                             <p className="text-white font-black text-xl">100%</p>
                         </div>
                     </div>
@@ -114,9 +99,18 @@ export function LoginForm() {
                 <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
                     <div className="w-full max-w-md space-y-8">
                         {/* Header */}
-                        <div className="text-center lg:text-left">
-                            <h2 className="text-3xl font-black text-foreground">Bienvenido</h2>
-                            <p className="text-muted-foreground mt-2">Ingresa tus credenciales para acceder al sistema</p>
+                        <div className="text-center flex flex-col items-center gap-4 mb-2">
+                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center overflow-hidden shadow-sm">
+                                {settings.logo_url ? (
+                                    <img src={settings.logo_url} alt="Logo" className="w-full h-full object-cover" />
+                                ) : (
+                                    <span className="text-2xl font-black" style={{ color: settings.header_color }}>{settings.app_name.charAt(0)}</span>
+                                )}
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-black text-foreground tracking-tight">{settings.app_name}</h2>
+                                <p className="text-muted-foreground text-sm font-medium">{t('auth.enterCredentials')}</p>
+                            </div>
                         </div>
 
                         {/* Error Message */}
@@ -133,7 +127,7 @@ export function LoginForm() {
                         <form onSubmit={handleSubmit} className="space-y-5">
                             <div className="space-y-2">
                                 <label htmlFor="email" className="block text-sm font-bold text-foreground">
-                                    Correo Electrónico
+                                    {t('auth.email')}
                                 </label>
                                 <div className="relative">
                                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -143,7 +137,7 @@ export function LoginForm() {
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl pl-12 pr-4 py-4 text-sm font-medium focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
-                                        placeholder="tu@empresa.com"
+                                        placeholder={t('auth.emailPlaceholder')}
                                         required
                                     />
                                 </div>
@@ -151,7 +145,7 @@ export function LoginForm() {
 
                             <div className="space-y-2">
                                 <label htmlFor="password" className="block text-sm font-bold text-foreground">
-                                    Contraseña
+                                    {t('auth.password')}
                                 </label>
                                 <div className="relative">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -161,7 +155,7 @@ export function LoginForm() {
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl pl-12 pr-4 py-4 text-sm font-medium focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
-                                        placeholder="••••••••••••"
+                                        placeholder={t('auth.passwordPlaceholder')}
                                         required
                                     />
                                 </div>
@@ -179,39 +173,17 @@ export function LoginForm() {
                                 {loading ? (
                                     <>
                                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        Iniciando sesión...
+                                        {t('auth.loggingIn')}
                                     </>
                                 ) : (
                                     <>
-                                        Acceder al Sistema
+                                        {t('auth.loginBtn')}
                                         <ArrowRight className="w-5 h-5" />
                                     </>
                                 )}
                             </button>
                         </form>
 
-                        {/* Divider */}
-                        <div className="relative">
-                            <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-slate-200 dark:border-slate-800" />
-                            </div>
-                            <div className="relative flex justify-center text-xs uppercase">
-                                <span className="bg-slate-50 dark:bg-slate-950 px-4 text-muted-foreground font-bold tracking-widest">
-                                    ¿Nuevo en el sistema?
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Register Link */}
-                        <div className="text-center">
-                            <a
-                                href="/register"
-                                className="text-sm font-bold hover:underline transition-colors"
-                                style={{ color: settings.header_color }}
-                            >
-                                Solicitar acceso al administrador
-                            </a>
-                        </div>
                     </div>
                 </div>
 

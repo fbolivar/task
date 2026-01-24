@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     X,
     Save,
@@ -14,9 +14,12 @@ import {
     ShieldCheck,
     Briefcase,
     Target,
-    DollarSign
+    DollarSign,
+    Upload
 } from 'lucide-react';
 import { Entity, EntityFormData, EntityType } from '../types';
+import { useSettings } from '@/shared/contexts/SettingsContext';
+import { createClient } from '@/lib/supabase/client';
 
 interface EntityModalProps {
     isOpen: boolean;
@@ -38,11 +41,16 @@ const initialFormData: EntityFormData = {
     budget_q2: 0,
     budget_q3: 0,
     budget_q4: 0,
+    logo_url: '',
 };
 
 export function EntityModal({ isOpen, onClose, onSave, entity }: EntityModalProps) {
+    const { t } = useSettings();
     const [formData, setFormData] = useState<EntityFormData>(initialFormData);
     const [isSaving, setIsSaving] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const supabase = createClient();
 
     useEffect(() => {
         if (entity) {
@@ -59,11 +67,41 @@ export function EntityModal({ isOpen, onClose, onSave, entity }: EntityModalProp
                 budget_q2: entity.budget_q2 || 0,
                 budget_q3: entity.budget_q3 || 0,
                 budget_q4: entity.budget_q4 || 0,
+                logo_url: entity.logo_url || '',
             });
         } else {
             setFormData(initialFormData);
         }
     }, [entity, isOpen]);
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+
+        const file = e.target.files[0];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `entity_logo_${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        setUploading(true);
+        try {
+            const { error: uploadError } = await supabase.storage
+                .from('assets')
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('assets')
+                .getPublicUrl(filePath);
+
+            setFormData(prev => ({ ...prev, logo_url: publicUrl }));
+        } catch (error) {
+            console.error('Error uploading entity logo:', error);
+            alert('Error al subir el logo.');
+        } finally {
+            setUploading(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -93,15 +131,32 @@ export function EntityModal({ isOpen, onClose, onSave, entity }: EntityModalProp
                     </button>
 
                     <div className="flex items-center gap-5">
-                        <div className="w-20 h-20 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center shadow-inner">
-                            <Building2 className="w-10 h-10 text-white" />
+                        <div
+                            className="w-20 h-20 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center shadow-inner overflow-hidden relative group cursor-pointer"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            {formData.logo_url ? (
+                                <img src={formData.logo_url} alt="Entity Logo" className="w-full h-full object-cover" />
+                            ) : (
+                                <Building2 className="w-10 h-10 text-white" />
+                            )}
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Upload className="w-6 h-6 text-white" />
+                            </div>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileUpload}
+                                className="hidden"
+                            />
                         </div>
                         <div>
                             <h3 className="text-3xl font-black tracking-tight leading-none mb-1">
-                                {entity ? 'Editar Perfil Corporativo' : 'Alta de Nueva Entidad'}
+                                {entity ? t('general.edit') : t('entities.new')}
                             </h3>
                             <p className="text-white/70 font-bold text-xs uppercase tracking-widest flex items-center gap-2">
-                                <ShieldCheck className="w-3.5 h-3.5" /> Registro Oficial del Ecosistema
+                                <ShieldCheck className="w-3.5 h-3.5" /> {uploading ? 'Subiendo Logo...' : 'Registro Oficial del Ecosistema'}
                             </p>
                         </div>
                     </div>
@@ -257,7 +312,7 @@ export function EntityModal({ isOpen, onClose, onSave, entity }: EntityModalProp
                             onClick={onClose}
                             className="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-xs border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
                         >
-                            Descartar
+                            {t('general.cancel')}
                         </button>
                         <button
                             type="submit"
@@ -269,7 +324,7 @@ export function EntityModal({ isOpen, onClose, onSave, entity }: EntityModalProp
                             ) : (
                                 <Save className="w-4 h-4" />
                             )}
-                            {entity ? 'Actualizar Stakeholder' : 'Confirmar Alta Directa'}
+                            {entity ? t('general.save') : t('general.save')}
                         </button>
                     </div>
                 </form>

@@ -35,7 +35,7 @@ export const userService = {
         return data || [];
     },
 
-    async createUser(user: UserFormData): Promise<void> {
+    async createUser(user: UserFormData): Promise<{ emailSent: boolean; emailError?: string }> {
         const supabase = createClient();
         const { data, error } = await supabase.functions.invoke('admin-create-user', {
             body: user
@@ -47,6 +47,11 @@ export const userService = {
         }
 
         if (data?.error) throw new Error(data.error);
+
+        return {
+            emailSent: data?.emailSent || false,
+            emailError: data?.emailError
+        };
     },
 
     async updateUser(id: string, user: UserFormData): Promise<void> {

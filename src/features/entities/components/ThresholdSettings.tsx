@@ -32,7 +32,17 @@ export function ThresholdSettings() {
                     activeEntityId !== 'all' ? thresholdService.getThresholds(activeEntityId) : Promise.resolve(null),
                     authService.getAllProfiles()
                 ]);
-                setThresholds(thresholdData);
+                setThresholds(thresholdData || {
+                    id: '',
+                    entity_id: activeEntityId,
+                    budget_warning_percent: 80,
+                    budget_critical_percent: 95,
+                    task_risk_check_enabled: true,
+                    auto_reassign_enabled: false,
+                    reassign_after_days: 3,
+                    backup_assignee_id: null,
+                    updated_at: new Date().toISOString()
+                });
                 setProfiles(profileData);
             } catch (error) {
                 console.error('Error loading config:', error);
@@ -46,7 +56,11 @@ export function ThresholdSettings() {
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!thresholds || activeEntityId === 'all') return;
+        e.preventDefault();
+        if (!activeEntityId || activeEntityId === 'all') return;
+
+        // Ensure we have at least partial data from state to save
+        if (!thresholds) return;
 
         try {
             setSaving(true);

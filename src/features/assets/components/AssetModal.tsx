@@ -22,6 +22,7 @@ import {
 import { Asset, AssetFormData, AssetCategory, AssetStatus } from '../types';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { useSettings } from '@/shared/contexts/SettingsContext';
 
 interface AssetModalProps {
     isOpen: boolean;
@@ -32,6 +33,22 @@ interface AssetModalProps {
 
 const categories: AssetCategory[] = ['Hardware', 'Software', 'Mobiliario', 'Vehículo', 'Herramientas', 'General'];
 const statuses: AssetStatus[] = ['Disponible', 'Asignado', 'Mantenimiento', 'Baja'];
+
+const categoryKeyMap: Record<AssetCategory, string> = {
+    'Hardware': 'inventory.cat.hardware',
+    'Software': 'inventory.cat.software',
+    'Mobiliario': 'inventory.cat.furniture',
+    'Vehículo': 'inventory.cat.vehicle',
+    'Herramientas': 'inventory.cat.tools',
+    'General': 'inventory.cat.general'
+};
+
+const statusKeyMap: Record<AssetStatus, string> = {
+    'Disponible': 'inventory.status.available',
+    'Asignado': 'inventory.status.assigned',
+    'Mantenimiento': 'inventory.status.maintenance',
+    'Baja': 'inventory.status.discharged'
+};
 
 const initialFormData: AssetFormData = {
     name: '',
@@ -50,6 +67,7 @@ const initialFormData: AssetFormData = {
 };
 
 export function AssetModal({ isOpen, onClose, onSave, asset }: AssetModalProps) {
+    const { t } = useSettings();
     const [formData, setFormData] = useState<AssetFormData>(initialFormData);
     const [entities, setEntities] = useState<{ id: string, name: string }[]>([]);
     const [profiles, setProfiles] = useState<{ id: string, full_name: string }[]>([]);
@@ -127,14 +145,14 @@ export function AssetModal({ isOpen, onClose, onSave, asset }: AssetModalProps) 
                         </div>
                         <div>
                             <h3 className="text-3xl font-black tracking-tight leading-none mb-2">
-                                {asset ? 'Actualizar Ficha Técnica' : 'Integrar Nuevo Activo'}
+                                {asset ? t('inventory.form.editTitle') : t('inventory.form.newTitle')}
                             </h3>
                             <div className="flex items-center gap-3">
                                 <span className="bg-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-md border border-primary/30">
                                     Módulo Inventario V3
                                 </span>
                                 <span className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em]">
-                                    Control Patrimonial
+                                    {t('inventory.desc')}
                                 </span>
                             </div>
                         </div>
@@ -143,9 +161,9 @@ export function AssetModal({ isOpen, onClose, onSave, asset }: AssetModalProps) 
 
                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 grid grid-cols-1 md:grid-cols-2 gap-10 bg-white dark:bg-slate-900">
                     <div className="space-y-8">
-                        <SectionTitle title="Datos de Identificación" />
+                        <SectionTitle title={t('inventory.form.identification')} />
                         <div className="space-y-4">
-                            <FormField label="Nombre del Activo" icon={<Package />}>
+                            <FormField label={t('inventory.form.name')} icon={<Package />}>
                                 <input
                                     type="text"
                                     value={formData.name}
@@ -157,7 +175,7 @@ export function AssetModal({ isOpen, onClose, onSave, asset }: AssetModalProps) 
                             </FormField>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <FormField label="Serial / ID Placa" icon={<Hash />}>
+                                <FormField label={t('inventory.form.serial')} icon={<Hash />}>
                                     <input
                                         type="text"
                                         value={formData.serial_number}
@@ -166,19 +184,19 @@ export function AssetModal({ isOpen, onClose, onSave, asset }: AssetModalProps) 
                                         placeholder="BC-99282"
                                     />
                                 </FormField>
-                                <FormField label="Categoría" icon={<Tag />}>
+                                <FormField label={t('inventory.form.category')} icon={<Tag />}>
                                     <select
                                         value={formData.category}
                                         onChange={(e) => setFormData({ ...formData, category: e.target.value as AssetCategory })}
                                         className="input-premium appearance-none cursor-pointer"
                                         required
                                     >
-                                        {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                                        {categories.map(c => <option key={c} value={c}>{t(categoryKeyMap[c] as any)}</option>)}
                                     </select>
                                 </FormField>
                             </div>
 
-                            <FormField label="Ubicación Física" icon={<MapPin />}>
+                            <FormField label={t('inventory.form.location')} icon={<MapPin />}>
                                 <input
                                     type="text"
                                     value={formData.location}
@@ -189,38 +207,38 @@ export function AssetModal({ isOpen, onClose, onSave, asset }: AssetModalProps) 
                             </FormField>
                         </div>
 
-                        <SectionTitle title="Asignación y Estado" />
+                        <SectionTitle title={t('inventory.form.assignment')} />
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
-                                <FormField label="Estado Operativo" icon={<Info />}>
+                                <FormField label={t('inventory.form.status')} icon={<Info />}>
                                     <select
                                         value={formData.status}
                                         onChange={(e) => setFormData({ ...formData, status: e.target.value as AssetStatus })}
                                         className="input-premium appearance-none cursor-pointer"
                                         required
                                     >
-                                        {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+                                        {statuses.map(s => <option key={s} value={s}>{t(statusKeyMap[s] as any)}</option>)}
                                     </select>
                                 </FormField>
-                                <FormField label="Asignado a" icon={<User />}>
+                                <FormField label={t('inventory.form.assignedTo')} icon={<User />}>
                                     <select
                                         value={formData.assigned_to || ''}
                                         onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value || null })}
                                         className="input-premium appearance-none cursor-pointer"
                                     >
-                                        <option value="">Sin Asignar</option>
+                                        <option value="">{t('general.none')}</option>
                                         {profiles.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
                                     </select>
                                 </FormField>
                             </div>
-                            <FormField label="Entidad Propietaria" icon={<Building2 />}>
+                            <FormField label={t('entities.title')} icon={<Building2 />}>
                                 <select
                                     value={formData.entity_id || ''}
                                     onChange={(e) => setFormData({ ...formData, entity_id: e.target.value || null })}
                                     className="input-premium appearance-none cursor-pointer"
                                     required
                                 >
-                                    <option value="">Seleccionar Entidad...</option>
+                                    <option value="">{t('general.none')}</option>
                                     {entities.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
                                 </select>
                             </FormField>
@@ -228,10 +246,10 @@ export function AssetModal({ isOpen, onClose, onSave, asset }: AssetModalProps) 
                     </div>
 
                     <div className="space-y-8">
-                        <SectionTitle title="Información Financiera" />
+                        <SectionTitle title={t('inventory.form.financial')} />
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
-                                <FormField label="Fecha Compra" icon={<Calendar />}>
+                                <FormField label={t('inventory.form.purchaseDate')} icon={<Calendar />}>
                                     <input
                                         type="date"
                                         value={formData.purchase_date || ''}
@@ -239,7 +257,7 @@ export function AssetModal({ isOpen, onClose, onSave, asset }: AssetModalProps) 
                                         className="input-premium"
                                     />
                                 </FormField>
-                                <FormField label="Valor de Adquisición" icon={<DollarSign />}>
+                                <FormField label={t('inventory.form.purchaseValue')} icon={<DollarSign />}>
                                     <input
                                         type="number"
                                         value={formData.purchase_value || ''}
@@ -251,7 +269,7 @@ export function AssetModal({ isOpen, onClose, onSave, asset }: AssetModalProps) 
                             </div>
 
                             <div className="grid grid-cols-1 gap-4">
-                                <FormField label="Vencimiento de Garantía" icon={<ShieldCheck />}>
+                                <FormField label={t('inventory.form.warranty')} icon={<ShieldCheck />}>
                                     <input
                                         type="date"
                                         value={formData.warranty_expiration || ''}
@@ -262,7 +280,7 @@ export function AssetModal({ isOpen, onClose, onSave, asset }: AssetModalProps) 
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <FormField label="Vida Útil (Años)" icon={<Clock />}>
+                                <FormField label={t('inventory.form.lifeSpan')} icon={<Clock />}>
                                     <input
                                         type="number"
                                         value={formData.useful_life_years}
@@ -271,7 +289,7 @@ export function AssetModal({ isOpen, onClose, onSave, asset }: AssetModalProps) 
                                         min="1"
                                     />
                                 </FormField>
-                                <FormField label="Tasa Depreciación (%)" icon={<TrendingDown />}>
+                                <FormField label={t('inventory.form.depreciation')} icon={<TrendingDown />}>
                                     <input
                                         type="number"
                                         value={formData.depreciation_rate}
@@ -283,20 +301,20 @@ export function AssetModal({ isOpen, onClose, onSave, asset }: AssetModalProps) 
                             </div>
                         </div>
 
-                        <SectionTitle title="Documentación y Notas" />
-                        <FormField label="Observaciones Técnicas" icon={<FileText />}>
+                        <SectionTitle title={t('inventory.form.notes')} />
+                        <FormField label={t('inventory.form.techNotes')} icon={<FileText />} alignIcon="top">
                             <textarea
                                 value={formData.notes}
                                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                                 className="input-premium min-h-[150px] py-4"
-                                placeholder="Detalles de garantía, especificaciones técnicas o estado actual..."
+                                placeholder="..."
                             />
                         </FormField>
                     </div>
 
                     <div className="md:col-span-2 flex gap-4 pt-6 border-t border-slate-100 dark:border-slate-800">
                         <button type="button" onClick={onClose} className="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-xs border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
-                            Descartar
+                            {t('general.cancel')}
                         </button>
                         <button
                             type="submit"
@@ -304,7 +322,7 @@ export function AssetModal({ isOpen, onClose, onSave, asset }: AssetModalProps) 
                             className="flex-[2] py-4 rounded-2xl font-black uppercase tracking-widest text-xs bg-primary text-white shadow-xl shadow-primary/20 flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50"
                         >
                             {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            {asset ? 'Actualizar Registro de Activo' : 'Confirmar Ingreso a Inventario'}
+                            {asset ? t('general.save') : t('general.create')}
                         </button>
                     </div>
                 </form>
@@ -321,12 +339,13 @@ function SectionTitle({ title }: { title: string }) {
     );
 }
 
-function FormField({ label, icon, children }: { label: string, icon: React.ReactNode, children: React.ReactNode }) {
+function FormField({ label, icon, children, alignIcon = 'center' }: { label: string, icon: React.ReactNode, children: React.ReactNode, alignIcon?: 'center' | 'top' }) {
+    const iconPos = alignIcon === 'top' ? 'top-4' : 'top-1/2 -translate-y-1/2';
     return (
         <div className="space-y-2">
             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{label}</label>
             <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
+                <div className={`absolute left-4 ${iconPos} text-muted-foreground group-focus-within:text-primary transition-colors`}>
                     {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: "w-4 h-4" })}
                 </div>
                 {children}

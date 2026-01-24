@@ -17,8 +17,10 @@ import {
     ShieldCheck,
     PieChart as PieIcon
 } from 'lucide-react';
+import { useSettings } from '@/shared/contexts/SettingsContext';
 
 export default function ReportesPage() {
+    const { t } = useSettings();
     const { projects, stats, trendData, loading, generateStats, getExhaustionEstimate } = useReports();
 
     const handleGenerate = async (projectId: string, start: string, end: string) => {
@@ -28,11 +30,17 @@ export default function ReportesPage() {
             end_date: end
         });
 
+        const selectedProject = projects.find(p => p.id === projectId);
         const projectName = projectId === 'all'
-            ? 'Todos los proyectos'
-            : projects.find(p => p.id === projectId)?.name || 'Proyecto';
+            ? t('reports.allActiveProjects')
+            : selectedProject?.name || 'Proyecto';
 
-        generateExecutivePDF(resultStats, projectName, start, end);
+        // Get logo from the selected project entity, or the first one if "all"
+        const entityLogoUrl = projectId === 'all'
+            ? projects[0]?.entity_logo_url
+            : selectedProject?.entity_logo_url;
+
+        await generateExecutivePDF(resultStats, projectName, start, end, entityLogoUrl);
     };
 
     return (
@@ -41,21 +49,21 @@ export default function ReportesPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                 <QuickStatCard
-                    title="Cumplimiento Global"
+                    title={t('reports.globalCompliance')}
                     value="84%"
                     trend="+5.2%"
                     icon={<TrendingUp className="w-5 h-5" />}
                     color="emerald"
                 />
                 <QuickStatCard
-                    title="Proyectos en Riesgo"
+                    title={t('reports.riskProjects')}
                     value="2"
                     trend="-1"
                     icon={<Zap className="w-5 h-5" />}
                     color="amber"
                 />
                 <QuickStatCard
-                    title="Auditados este Mes"
+                    title={t('reports.auditedOnMonth')}
                     value="12"
                     trend="+3"
                     icon={<ShieldCheck className="w-5 h-5" />}
@@ -85,7 +93,7 @@ export default function ReportesPage() {
             <section className="space-y-6">
                 <div className="flex items-center justify-between">
                     <h2 className="text-xl font-black text-foreground flex items-center gap-2">
-                        Generador Avanzado
+                        {t('reports.generator.title')}
                         <span className="h-1 w-1 rounded-full bg-primary" />
                     </h2>
                 </div>
@@ -100,29 +108,29 @@ export default function ReportesPage() {
             <section className="space-y-6">
                 <div className="flex items-center justify-between">
                     <h2 className="text-xl font-black text-foreground flex items-center gap-2">
-                        Plantillas Predefinidas
+                        {t('reports.templates.title')}
                         <span className="h-1 w-1 rounded-full bg-primary" />
                     </h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <TemplateCard
-                        title="Auditoría de Cumplimiento"
-                        description="Reporte detallado de hitos vs entregables finales."
+                        title={t('reports.template.compliance.title')}
+                        description={t('reports.template.compliance.desc')}
                         icon={<ShieldCheck className="w-6 h-6 text-emerald-500" />}
-                        tag="Compliance"
+                        tag={t('reports.tag.compliance')}
                     />
                     <TemplateCard
-                        title="Rentabilidad de Recursos"
-                        description="Análisis de horas hombre invertidas por proyecto."
+                        title={t('reports.template.financial.title')}
+                        description={t('reports.template.financial.desc')}
                         icon={<PieIcon className="w-6 h-6 text-blue-500" />}
-                        tag="Financial"
+                        tag={t('reports.tag.financial')}
                     />
                     <TemplateCard
-                        title="Métricas de Equipo"
-                        description="Eficacia individual y carga operativa por colaborador."
+                        title={t('reports.template.team.title')}
+                        description={t('reports.template.team.desc')}
                         icon={<FileText className="w-6 h-6 text-purple-500" />}
-                        tag="Human Capital"
+                        tag={t('reports.tag.humanCapital')}
                     />
                 </div>
             </section>
@@ -169,6 +177,7 @@ interface TemplateCardProps {
 }
 
 function TemplateCard({ title, description, icon, tag }: TemplateCardProps) {
+    const { t } = useSettings();
     return (
         <div className="glass-card p-6 group hover:border-primary/40 transition-all duration-500 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-150 group-hover:opacity-20 transition-all duration-700">
@@ -182,7 +191,7 @@ function TemplateCard({ title, description, icon, tag }: TemplateCardProps) {
             <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{description}</p>
 
             <button className="mt-6 flex items-center gap-2 text-xs font-black text-primary hover:gap-3 transition-all">
-                Configurar Reporte <ArrowUpRight className="w-3 h-3" />
+                {t('reports.configure')} <ArrowUpRight className="w-3 h-3" />
             </button>
         </div>
     );

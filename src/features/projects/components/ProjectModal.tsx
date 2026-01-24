@@ -17,6 +17,7 @@ import {
 import { Project, ProjectFormData, ProjectPriority, ProjectStatus, Entity } from '../types';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { useSettings } from '@/shared/contexts/SettingsContext';
 
 interface ProjectModalProps {
     isOpen: boolean;
@@ -38,11 +39,14 @@ const initialFormData: ProjectFormData = {
 };
 
 export function ProjectModal({ isOpen, onClose, onSave, project }: ProjectModalProps) {
+    const { t } = useSettings();
     const [formData, setFormData] = useState<ProjectFormData>(initialFormData);
     const [entities, setEntities] = useState<Entity[]>([]);
     const [loading, setLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const activeEntityId = useAuthStore(state => state.activeEntityId);
+
+    // ... (useEffect hooks match but ensure no translation logic here) ...
 
     useEffect(() => {
         if (project) {
@@ -102,7 +106,7 @@ export function ProjectModal({ isOpen, onClose, onSave, project }: ProjectModalP
                         </div>
                         <div>
                             <h3 className="text-xl font-black text-foreground">
-                                {project ? 'Editar Proyecto' : 'Nuevo Proyecto'}
+                                {project ? t('projects.edit') : t('projects.new')}
                             </h3>
                             <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Definición de Portafolio</p>
                         </div>
@@ -116,7 +120,7 @@ export function ProjectModal({ isOpen, onClose, onSave, project }: ProjectModalP
                     {/* Basic Info */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1.5 md:col-span-2">
-                            <label className="text-sm font-bold text-foreground">Nombre del Proyecto</label>
+                            <label className="text-sm font-bold text-foreground">{t('projects.form.name')}</label>
                             <div className="relative group">
                                 <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                 <input
@@ -131,7 +135,7 @@ export function ProjectModal({ isOpen, onClose, onSave, project }: ProjectModalP
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-sm font-bold text-foreground">Entidad Asociada</label>
+                            <label className="text-sm font-bold text-foreground">{t('projects.form.entity')}</label>
                             <div className="relative group">
                                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                 <select
@@ -139,7 +143,7 @@ export function ProjectModal({ isOpen, onClose, onSave, project }: ProjectModalP
                                     onChange={(e) => setFormData({ ...formData, entity_id: e.target.value || null })}
                                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium appearance-none"
                                 >
-                                    <option value="">Seleccionar Entidad...</option>
+                                    <option value="">{t('general.none')}</option>
                                     {entities.map(e => (
                                         <option key={e.id} value={e.id}>{e.name}</option>
                                     ))}
@@ -148,7 +152,7 @@ export function ProjectModal({ isOpen, onClose, onSave, project }: ProjectModalP
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-sm font-bold text-foreground">Prioridad</label>
+                            <label className="text-sm font-bold text-foreground">{t('general.priority')}</label>
                             <div className="relative group">
                                 <Flag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                 <select
@@ -168,7 +172,7 @@ export function ProjectModal({ isOpen, onClose, onSave, project }: ProjectModalP
                     {/* Dates */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
                         <div className="space-y-1.5">
-                            <label className="text-sm font-bold text-foreground">Fecha Inicio</label>
+                            <label className="text-sm font-bold text-foreground">{t('general.startDate')}</label>
                             <div className="relative group">
                                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground transition-colors" />
                                 <input
@@ -181,7 +185,7 @@ export function ProjectModal({ isOpen, onClose, onSave, project }: ProjectModalP
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-sm font-bold text-foreground">Fecha Fin Estimada</label>
+                            <label className="text-sm font-bold text-foreground">{t('general.endDate')}</label>
                             <div className="relative group">
                                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground transition-colors" />
                                 <input
@@ -195,7 +199,7 @@ export function ProjectModal({ isOpen, onClose, onSave, project }: ProjectModalP
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-sm font-bold text-foreground">Descripción del Proyecto</label>
+                        <label className="text-sm font-bold text-foreground">{t('general.description')}</label>
                         <div className="relative group">
                             <AlignLeft className="absolute left-3 top-3 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                             <textarea
@@ -217,7 +221,7 @@ export function ProjectModal({ isOpen, onClose, onSave, project }: ProjectModalP
                                 className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
                             />
                             <div className="flex flex-col">
-                                <span className="text-sm font-bold">Contrato Activo</span>
+                                <span className="text-sm font-bold">{t('projects.form.contract')}</span>
                                 <span className="text-[10px] text-muted-foreground">Vigencia legal vigente</span>
                             </div>
                         </label>
@@ -230,7 +234,7 @@ export function ProjectModal({ isOpen, onClose, onSave, project }: ProjectModalP
                                 className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
                             />
                             <div className="flex flex-col">
-                                <span className="text-sm font-bold">Incluye Soporte</span>
+                                <span className="text-sm font-bold">{t('projects.form.support')}</span>
                                 <span className="text-[10px] text-muted-foreground">Mantenimiento recurrente</span>
                             </div>
                         </label>
@@ -243,7 +247,7 @@ export function ProjectModal({ isOpen, onClose, onSave, project }: ProjectModalP
                             onClick={onClose}
                             className="btn-secondary flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2"
                         >
-                            Cancelar
+                            {t('general.cancel')}
                         </button>
                         <button
                             type="submit"
@@ -253,12 +257,12 @@ export function ProjectModal({ isOpen, onClose, onSave, project }: ProjectModalP
                             {isSaving ? (
                                 <>
                                     <Loader2 className="w-4 h-4 animate-spin" />
-                                    Guardando...
+                                    {t('general.loading')}
                                 </>
                             ) : (
                                 <>
                                     <Save className="w-4 h-4" />
-                                    {project ? 'Actualizar Proyecto' : 'Crear Proyecto'}
+                                    {project ? t('general.save') : t('general.create')}
                                 </>
                             )}
                         </button>

@@ -6,19 +6,30 @@ import { useSettings } from '@/shared/contexts/SettingsContext';
 import { Save, Upload, RefreshCw } from 'lucide-react';
 
 export default function GeneralSettingsPage() {
-    const settings = useSettings();
+    const {
+        app_name = 'GestorPro',
+        header_color = '#2563EB',
+        footer_text = '© 2026',
+        logo_url = null,
+        language = 'es',
+        t
+    } = useSettings();
+
     const [formData, setFormData] = useState({
-        app_name: settings.app_name,
-        header_color: settings.header_color,
-        footer_text: settings.footer_text,
-        logo_url: settings.logo_url
+        app_name,
+        header_color,
+        footer_text,
+        logo_url,
+        language
     });
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
 
     // File input ref
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const supabase = createClient();
+
+    // Supabase client created lazily or memoized
+    const getSupabase = () => createClient();
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
@@ -31,14 +42,14 @@ export default function GeneralSettingsPage() {
         setUploading(true);
         try {
             // Upload
-            const { error: uploadError } = await supabase.storage
+            const { error: uploadError } = await getSupabase().storage
                 .from('assets')
                 .upload(filePath, file);
 
             if (uploadError) throw uploadError;
 
             // Get Public URL
-            const { data: { publicUrl } } = supabase.storage
+            const { data: { publicUrl } } = getSupabase().storage
                 .from('assets')
                 .getPublicUrl(filePath);
 
@@ -55,7 +66,7 @@ export default function GeneralSettingsPage() {
         e.preventDefault();
         setSaving(true);
         try {
-            const { error } = await supabase
+            const { error } = await getSupabase()
                 .from('app_settings')
                 .upsert({
                     id: 1, // Singleton ID
@@ -94,13 +105,24 @@ export default function GeneralSettingsPage() {
                         </h2>
 
                         <div>
-                            <label className="block text-sm font-medium mb-1">Nombre de la Aplicación</label>
+                            <label className="block text-sm font-medium mb-1">{t('config.language')}</label>
+                            <select
+                                value={formData.language}
+                                onChange={(e) => setFormData({ ...formData, language: e.target.value as 'es' | 'en' })}
+                                className="input-premium w-full"
+                            >
+                                <option value="es">Español</option>
+                                <option value="en">English (Inglés)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium mb-1">{t('config.appName')}</label>
                             <input
                                 type="text"
                                 value={formData.app_name}
                                 onChange={(e) => setFormData({ ...formData, app_name: e.target.value })}
-                                className="input w-full"
-                                placeholder="Ej: Mi Empresa ERP"
+                                className="input-premium w-full"
                             />
                         </div>
 
@@ -110,7 +132,7 @@ export default function GeneralSettingsPage() {
                                 type="text"
                                 value={formData.footer_text}
                                 onChange={(e) => setFormData({ ...formData, footer_text: e.target.value })}
-                                className="input w-full"
+                                className="input-premium w-full"
                                 placeholder="Ej: © 2026 Reservados todos los derechos"
                             />
                         </div>
@@ -129,7 +151,7 @@ export default function GeneralSettingsPage() {
                                     className="w-16 h-16 p-1 rounded-xl cursor-pointer bg-transparent border border-border"
                                 />
                                 <div className="space-y-1">
-                                    <p className="text-sm font-medium">{formData.header_color.toUpperCase()}</p>
+                                    <p className="text-sm font-medium">{(formData.header_color || '#000000').toUpperCase()}</p>
                                     <p className="text-xs text-muted-foreground">Color usado en barra lateral y botones principales</p>
                                 </div>
                             </div>

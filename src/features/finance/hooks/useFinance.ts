@@ -57,6 +57,20 @@ export function useFinance(projectId?: string) {
         }
     };
 
+    const updateRecord = async (id: string, record: Partial<FinancialRecord>) => {
+        try {
+            const updatedRecord = await financeService.updateFinancialRecord(id, record);
+            setRecords(prev => prev.map(r => r.id === id ? updatedRecord : r));
+            // Force sync project cost
+            if (record.project_id) {
+                await financeService.syncProjectActualCost(record.project_id);
+            }
+            return updatedRecord;
+        } catch (err: any) {
+            throw new Error(err.message);
+        }
+    };
+
     const deleteRecord = async (id: string, pId: string) => {
         try {
             await financeService.deleteFinancialRecord(id);
@@ -84,6 +98,7 @@ export function useFinance(projectId?: string) {
         summary,
         entityBudget,
         addRecord,
+        updateRecord,
         deleteRecord,
         refresh: fetchFinancialData
     };

@@ -4,7 +4,7 @@ import { ReportFilter, ReportStats, ProjectData } from '../types';
 export const reportService = {
     async getProjectsForFilter(activeEntityId: string | 'all'): Promise<ProjectData[]> {
         const supabase = createClient();
-        let query = supabase.from('projects').select('id, name, entity_id, entities(name)');
+        let query = supabase.from('projects').select('id, name, entity_id, entities(name, logo_url)');
 
         if (activeEntityId !== 'all') {
             query = query.eq('entity_id', activeEntityId);
@@ -17,7 +17,8 @@ export const reportService = {
             id: p.id,
             name: p.name,
             entity_id: p.entity_id,
-            entity_name: p.entities?.name
+            entity_name: p.entities?.name,
+            entity_logo_url: p.entities?.logo_url
         }));
     },
 
@@ -111,7 +112,7 @@ export const reportService = {
         });
 
         const now = new Date().toISOString().split('T')[0];
-        const teamEfficacy = Object.values(teamMap).map(m => {
+        const teamEfficacy = Object.values(teamMap).map((m: any) => {
             const avgDelay = m.completed > 0 ? (m.totalDelay / m.completed) : 0;
             const riskFactor = 1 + (Math.max(0, m.load - 5) * 0.1);
 

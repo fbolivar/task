@@ -1,22 +1,31 @@
 'use client';
 
-import { BarChart3, FileLineChart, Sparkles } from 'lucide-react';
+import { BarChart3, Sparkles } from 'lucide-react';
+import { useSettings } from '@/shared/contexts/SettingsContext';
 
 export function ReportHeader() {
+    const { t } = useSettings();
     return (
-        <div className="flex flex-col gap-2 mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
-            <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                    <BarChart3 className="w-6 h-6" />
+        <div className="flex flex-col gap-8 mb-10 animate-reveal">
+            <div className="flex items-center gap-5 group">
+                <div className="relative">
+                    <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full transition-all group-hover:scale-150 duration-700" />
+                    <div className="relative w-16 h-16 rounded-3xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white shadow-2xl shadow-primary/30 group-hover:rotate-6 transition-transform duration-500">
+                        <BarChart3 className="w-8 h-8" />
+                    </div>
                 </div>
                 <div>
-                    <h1 className="text-3xl font-black text-foreground tracking-tight flex items-center gap-3">
-                        Inteligencia de Negocio
-                        <span className="text-[10px] py-1 px-3 bg-blue-500/10 text-blue-500 rounded-full font-black uppercase tracking-widest border border-blue-500/10">
-                            Executive Insights
+                    <div className="flex items-center gap-2 mb-1">
+                        <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/70">Analytical Intelligence</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <h1 className="text-4xl font-black text-foreground tracking-tight leading-none">{t('reports.title')}</h1>
+                        <span className="text-[10px] py-1.5 px-4 bg-primary/10 text-primary rounded-full font-black uppercase tracking-widest shadow-sm">
+                            {t('reports.subtitle')}
                         </span>
-                    </h1>
-                    <p className="text-muted-foreground font-medium">Análisis profundo de desempeño, rentabilidad y carga operativa.</p>
+                    </div>
+                    <p className="text-muted-foreground font-medium text-sm mt-3">{t('reports.desc')}</p>
                 </div>
             </div>
         </div>

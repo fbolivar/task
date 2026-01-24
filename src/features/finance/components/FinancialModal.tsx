@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { X, Save, TrendingUp, TrendingDown, Calendar, Tag, FileText, DollarSign } from 'lucide-react';
-import { FinancialRecordType } from '../types';
+import { FinancialRecordType, FinancialRecord } from '../types';
 import { createClient } from '@/lib/supabase/client';
+import { useSettings } from '@/shared/contexts/SettingsContext';
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
     onSave: (data: any) => Promise<any>;
+    initialData?: FinancialRecord | null;
 }
 
 const CATEGORIES = {
@@ -16,8 +18,13 @@ const CATEGORIES = {
     Gasto: ['Nómina', 'Servicios Cloud', 'Marketing', 'Hardware', 'Viáticos', 'Oficina', 'Otros Gastos']
 };
 
-export function FinancialModal({ isOpen, onClose, onSave }: Props) {
+export function FinancialModal({ isOpen, onClose, onSave, initialData }: Props) {
+    const { t } = useSettings();
     const [loading, setLoading] = useState(false);
+    // ... (use effect logic same but ensure translated strings if any hardcoded logic remains) ...
+    // Note: Categories are hardcoded in Spanish logic above, for full translation we'd need to map them or key them.
+    // For now I will translate the UI labels.
+
     const [projects, setProjects] = useState<any[]>([]);
     const [formData, setFormData] = useState({
         project_id: '',
@@ -37,6 +44,32 @@ export function FinancialModal({ isOpen, onClose, onSave }: Props) {
         };
         fetchProjects();
     }, []);
+
+    useEffect(() => {
+        if (isOpen) {
+            if (initialData) {
+                setFormData({
+                    project_id: initialData.project_id,
+                    entity_id: initialData.entity_id,
+                    type: initialData.type,
+                    category: initialData.category,
+                    amount: initialData.amount.toString(),
+                    description: initialData.description || '',
+                    date: initialData.date.split('T')[0]
+                });
+            } else {
+                setFormData({
+                    project_id: '',
+                    entity_id: '',
+                    type: 'Gasto' as FinancialRecordType,
+                    category: 'Nómina',
+                    amount: '',
+                    description: '',
+                    date: new Date().toISOString().split('T')[0]
+                });
+            }
+        }
+    }, [isOpen, initialData]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -64,9 +97,9 @@ export function FinancialModal({ isOpen, onClose, onSave }: Props) {
                 <div className="px-8 py-6 border-b border-border flex justify-between items-center bg-muted/30">
                     <div>
                         <h2 className="text-xl font-black text-foreground uppercase tracking-tight flex items-center gap-2">
-                            <DollarSign className="w-5 h-5 text-primary" /> Nuevo Registro Financiero
+                            <DollarSign className="w-5 h-5 text-primary" /> {initialData ? t('general.edit') : t('finance.new')}
                         </h2>
-                        <p className="text-xs text-muted-foreground font-bold uppercase mt-1">Control de Rentabilidad de Proyecto</p>
+                        <p className="text-xs text-muted-foreground font-bold uppercase mt-1">{t('finance.desc')}</p>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-colors">
                         <X className="w-5 h-5 text-muted-foreground" />
@@ -81,7 +114,7 @@ export function FinancialModal({ isOpen, onClose, onSave }: Props) {
                             className={`flex items-center justify-center gap-2 p-4 rounded-2xl border-2 transition-all ${formData.type === 'Ingreso' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-500' : 'bg-muted/20 border-border/50 text-muted-foreground hover:border-border'}`}
                         >
                             <TrendingUp className="w-5 h-5" />
-                            <span className="font-black uppercase text-xs">Ingreso</span>
+                            <span className="font-black uppercase text-xs">{t('finance.income')}</span>
                         </button>
                         <button
                             type="button"
@@ -89,19 +122,19 @@ export function FinancialModal({ isOpen, onClose, onSave }: Props) {
                             className={`flex items-center justify-center gap-2 p-4 rounded-2xl border-2 transition-all ${formData.type === 'Gasto' ? 'bg-rose-500/10 border-rose-500 text-rose-500' : 'bg-muted/20 border-border/50 text-muted-foreground hover:border-border'}`}
                         >
                             <TrendingDown className="w-5 h-5" />
-                            <span className="font-black uppercase text-xs">Gasto</span>
+                            <span className="font-black uppercase text-xs">{t('finance.expense')}</span>
                         </button>
                     </div>
 
                     <div className="space-y-4">
-                        <FormField label="Proyecto Asociado" icon={<Tag className="w-4 h-4" />}>
+                        <FormField label={t('finance.form.project')} icon={<Tag className="w-4 h-4" />}>
                             <select
                                 required
                                 value={formData.project_id}
                                 onChange={e => setFormData({ ...formData, project_id: e.target.value })}
                                 className="w-full bg-muted/50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none font-bold"
                             >
-                                <option value="">Seleccionar Proyecto...</option>
+                                <option value="">{t('general.none')}</option>
                                 {projects.map(p => (
                                     <option key={p.id} value={p.id}>{p.name}</option>
                                 ))}
@@ -109,7 +142,7 @@ export function FinancialModal({ isOpen, onClose, onSave }: Props) {
                         </FormField>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <FormField label="Categoría" icon={<FileText className="w-4 h-4" />}>
+                            <FormField label={t('finance.form.category')} icon={<FileText className="w-4 h-4" />}>
                                 <select
                                     required
                                     value={formData.category}
@@ -122,7 +155,7 @@ export function FinancialModal({ isOpen, onClose, onSave }: Props) {
                                 </select>
                             </FormField>
 
-                            <FormField label="Fecha" icon={<Calendar className="w-4 h-4" />}>
+                            <FormField label={t('finance.form.date')} icon={<Calendar className="w-4 h-4" />}>
                                 <input
                                     type="date"
                                     required
@@ -133,7 +166,7 @@ export function FinancialModal({ isOpen, onClose, onSave }: Props) {
                             </FormField>
                         </div>
 
-                        <FormField label="Monto total ($)" icon={<DollarSign className="w-4 h-4" />}>
+                        <FormField label={t('finance.form.amount') + ' ($)'} icon={<DollarSign className="w-4 h-4" />}>
                             <input
                                 type="number"
                                 step="0.01"
@@ -145,7 +178,7 @@ export function FinancialModal({ isOpen, onClose, onSave }: Props) {
                             />
                         </FormField>
 
-                        <FormField label="Descripción / Concepto" icon={<FileText className="w-4 h-4" />}>
+                        <FormField label={t('finance.form.desc')} icon={<FileText className="w-4 h-4" />}>
                             <textarea
                                 value={formData.description}
                                 onChange={e => setFormData({ ...formData, description: e.target.value })}
@@ -161,14 +194,14 @@ export function FinancialModal({ isOpen, onClose, onSave }: Props) {
                             onClick={onClose}
                             className="px-6 py-3 rounded-xl font-black uppercase text-xs hover:bg-muted transition-colors"
                         >
-                            Cancelar
+                            {t('general.cancel')}
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
                             className="bg-primary text-white px-8 py-3 rounded-xl font-black uppercase text-xs shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all flex items-center gap-2 disabled:opacity-50"
                         >
-                            {loading ? 'Guardando...' : <><Save className="w-4 h-4" /> Registrar Transacción</>}
+                            {loading ? t('general.loading') : <><Save className="w-4 h-4" /> {initialData ? t('general.save') : t('general.create')}</>}
                         </button>
                     </div>
                 </form>
