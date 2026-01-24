@@ -36,21 +36,21 @@ export const userService = {
     },
 
     async createUser(user: UserFormData): Promise<{ emailSent: boolean; emailError?: string }> {
-        const supabase = createClient();
-        const { data, error } = await supabase.functions.invoke('admin-create-user', {
-            body: user
+        const response = await fetch('/api/users/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(user)
         });
 
-        if (error) {
-            const body = await error.context?.json?.().catch(() => null);
-            throw new Error(body?.error || error.message || 'Error invocando función de creación');
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Error creando usuario');
         }
 
-        if (data?.error) throw new Error(data.error);
-
         return {
-            emailSent: data?.emailSent || false,
-            emailError: data?.emailError
+            emailSent: data.emailSent,
+            emailError: data.emailError
         };
     },
 
