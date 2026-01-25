@@ -26,6 +26,7 @@ export const es = {
     'general.date': 'Fecha',
     'general.status': 'Estado',
     'general.description': 'Descripción',
+    'general.budget': 'Presupuesto',
 
     'general.all': 'Todos',
     'general.active': 'Activos',
@@ -264,6 +265,7 @@ export const en = {
     'general.date': 'Date',
     'general.status': 'Status',
     'general.description': 'Description',
+    'general.budget': 'Budget',
 
     'general.all': 'All',
     'general.active': 'Active',

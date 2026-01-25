@@ -16,32 +16,8 @@ export function useRiskMonitor() {
             // 0. Fetch Custom Thresholds
             const thresholds = await thresholdService.getThresholds(activeEntityId);
 
-            // 1. Financial Risk Check
-            const estimate = getExhaustionEstimate();
-            if (estimate) {
-                const executionPercent = (estimate.totalBudget - estimate.remaining) / estimate.totalBudget * 100;
-
-                const criticalLimit = thresholds?.budget_critical_percent || 95;
-                const warningLimit = thresholds?.budget_warning_percent || 80;
-
-                if (executionPercent >= criticalLimit || estimate.status === 'EXHAUSTED') {
-                    await notificationService.createNotification({
-                        user_id: user.id,
-                        title: '🔥 CRÍTICO: Techo Presupuestario',
-                        message: `La ejecución fiscal ha alcanzado el ${executionPercent.toFixed(1)}%. Se requiere intervención inmediata.`,
-                        type: 'ALERT',
-                        link: '/reportes'
-                    });
-                } else if (executionPercent >= warningLimit) {
-                    await notificationService.createNotification({
-                        user_id: user.id,
-                        title: '📢 Advertencia de Gasto',
-                        message: `La ejecución fiscal ha superado el ${warningLimit}%. El presupuesto se agotará proyectadamente en ${estimate.month}.`,
-                        type: 'WARNING',
-                        link: '/reportes'
-                    });
-                }
-            }
+            // 1. Financial Risk Check - DISABLED (Module Removed)
+            // Code removed to prevent build errors with deleted financial module
 
             // 2. Operational Risk Check (Overdue Tasks & Auto-Reassign)
             if (thresholds?.task_risk_check_enabled !== false) {
