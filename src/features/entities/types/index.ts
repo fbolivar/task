@@ -12,10 +12,6 @@ export interface Entity {
     address: string | null;
     contact_name: string | null;
     contact_email: string | null;
-    budget_q1: number;
-    budget_q2: number;
-    budget_q3: number;
-    budget_q4: number;
     logo_url: string | null;
     created_at: string;
 }
@@ -29,9 +25,5 @@ export interface EntityFormData {
     address: string;
     contact_name: string;
     contact_email: string;
-    budget_q1: number;
-    budget_q2: number;
-    budget_q3: number;
-    budget_q4: number;
     logo_url: string;
 }

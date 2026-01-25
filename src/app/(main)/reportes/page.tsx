@@ -4,7 +4,6 @@ import { useReports } from '@/features/reports/hooks/useReports';
 import { ReportHeader } from '@/features/reports/components/ReportHeader';
 import { ReportGenerator } from '@/features/reports/components/ReportGenerator';
 import { generateExecutivePDF } from '@/features/reports/utils/pdfGenerator';
-import { ExpenseTrendChart } from '@/features/reports/components/ExpenseTrendChart';
 import { ProjectionAssistant } from '@/features/reports/components/ProjectionAssistant';
 import { NonComplianceReport } from '@/features/reports/components/NonComplianceReport';
 import { OperationalDelayAssistant } from '@/features/reports/components/OperationalDelayAssistant';
@@ -14,8 +13,7 @@ import {
     Zap,
     ArrowUpRight,
     TrendingUp,
-    ShieldCheck,
-    PieChart as PieIcon
+    ShieldCheck
 } from 'lucide-react';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 
@@ -41,6 +39,21 @@ export default function ReportesPage() {
             : selectedProject?.entity_logo_url;
 
         await generateExecutivePDF(resultStats, projectName, start, end, entityLogoUrl);
+    };
+
+    const handleTemplateClick = async (type: 'compliance' | 'team') => {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+
+        await handleGenerate('all', start, end); // Load data first
+
+        // Scroll to section
+        const id = type === 'compliance' ? 'non-compliance-section' : 'team-efficacy-section';
+        const element = document.getElementById(id);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+        }
     };
 
     return (
@@ -73,8 +86,12 @@ export default function ReportesPage() {
 
             <section className="animate-in slide-in-from-bottom duration-700 space-y-8">
                 <ProjectionAssistant projection={getExhaustionEstimate()} />
-                <OperationalDelayAssistant teamEfficacy={stats?.team_efficacy || []} />
-                <NonComplianceReport stats={stats} />
+                <div id="team-efficacy-section">
+                    <OperationalDelayAssistant teamEfficacy={stats?.team_efficacy || []} />
+                </div>
+                <div id="non-compliance-section">
+                    <NonComplianceReport stats={stats} />
+                </div>
             </section>
 
             {/* AI Executive Assistant */}
@@ -84,10 +101,6 @@ export default function ReportesPage() {
                     entityName="Ecosistema BC FABRIC"
                     trendData={trendData}
                 />
-            </section>
-
-            <section className="animate-in slide-in-from-bottom duration-1000">
-                <ExpenseTrendChart data={trendData} />
             </section>
 
             <section className="space-y-6">
@@ -113,24 +126,20 @@ export default function ReportesPage() {
                     </h2>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <TemplateCard
                         title={t('reports.template.compliance.title')}
                         description={t('reports.template.compliance.desc')}
                         icon={<ShieldCheck className="w-6 h-6 text-emerald-500" />}
                         tag={t('reports.tag.compliance')}
-                    />
-                    <TemplateCard
-                        title={t('reports.template.financial.title')}
-                        description={t('reports.template.financial.desc')}
-                        icon={<PieIcon className="w-6 h-6 text-blue-500" />}
-                        tag={t('reports.tag.financial')}
+                        onClick={() => handleTemplateClick('compliance')}
                     />
                     <TemplateCard
                         title={t('reports.template.team.title')}
                         description={t('reports.template.team.desc')}
                         icon={<FileText className="w-6 h-6 text-purple-500" />}
                         tag={t('reports.tag.humanCapital')}
+                        onClick={() => handleTemplateClick('team')}
                     />
                 </div>
             </section>
@@ -174,9 +183,10 @@ interface TemplateCardProps {
     description: string;
     icon: React.ReactNode;
     tag: string;
+    onClick: () => void;
 }
 
-function TemplateCard({ title, description, icon, tag }: TemplateCardProps) {
+function TemplateCard({ title, description, icon, tag, onClick }: TemplateCardProps) {
     const { t } = useSettings();
     return (
         <div className="glass-card p-6 group hover:border-primary/40 transition-all duration-500 relative overflow-hidden">
@@ -190,7 +200,10 @@ function TemplateCard({ title, description, icon, tag }: TemplateCardProps) {
             <h4 className="text-lg font-black text-foreground mt-1 group-hover:text-primary transition-colors">{title}</h4>
             <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{description}</p>
 
-            <button className="mt-6 flex items-center gap-2 text-xs font-black text-primary hover:gap-3 transition-all">
+            <button
+                onClick={onClick}
+                className="mt-6 flex items-center gap-2 text-xs font-black text-primary hover:gap-3 transition-all"
+            >
                 {t('reports.configure')} <ArrowUpRight className="w-3 h-3" />
             </button>
         </div>

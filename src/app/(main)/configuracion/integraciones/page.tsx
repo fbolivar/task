@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { integrationService } from '@/features/integrations/services/integrationService';
 import { Integration } from '@/features/integrations/types';
 import { GmailModal } from '@/features/integrations/components/GmailModal';
+import { DriveModal } from '@/features/integrations/components/DriveModal';
 import { Loader2, Mail, CheckCircle2, XCircle, ChevronRight, Puzzle } from 'lucide-react';
 
 export default function IntegrationsPage() {
@@ -11,12 +12,23 @@ export default function IntegrationsPage() {
     const [loading, setLoading] = useState(true);
     const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isDriveModalOpen, setIsDriveModalOpen] = useState(false);
 
     const fetchIntegrations = async () => {
         try {
             setLoading(true);
             const data = await integrationService.getIntegrations();
-            setIntegrations(data);
+            // Mock Google Drive for Phase 7
+            const driveIntegration: Integration = {
+                id: 'drive-001',
+                name: 'Google Drive',
+                provider: 'google_drive',
+                is_active: false,
+                config: {},
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+            setIntegrations([...data, driveIntegration]);
         } catch (error) {
             console.error('Error fetching integrations:', error);
         } finally {
@@ -66,15 +78,15 @@ export default function IntegrationsPage() {
                     <div
                         key={integration.id}
                         className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 hover:shadow-xl ${integration.is_active
-                                ? 'bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 border-primary/20 shadow-primary/5'
-                                : 'bg-white dark:bg-slate-900 border-border grayscale-[0.5] hover:grayscale-0'
+                            ? 'bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 border-primary/20 shadow-primary/5'
+                            : 'bg-white dark:bg-slate-900 border-border grayscale-[0.5] hover:grayscale-0'
                             }`}
                     >
                         {/* Status Indicator */}
                         <div className="absolute top-4 right-4">
                             <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${integration.is_active
-                                    ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
-                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
+                                ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
                                 }`}>
                                 {integration.is_active ? (
                                     <>
@@ -108,15 +120,24 @@ export default function IntegrationsPage() {
                             <p className="text-sm text-muted-foreground font-medium mb-6 min-h-[40px]">
                                 {integration.provider === 'gmail'
                                     ? 'Automatiza el envío de notificaciones y reportes a través de tu cuenta corporativa.'
-                                    : 'Integración genérica del sistema.'}
+                                    : integration.provider === 'google_drive'
+                                        ? 'Sincronización automática de actas y evidencias documentales.'
+                                        : 'Integración genérica del sistema.'}
                             </p>
 
                             <div className="flex items-center gap-4 pt-6 border-t border-border/50">
                                 <button
-                                    onClick={() => handleConfigure(integration)}
+                                    onClick={() => {
+                                        if (integration.provider === 'google_drive') {
+                                            setSelectedIntegration(integration);
+                                            setIsDriveModalOpen(true);
+                                        } else {
+                                            handleConfigure(integration);
+                                        }
+                                    }}
                                     className="flex-1 py-2.5 rounded-xl bg-primary/10 text-primary font-bold text-xs uppercase hover:bg-primary hover:text-white transition-all"
                                 >
-                                    Configurar
+                                    {integration.provider === 'google_drive' ? 'Conectar' : 'Configurar'}
                                 </button>
 
                                 {integration.is_active && (
@@ -137,6 +158,13 @@ export default function IntegrationsPage() {
             <GmailModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
+                integration={selectedIntegration}
+                onSuccess={fetchIntegrations}
+            />
+
+            <DriveModal
+                isOpen={isDriveModalOpen}
+                onClose={() => setIsDriveModalOpen(false)}
                 integration={selectedIntegration}
                 onSuccess={fetchIntegrations}
             />

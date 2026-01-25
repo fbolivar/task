@@ -37,10 +37,6 @@ const initialFormData: EntityFormData = {
     address: '',
     contact_name: '',
     contact_email: '',
-    budget_q1: 0,
-    budget_q2: 0,
-    budget_q3: 0,
-    budget_q4: 0,
     logo_url: '',
 };
 
@@ -63,10 +59,6 @@ export function EntityModal({ isOpen, onClose, onSave, entity }: EntityModalProp
                 address: entity.address || '',
                 contact_name: entity.contact_name || '',
                 contact_email: entity.contact_email || '',
-                budget_q1: entity.budget_q1 || 0,
-                budget_q2: entity.budget_q2 || 0,
-                budget_q3: entity.budget_q3 || 0,
-                budget_q4: entity.budget_q4 || 0,
                 logo_url: entity.logo_url || '',
             });
         } else {
@@ -136,7 +128,7 @@ export function EntityModal({ isOpen, onClose, onSave, entity }: EntityModalProp
                             onClick={() => fileInputRef.current?.click()}
                         >
                             {formData.logo_url ? (
-                                <img src={formData.logo_url} alt="Entity Logo" className="w-full h-full object-cover" />
+                                <img src={formData.logo_url} alt="Entity Logo" className="w-full h-full object-contain p-2" />
                             ) : (
                                 <Building2 className="w-10 h-10 text-white" />
                             )}
@@ -275,33 +267,6 @@ export function EntityModal({ isOpen, onClose, onSave, entity }: EntityModalProp
                                     />
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Quarterly Budgets Card */}
-                    <div className="p-6 rounded-3xl bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/20 space-y-6">
-                        <div className="flex items-center justify-between">
-                            <h4 className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.3em] flex items-center gap-2">
-                                <DollarSign className="w-3.5 h-3.5" /> Planificación Presupuestaria (Trimestral)
-                            </h4>
-                        </div>
-
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                            {[1, 2, 3, 4].map((q) => (
-                                <div key={q} className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase text-muted-foreground ml-1">Presupuesto Q{q}</label>
-                                    <div className="relative group">
-                                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground group-focus-within:text-blue-500 transition-colors" />
-                                        <input
-                                            type="number"
-                                            value={formData[`budget_q${q}` as keyof EntityFormData] || 0}
-                                            onChange={(e) => setFormData({ ...formData, [`budget_q${q}`]: Number(e.target.value) })}
-                                            className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-blue-500/10 bg-white dark:bg-slate-950 focus:border-blue-500 focus:outline-none text-sm font-black text-blue-600 dark:text-blue-400"
-                                            placeholder="0.00"
-                                        />
-                                    </div>
-                                </div>
-                            ))}
                         </div>
                     </div>
 

@@ -3,13 +3,15 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Settings, Users, ShieldAlert, History, Link2 as LinkIcon } from 'lucide-react';
+import { Settings, Users, ShieldAlert, History, Link2 as LinkIcon, FileText, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 
 const tabs = [
     { href: '/configuracion/general', label: 'General', icon: Settings },
     { href: '/configuracion/integraciones', label: 'Integraciones', icon: LinkIcon },
-    { href: '/configuracion/politicas', label: 'Políticas de Riesgo', icon: ShieldAlert },
+    { href: '/configuracion/templates', label: 'Plantillas', icon: FileText },
+    { href: '/configuracion/seguridad', label: 'Seguridad', icon: ShieldAlert },
+    { href: '/configuracion/politicas', label: 'Políticas de Riesgo', icon: AlertTriangle },
     { href: '/configuracion/auditoria', label: 'Log de Auditoría', icon: History },
     { href: '/configuracion/usuarios', label: 'Usuarios y Permisos', icon: Users },
 ];
@@ -63,8 +65,8 @@ export default function ConfigLayout({ children }: { children: React.ReactNode }
                         const roleName = profile?.role?.name;
                         if (roleName === 'Admin') return true;
                         if (roleName === 'Gerente') {
-                            // Gerente only sees Políticas and Auditoría
-                            return ['/configuracion/politicas', '/configuracion/auditoria'].includes(tab.href);
+                            // Gerente only sees Políticas, Auditoría, Templates
+                            return ['/configuracion/politicas', '/configuracion/auditoria', '/configuracion/templates'].includes(tab.href);
                         }
                         return false;
                     })

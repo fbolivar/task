@@ -24,12 +24,15 @@ import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 
+import { DeliveryActButton } from './DeliveryAct';
+
 interface AssetModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: (data: AssetFormData) => Promise<void>;
     asset?: Asset | null;
 }
+
 
 const categories: AssetCategory[] = ['Hardware', 'Software', 'Mobiliario', 'Vehículo', 'Herramientas', 'General'];
 const statuses: AssetStatus[] = ['Disponible', 'Asignado', 'Mantenimiento', 'Baja'];
@@ -134,11 +137,16 @@ export function AssetModal({ isOpen, onClose, onSave, asset }: AssetModalProps) 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
             <div className="glass-card w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-white/20 shadow-2xl animate-in zoom-in-95 duration-300">
+
+
                 {/* Header */}
                 <div className="p-8 bg-gradient-to-br from-slate-800 to-black text-white relative">
-                    <button onClick={onClose} className="absolute right-6 top-6 p-2 hover:bg-white/10 rounded-xl transition-colors text-white/80">
-                        <X className="w-5 h-5" />
-                    </button>
+                    <div className="absolute right-6 top-6 flex items-center gap-3">
+                        {asset && <DeliveryActButton asset={asset} />}
+                        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-colors text-white/80">
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
                     <div className="flex items-center gap-6">
                         <div className="w-20 h-20 rounded-2xl border-4 border-primary/30 flex items-center justify-center bg-slate-900 shadow-2xl">
                             <Package className="w-10 h-10 text-primary" />

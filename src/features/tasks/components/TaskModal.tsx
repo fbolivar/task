@@ -33,6 +33,7 @@ const initialFormData: TaskFormData = {
     priority: 'Media',
     end_date: null,
     assigned_to: null,
+    evidence_link: null,
 };
 
 export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
@@ -56,6 +57,7 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                 priority: task.priority,
                 end_date: task.end_date,
                 assigned_to: task.assigned_to,
+                evidence_link: task.evidence_link || null,
             });
         } else {
             setFormData(initialFormData);
@@ -205,16 +207,34 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                         </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                        <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">{t('tasks.form.dueDate')}</label>
-                        <div className="relative">
-                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <input
-                                type="date"
-                                value={formData.end_date || ''}
-                                onChange={(e) => setFormData({ ...formData, end_date: e.target.value || null })}
-                                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:border-primary transition-all text-sm font-medium"
-                            />
+
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">{t('tasks.form.dueDate')}</label>
+                            <div className="relative">
+                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                <input
+                                    type="date"
+                                    value={formData.end_date || ''}
+                                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value || null })}
+                                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:border-primary transition-all text-sm font-medium"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Google Drive (Link)</label>
+                            <div className="relative">
+                                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                <input
+                                    type="url"
+                                    value={formData.evidence_link || ''}
+                                    onChange={(e) => setFormData({ ...formData, evidence_link: e.target.value || null })}
+                                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:border-primary transition-all text-sm font-medium"
+                                    placeholder="https://drive.google.com/..."
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -251,7 +271,7 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                         </button>
                     </div>
                 </form>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }

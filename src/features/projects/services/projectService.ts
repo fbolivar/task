@@ -7,7 +7,7 @@ export const projectService = {
 
         let query = supabase
             .from('projects')
-            .select('*, entity:entities(id, name), sub_projects(*)')
+            .select('*, entity:entities(id, name), sub_projects(*), budget')
             .order('created_at', { ascending: false });
 
         if (activeEntityId !== 'all') {
@@ -26,7 +26,7 @@ export const projectService = {
         const { data, error } = await supabase
             .from('projects')
             .insert(project)
-            .select('*, entity:entities(id, name), sub_projects(*)')
+            .select('*, entity:entities(id, name), sub_projects(*), budget')
             .single();
 
         if (error) throw error;
@@ -39,7 +39,7 @@ export const projectService = {
             .from('projects')
             .update(updates)
             .eq('id', id)
-            .select('*, entity:entities(id, name), sub_projects(*)')
+            .select('*, entity:entities(id, name), sub_projects(*), budget')
             .single();
 
         if (error) throw error;

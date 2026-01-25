@@ -66,20 +66,37 @@ export default function GeneralSettingsPage() {
         e.preventDefault();
         setSaving(true);
         try {
-            const { error } = await getSupabase()
-                .from('app_settings')
-                .upsert({
-                    id: 1, // Singleton ID
-                    ...formData,
-                    updated_at: new Date().toISOString()
-                });
+            // First check if a row exists, if not create one
+            const { count } = await getSupabase().from('app_settings').select('*', { count: 'exact', head: true });
+
+            const payload = {
+                ...formData,
+                updated_at: new Date().toISOString()
+            };
+
+            let error;
+            if (count === 0) {
+                const { error: insertError } = await getSupabase()
+                    .from('app_settings')
+                    .insert([payload]);
+                error = insertError;
+            } else {
+                const { error: updateError } = await getSupabase()
+                    .from('app_settings')
+                    .update(payload)
+                    // Update any row found, assuming single row table concept
+                    .gt('id', 0);
+                error = updateError;
+            }
 
             if (error) throw error;
-            // Force reload to apply changes globally immediately (or rely on realtime if enabled)
+
+            // Allow time for propagation
+            await new Promise(resolve => setTimeout(resolve, 500));
             window.location.reload();
         } catch (error) {
             console.error('Error saving settings:', error);
-            alert('Error guardando configuración');
+            alert('Error guardando configuración. Verifica que has iniciado sesión.');
         } finally {
             setSaving(false);
         }

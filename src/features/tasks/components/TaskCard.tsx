@@ -140,6 +140,21 @@ export function TaskCard({ task, onEdit, onArchive, onStatusChange }: TaskCardPr
                             {task.status}
                         </div>
                     </div>
+
+                    {/* Drive Integration */}
+                    {task.evidence_link && (
+                        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/5">
+                            <a
+                                href={task.evidence_link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors bg-slate-50 dark:bg-white/5 p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10"
+                            >
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" className="w-4 h-4" alt="Drive" />
+                                Ver Archivos en Drive
+                            </a>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

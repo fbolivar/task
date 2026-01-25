@@ -9,19 +9,10 @@ export function useEntities() {
     const fetchEntities = useCallback(async () => {
         try {
             setLoading(true);
-            const [entitiesData, expensesData] = await Promise.all([
-                entityService.getEntities(),
-                entityService.getQuarterlyExpenses()
-            ]);
-
-            const merged = entitiesData.map(ent => ({
-                ...ent,
-                current_q_expenses: expensesData[ent.id] || 0
-            }));
-
-            setEntities(merged);
+            const entitiesData = await entityService.getEntities();
+            setEntities(entitiesData);
         } catch (error) {
-            console.error('Error fetching entities with expenses:', error);
+            console.error('Error fetching entities:', error);
         } finally {
             setLoading(false);
         }

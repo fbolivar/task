@@ -23,7 +23,6 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         { href: '/proyectos', label: t('nav.projects'), icon: Briefcase },
         { href: '/tareas', label: t('nav.tasks'), icon: CheckSquare },
         { href: '/inventario', label: t('nav.inventory'), icon: Package },
-        { href: '/finanzas', label: t('nav.finance'), icon: DollarSign },
         { href: '/reportes', label: t('nav.reports'), icon: BarChart3 },
     ];
 
@@ -80,7 +79,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                         // Define access per role
                         const roleAccess: Record<string, string[]> = {
                             'Admin': [], // Empty means all access
-                            'Gerente': ['/dashboard', '/finanzas', '/reportes'],
+                            'Gerente': ['/dashboard', '/reportes'],
                             'Operativo': ['/dashboard', '/proyectos', '/tareas', '/inventario', '/reportes'],
                         };
 
@@ -142,8 +141,8 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
 
                 {/* Footer */}
                 <div className="pt-6 mt-6 border-t border-slate-200/50 dark:border-white/5">
-                    <div className="bg-primary/5 dark:bg-primary/10 rounded-2xl p-4 mb-4">
-                        <p className="text-[10px] text-muted-foreground text-center">
+                    <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl p-4 mb-4 border border-primary/10">
+                        <p className="text-[10px] text-primary/80 dark:text-primary/60 text-center font-bold uppercase tracking-wider">
                             {settings.footer_text}
                         </p>
                     </div>

@@ -81,7 +81,7 @@ export function EntityCard({ entity, onEdit, onDelete }: EntityCardProps) {
                         <div className={`absolute inset-0 bg-gradient-to-br ${typeColors[entity.type]} blur-xl opacity-20 group-hover:opacity-40 transition-opacity duration-700`} />
                         <div className={`relative w-16 h-16 rounded-3xl bg-gradient-to-br ${typeColors[entity.type]} flex items-center justify-center text-white font-black text-2xl shadow-xl ring-4 ring-white dark:ring-slate-900 group-hover:rotate-6 transition-transform duration-500 overflow-hidden`}>
                             {entity.logo_url ? (
-                                <img src={entity.logo_url} alt={entity.name} className="w-full h-full object-cover" />
+                                <img src={entity.logo_url} alt={entity.name} className="w-full h-full object-contain p-2" />
                             ) : (
                                 entity.name.substring(0, 2).toUpperCase()
                             )}
@@ -96,43 +96,6 @@ export function EntityCard({ entity, onEdit, onDelete }: EntityCardProps) {
                             <span className="truncate">{entity.address || 'Global Operations'}</span>
                         </div>
                     </div>
-                </div>
-
-                {/* --- Budget Execution (Enhanced) --- */}
-                <div className="mb-8 p-6 rounded-3xl bg-slate-50/50 dark:bg-white/5 border border-slate-100 dark:border-white/5 shadow-inner">
-                    {(() => {
-                        const now = new Date();
-                        const quarter = Math.ceil((now.getMonth() + 1) / 3);
-                        const budget = (entity as any)[`budget_q${quarter}`] || 0;
-                        const expenses = (entity as any).current_q_expenses || 0;
-                        const percent = budget > 0 ? (expenses / budget) * 100 : 0;
-                        const isCritical = percent >= 90;
-
-                        return (
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
-                                        <Sparkles className="w-3.5 h-3.5 text-primary animate-pulse" /> Q{quarter} Performance
-                                    </div>
-                                    <span className={`text-[12px] font-black tracking-tighter ${isCritical ? 'text-rose-500' : 'text-emerald-500'}`}>
-                                        {percent.toFixed(0)}%
-                                    </span>
-                                </div>
-
-                                <div className="h-2 w-full bg-slate-200/50 dark:bg-white/10 rounded-full overflow-hidden p-0.5">
-                                    <div
-                                        className={`h-full rounded-full transition-all duration-1000 ease-spring ${isCritical ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.3)]' : 'bg-primary shadow-[0_0_10px_rgba(59,130,246,0.3)]'}`}
-                                        style={{ width: `${Math.min(percent, 100)}%` }}
-                                    />
-                                </div>
-
-                                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
-                                    <span className="text-foreground">${expenses.toLocaleString()}</span>
-                                    <span className="text-muted-foreground/50">Plan: ${budget.toLocaleString()}</span>
-                                </div>
-                            </div>
-                        );
-                    })()}
                 </div>
 
                 <div className="space-y-4">

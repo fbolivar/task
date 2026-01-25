@@ -14,10 +14,6 @@ const mapFormDataToPayload = (form: EntityFormData) => {
         address: form.address ? String(form.address).trim() : null,
         contact_name: form.contact_name ? String(form.contact_name).trim() : null,
         contact_email: form.contact_email ? String(form.contact_email).trim() : null,
-        budget_q1: Number(form.budget_q1) || 0,
-        budget_q2: Number(form.budget_q2) || 0,
-        budget_q3: Number(form.budget_q3) || 0,
-        budget_q4: Number(form.budget_q4) || 0,
         logo_url: form.logo_url && String(form.logo_url).trim() !== '' ? String(form.logo_url).trim() : null,
     };
 };
@@ -99,27 +95,4 @@ export const entityService = {
         if (error) throw error;
     },
 
-    async getQuarterlyExpenses(): Promise<Record<string, number>> {
-        const supabase = createClient();
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = now.getMonth() + 1; // 1-12
-        const quarter = Math.ceil(month / 3);
-        const qMonths = quarter === 1 ? [1, 2, 3] : quarter === 2 ? [4, 5, 6] : quarter === 3 ? [7, 8, 9] : [10, 11, 12];
-
-        const { data, error } = await supabase
-            .from('entity_annual_expense_trend')
-            .select('entity_id, total_expenses')
-            .eq('year', year)
-            .in('month', qMonths);
-
-        if (error) throw error;
-
-        const results: Record<string, number> = {};
-        data?.forEach((row: any) => {
-            results[row.entity_id] = (results[row.entity_id] || 0) + Number(row.total_expenses);
-        });
-
-        return results;
-    }
 };

@@ -17,10 +17,10 @@ interface SettingsContextType extends AppSettings {
 }
 
 const defaultSettings: AppSettings = {
-    app_name: 'GestorPro',
-    logo_url: null,
-    header_color: '#2563EB',
-    footer_text: '© 2026 GestorPro',
+    app_name: 'SGP - Parques Nacionales',
+    logo_url: 'https://upload.wikimedia.org/wikipedia/commons/e/ec/Logo_Parques_Nacionales_Naturales_de_Colombia.jpg',
+    header_color: '#166A2F', // Forest Green
+    footer_text: '© 2024 Parques Nacionales Naturales de Colombia',
     language: 'es'
 };
 

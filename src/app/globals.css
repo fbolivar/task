@@ -4,61 +4,69 @@
 
 @layer base {
     :root {
-        /* Premium Indigo Palette */
-        --background: 210 40% 98%;
-        --foreground: 224 71% 4%;
+        /* Parques Nacionales Palette */
+        /* Forest Green Primary */
+        --primary: 138 65% 25%;
+        /* #166A2F */
+        --primary-foreground: 120 40% 98%;
 
-        --card: 0 0% 100%;
-        --card-foreground: 224 71% 4%;
-
-        --primary: 262 83% 58%;
-        /* Vibrant Violet-Indigo */
-        --primary-foreground: 210 40% 98%;
-
-        --secondary: 215 25% 27%;
+        /* Oceanside Blue Secondary */
+        --secondary: 178 80% 30%;
+        /* Deep Cyan/Teal */
         --secondary-foreground: 210 40% 98%;
 
-        --muted: 215 16% 94%;
-        --muted-foreground: 215 16% 47%;
+        /* Wax Palm Gold Accent */
+        --accent: 45 90% 50%;
+        --accent-foreground: 224 71% 4%;
 
-        --accent: 262 83% 58%;
-        --accent-foreground: 210 40% 98%;
+        --background: 140 30% 98%;
+        /* Soft Tint */
+        --foreground: 140 60% 10%;
+        /* Dark Green/Black text */
+
+        --card: 0 0% 100%;
+        --card-foreground: 140 60% 10%;
+
+        --muted: 140 20% 94%;
+        --muted-foreground: 140 20% 40%;
 
         --destructive: 0 84% 60%;
-        --destructive-foreground: 210 40% 98%;
+        --destructive-foreground: 0 0% 98%;
 
-        --border: 214 32% 91%;
-        --ring: 262 83% 58%;
-        --radius: 1rem;
+        --border: 140 20% 90%;
+        --ring: 138 65% 25%;
+        --radius: 0.75rem;
+        /* Slightly less rounded for a more institutional feel */
 
         --font-sans: var(--font-inter);
         --font-heading: var(--font-outfit);
     }
 
     .dark {
-        --background: 224 71% 4%;
-        --foreground: 210 40% 98%;
+        --background: 140 60% 4%;
+        --foreground: 140 30% 98%;
 
-        --card: 224 71% 4%;
-        --card-foreground: 210 40% 98%;
+        --card: 140 60% 5%;
+        --card-foreground: 140 30% 98%;
 
-        --primary: 263 70% 50%;
-        --primary-foreground: 210 40% 98%;
+        --primary: 138 60% 45%;
+        /* Lighter green for dark mode visibility */
+        --primary-foreground: 0 0% 100%;
 
-        --secondary: 215 25% 27%;
-        --secondary-foreground: 210 40% 98%;
+        --secondary: 178 60% 40%;
+        --secondary-foreground: 0 0% 100%;
 
-        --muted: 215 25% 15%;
-        --muted-foreground: 215 20% 65%;
+        --muted: 140 30% 15%;
+        --muted-foreground: 140 20% 65%;
 
-        --accent: 263 70% 50%;
-        --accent-foreground: 210 40% 98%;
+        --accent: 45 80% 50%;
+        --accent-foreground: 0 0% 10%;
 
         --destructive: 0 62% 30%;
         --destructive-foreground: 210 40% 98%;
 
-        --border: 215 25% 20%;
-        --ring: 263 70% 50%;
+        --border: 140 30% 20%;
+        --ring: 138 60% 45%;
     }
 }
 
@@ -185,20 +193,21 @@
 }
 
 /* Mesh Gradient Background */
+/* Mesh Gradient Background - Nature Theme */
 .mesh-gradient {
-    background-color: hsla(210, 40%, 98%, 1);
+    background-color: hsla(140, 30%, 98%, 1);
     background-image:
-        radial-gradient(at 0% 0%, hsla(262, 83%, 58%, 0.1) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, hsla(199, 89%, 48%, 0.1) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, hsla(262, 83%, 58%, 0.05) 0px, transparent 50%),
-        radial-gradient(at 0% 100%, hsla(199, 89%, 48%, 0.05) 0px, transparent 50%);
+        radial-gradient(at 0% 0%, hsla(138, 65%, 25%, 0.1) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, hsla(178, 80%, 30%, 0.1) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, hsla(45, 90%, 50%, 0.1) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, hsla(138, 65%, 25%, 0.05) 0px, transparent 50%);
 }
 
 .dark .mesh-gradient {
-    background-color: hsla(224, 71%, 4%, 1);
+    background-color: hsla(140, 60%, 4%, 1);
     background-image:
-        radial-gradient(at 0% 0%, hsla(262, 83%, 58%, 0.15) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, hsla(199, 89%, 48%, 0.1) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, hsla(262, 83%, 58%, 0.1) 0px, transparent 50%),
-        radial-gradient(at 0% 100%, hsla(199, 89%, 48%, 0.05) 0px, transparent 50%);
+        radial-gradient(at 0% 0%, hsla(138, 60%, 45%, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, hsla(178, 60%, 40%, 0.1) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, hsla(45, 80%, 50%, 0.1) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, hsla(138, 60%, 45%, 0.05) 0px, transparent 50%);
 }

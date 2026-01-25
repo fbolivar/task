@@ -36,6 +36,7 @@ const initialFormData: ProjectFormData = {
     end_date: null,
     contract_active: true,
     has_support: false,
+    budget: 0,
 };
 
 export function ProjectModal({ isOpen, onClose, onSave, project }: ProjectModalProps) {
@@ -60,6 +61,7 @@ export function ProjectModal({ isOpen, onClose, onSave, project }: ProjectModalP
                 end_date: project.end_date,
                 contract_active: project.contract_active,
                 has_support: project.has_support,
+                budget: project.budget || 0,
             });
         } else {
             setFormData({
@@ -73,8 +75,35 @@ export function ProjectModal({ isOpen, onClose, onSave, project }: ProjectModalP
         const fetchEntities = async () => {
             setLoading(true);
             const supabase = createClient();
-            const { data } = await supabase.from('entities').select('id, name');
-            if (data) setEntities(data);
+
+            // Get current user profile to check permissions
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('has_all_entities_access')
+                .eq('id', user.id)
+                .single();
+
+            if (profile?.has_all_entities_access) {
+                // Admin sees all
+                const { data } = await supabase.from('entities').select('id, name');
+                if (data) setEntities(data);
+            } else {
+                // Regular user sees only assigned entities
+                const { data: profileEntities } = await supabase
+                    .from('profile_entities')
+                    .select('entity:entities(id, name)')
+                    .eq('profile_id', user.id);
+
+                if (profileEntities) {
+                    const mappedEntities = profileEntities
+                        .map((pe: any) => pe.entity)
+                        .filter(Boolean);
+                    setEntities(mappedEntities);
+                }
+            }
             setLoading(false);
         };
         if (isOpen) fetchEntities();
@@ -151,21 +180,19 @@ export function ProjectModal({ isOpen, onClose, onSave, project }: ProjectModalP
                             </div>
                         </div>
 
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-bold text-foreground">{t('general.priority')}</label>
-                            <div className="relative group">
-                                <Flag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                <select
-                                    value={formData.priority}
-                                    onChange={(e) => setFormData({ ...formData, priority: e.target.value as ProjectPriority })}
-                                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium appearance-none"
-                                >
-                                    <option value="Baja">Baja</option>
-                                    <option value="Media">Media</option>
-                                    <option value="Alta">Alta</option>
-                                    <option value="Crítica">Crítica</option>
-                                </select>
-                            </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-bold text-foreground">{t('general.budget')}</label>
+                        <div className="relative group">
+                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                            <input
+                                type="number"
+                                value={formData.budget || ''}
+                                onChange={(e) => setFormData({ ...formData, budget: Number(e.target.value) })}
+                                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium"
+                                placeholder="0.00"
+                            />
                         </div>
                     </div>
 

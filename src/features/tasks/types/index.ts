@@ -24,6 +24,7 @@ export interface Task {
     priority: TaskPriority;
     end_date: string | null;
     assigned_to: string | null;
+    evidence_link: string | null;
     created_at: string;
     archived?: boolean;
     project?: ProjectShort;
@@ -39,4 +40,5 @@ export interface TaskFormData {
     priority: TaskPriority;
     end_date: string | null;
     assigned_to: string | null;
+    evidence_link: string | null;
 }

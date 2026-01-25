@@ -143,31 +143,4 @@ export const reportService = {
         };
     },
 
-    async getExpenseTrend(activeEntityId: string | 'all'): Promise<{ month: string, amount: number }[]> {
-        const supabase = createClient();
-        let query = supabase.from('entity_annual_expense_trend').select('*');
-
-        if (activeEntityId !== 'all') {
-            query = query.eq('entity_id', activeEntityId);
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-
-        const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-
-        // Group by month name (aggregating multiple years if they exist, or just for the current year)
-        const trendMap: Record<string, number> = {};
-        months.forEach(m => trendMap[m] = 0);
-
-        data?.forEach((row: any) => {
-            const mName = months[row.month - 1];
-            trendMap[mName] += Number(row.total_expenses);
-        });
-
-        return months.map(m => ({
-            month: m,
-            amount: trendMap[m]
-        }));
-    }
 };

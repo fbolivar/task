@@ -28,6 +28,7 @@ export interface Project {
     contract_active: boolean;
     has_support: boolean;
     actual_cost: number;
+    budget?: number;
     created_at: string;
     entity?: Entity;
     sub_projects?: SubProject[];
@@ -43,4 +44,5 @@ export interface ProjectFormData {
     end_date: string | null;
     contract_active: boolean;
     has_support: boolean;
+    budget: number;
 }
