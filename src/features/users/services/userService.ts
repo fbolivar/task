@@ -90,10 +90,17 @@ export const userService = {
         }
     },
 
-    async deleteUser(id: string): Promise<void> {
-        const supabase = createClient();
-        const { error } = await supabase.from('profiles').delete().eq('id', id);
-        if (error) throw error;
+    async deleteUser(userId: string): Promise<void> {
+        const response = await fetch('/api/users/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId })
+        });
+
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.error || 'Error eliminando usuario');
+        }
     },
 
     async toggleStatus(id: string, status: boolean): Promise<void> {

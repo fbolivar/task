@@ -45,10 +45,17 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0');
 
     // 4. Fetch data using service role (bypasses RLS for API access)
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey || supabaseServiceKey.includes('PEGA_AQUÍ')) {
+        return NextResponse.json(
+            { error: 'Internal configuration error: missing SUPABASE_SERVICE_ROLE_KEY', code: 'INTERNAL_ERROR' },
+            { status: 500 }
+        );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     let query = supabase
         .from('tasks')
@@ -155,10 +162,17 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. Create task
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey || supabaseServiceKey.includes('PEGA_AQUÍ')) {
+        return NextResponse.json(
+            { error: 'Internal configuration error: missing SUPABASE_SERVICE_ROLE_KEY', code: 'INTERNAL_ERROR' },
+            { status: 500 }
+        );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data, error } = await supabase
         .from('tasks')

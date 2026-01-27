@@ -42,8 +42,13 @@ export async function POST(request: Request) {
                 (!supabaseServiceKey ? 'falta SUPABASE_SERVICE_ROLE_KEY' : 'la llave SUPABASE_SERVICE_ROLE_KEY es inválida (contiene texto de instrucción)');
 
             console.error(`Configuración de Supabase inválida: ${reason}`);
+
+            const isLocal = process.env.NODE_ENV === 'development';
+            const locationHint = isLocal ? 'en .env.local' : 'en las variables de entorno de tu proveedor de hosting (Vercel)';
+            const restartHint = isLocal ? ' Reinicia el servidor tras corregirlo.' : ' Asegúrate de desplegar de nuevo tras guardar los cambios.';
+
             return NextResponse.json({
-                error: `Configuración incompleta: ${reason}. Asegúrate de que el valor en .env.local sea CORRECTO y NO incluya el texto "PEGA_AQUÍ...". Reinicia el servidor tras corregirlo.`
+                error: `Configuración incompleta: ${reason}. Asegúrate de que el valor ${locationHint} sea CORRECTO.${restartHint}`
             }, { status: 500 });
         }
 

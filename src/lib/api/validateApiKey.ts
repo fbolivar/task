@@ -22,10 +22,14 @@ export async function validateApiKey(apiKey: string | null): Promise<{
     const keyPrefix = apiKey.substring(0, 8);
 
     // Create admin client (uses service role key)
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey || supabaseServiceKey.includes('PEGA_AQUÍ')) {
+        return { valid: false, error: 'Internal configuration error. Missing SUPABASE_SERVICE_ROLE_KEY.' };
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Find key by prefix
     const { data: keys, error } = await supabase

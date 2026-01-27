@@ -27,9 +27,15 @@ export async function createClient() {
 }
 
 export async function createAdminClient() {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!serviceKey || serviceKey.includes('PEGA_AQUÍ')) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is missing or invalid. Check your environment variables.');
+  }
+
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    serviceKey,
     {
       cookies: {
         getAll() { return [] },
