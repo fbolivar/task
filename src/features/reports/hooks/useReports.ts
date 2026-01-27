@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { reportService } from '../services/reportService';
 import { entityService } from '@/features/entities/services/entityService';
-import { ProjectData, ReportFilter, ReportStats } from '../types';
+import { ProjectData, ReportFilter, ReportStats, BurndownPoint, ResourceMetric, FinancialMetric } from '../types';
 import { useAuthStore } from '@/features/auth/store/authStore';
 
 export function useReports() {
     const [projects, setProjects] = useState<ProjectData[]>([]);
     const [stats, setStats] = useState<ReportStats | null>(null);
-    const [trendData, setTrendData] = useState<{ month: string, amount: number }[]>([]);
-    const [activeBudget, setActiveBudget] = useState<number>(0);
+
+    // New state for visualizations
     const [loading, setLoading] = useState(false);
     const activeEntityId = useAuthStore(state => state.activeEntityId);
 
@@ -19,9 +19,6 @@ export function useReports() {
             ]);
 
             setProjects(projData);
-            setTrendData([]); // No financial data anymore
-            setActiveBudget(0); // No budget data anymore
-
         } catch (error) {
             console.error('Error fetching report data:', error);
         }
@@ -35,7 +32,7 @@ export function useReports() {
                 entity_id: activeEntityId
             });
             setStats(data);
-            return data;
+            return; // Return void explicitly 
         } catch (error) {
             console.error('Error generating report stats:', error);
             throw error;
@@ -51,10 +48,14 @@ export function useReports() {
     return {
         projects,
         stats,
-        trendData,
+        trendData: stats?.trend_data || [],
+        // Fallback to empty defaults if stats is null to avoid breakages before generation
+        burndownData: stats?.burndown_data || [],
+        resourceData: stats?.resource_metrics || [],
+        financialData: stats?.financial_metrics || [],
         loading,
         generateStats,
         activeEntityId,
-        getExhaustionEstimate: () => null // Feature disabled due to financial module removal
+        getExhaustionEstimate: () => null
     };
 }

@@ -237,6 +237,12 @@ export default function SecurityPage() {
                             onToggle={() => toggleSetting('xss_protection')}
                         />
                         <ToggleItem
+                            title="Permissions Policy"
+                            description="Bloqueo de Hardware (Cámara, Micrófono, USB)"
+                            active={true}
+                            onToggle={() => { }} // Enforced by Middleware
+                        />
+                        <ToggleItem
                             title="Geo-Bloqueo"
                             description="Permitir acceso solo desde Colombia (CO)"
                             active={settings.geo_blocking}

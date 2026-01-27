@@ -7,6 +7,7 @@ import {
     Edit2,
     Trash2,
     Power,
+    Lock,
     CheckCircle2,
     XCircle,
     Building2,
@@ -20,9 +21,10 @@ interface UserTableProps {
     onEdit: (user: UserProfile) => void;
     onDelete: (id: string) => void;
     onToggleStatus: (id: string, current: boolean) => void;
+    onChangePassword?: (user: UserProfile) => void;
 }
 
-export function UserTable({ users, onEdit, onDelete, onToggleStatus }: UserTableProps) {
+export function UserTable({ users, onEdit, onDelete, onToggleStatus, onChangePassword }: UserTableProps) {
     const { t } = useSettings();
     return (
         <div className="glass-card overflow-hidden border border-white/20 shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -113,6 +115,13 @@ export function UserTable({ users, onEdit, onDelete, onToggleStatus }: UserTable
                                             className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-muted-foreground hover:text-amber-600 transition-colors"
                                         >
                                             <Edit2 className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => onChangePassword?.(user)}
+                                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-muted-foreground hover:text-blue-600 transition-colors tooltip"
+                                            title="Cambiar Contraseña (Admin)"
+                                        >
+                                            <Lock className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => onDelete(user.id)}

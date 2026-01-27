@@ -13,6 +13,12 @@ export function LoginForm() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
+    const [showForgotModal, setShowForgotModal] = useState(false);
+    const [forgotEmail, setForgotEmail] = useState('');
+    const [forgotLoading, setForgotLoading] = useState(false);
+    const [forgotSuccess, setForgotSuccess] = useState(false);
+    const [forgotError, setForgotError] = useState('');
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -29,6 +35,34 @@ export function LoginForm() {
             } else {
                 setError(t('auth.loginError'));
             }
+        }
+    };
+
+    const handleForgotSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setForgotLoading(true);
+        setForgotError(''); // Clear modal error, not main login error
+
+        try {
+            // Import the Server Action for custom password reset flow
+            // Note: In Next.js App Router, we can import server actions in Client Components
+            const { requestPasswordResetAction } = await import('../actions/resetPasswordAction');
+
+            const result = await requestPasswordResetAction(forgotEmail);
+
+            if (!result.success) {
+                throw new Error(result.error || 'Error al enviar el correo');
+            }
+
+            setForgotSuccess(true);
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setForgotError(err.message);
+            } else {
+                setForgotError('Error al enviar solicitud');
+            }
+        } finally {
+            setForgotLoading(false);
         }
     };
 
@@ -152,9 +186,18 @@ export function LoginForm() {
                             </div>
 
                             <div className="space-y-2">
-                                <label htmlFor="password" className="block text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
-                                    {t('auth.password')}
-                                </label>
+                                <div className="flex items-center justify-between">
+                                    <label htmlFor="password" className="block text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
+                                        {t('auth.password')}
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setShowForgotModal(true); setForgotError(''); }}
+                                        className="text-xs font-bold text-primary hover:underline"
+                                    >
+                                        ¿Olvidaste tu contraseña?
+                                    </button>
+                                </div>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                         <Lock className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -197,6 +240,81 @@ export function LoginForm() {
                     <p className="text-muted-foreground/50 text-xs font-medium uppercase tracking-wider">{footerText}</p>
                 </div>
             </div>
+
+            {/* Forgot Password Modal */}
+            {showForgotModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
+                    <div className="glass-card w-full max-w-md p-6 space-y-6 m-4 relative bg-white dark:bg-slate-900 shadow-2xl">
+                        {!forgotSuccess ? (
+                            <>
+                                <div>
+                                    <h3 className="font-bold text-xl font-heading mb-2">Recuperar Contraseña</h3>
+                                    <p className="text-muted-foreground text-sm">
+                                        Te enviaremos un enlace seguro para restablecer tu contraseña.
+                                    </p>
+                                </div>
+
+                                {forgotError && (
+                                    <div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400 p-3 rounded-lg text-sm font-medium flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
+                                        <span className="text-rose-600 font-bold">!</span>
+                                        {forgotError}
+                                    </div>
+                                )}
+
+                                <form onSubmit={handleForgotSubmit} className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label htmlFor="forgotEmail" className="block text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
+                                            Correo Electrónico
+                                        </label>
+                                        <input
+                                            id="forgotEmail"
+                                            type="email"
+                                            value={forgotEmail}
+                                            onChange={(e) => setForgotEmail(e.target.value)}
+                                            className="block w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-xl text-sm font-medium focus:border-primary focus:ring-0"
+                                            placeholder="nombre@ejemplo.com"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowForgotModal(false)}
+                                            className="flex-1 btn-secondary"
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={forgotLoading}
+                                            className="flex-1 btn-primary flex items-center justify-center gap-2"
+                                        >
+                                            {forgotLoading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Mail className="w-4 h-4" />}
+                                            Enviar Enlace
+                                        </button>
+                                    </div>
+                                </form>
+                            </>
+                        ) : (
+                            <div className="text-center py-6">
+                                <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Mail className="w-8 h-8" />
+                                </div>
+                                <h3 className="font-bold text-xl font-heading mb-2 text-emerald-600">¡Correo Enviado!</h3>
+                                <p className="text-muted-foreground text-sm mb-6">
+                                    Hemos enviado un enlace de recuperación a <strong>{forgotEmail}</strong>. Revisa tu bandeja de entrada.
+                                </p>
+                                <button
+                                    onClick={() => { setShowForgotModal(false); setForgotSuccess(false); setForgotEmail(''); }}
+                                    className="btn-primary w-full"
+                                >
+                                    Entendido, volver al login
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -39,7 +39,7 @@ const initialFormData: HiringProcessFormData = {
 export function HiringModal({ isOpen, onClose, onSave, onUpdatePhase, process, entityId, readOnly = false }: HiringModalProps) {
     const [formData, setFormData] = useState<HiringProcessFormData>(initialFormData);
     const [isSaving, setIsSaving] = useState(false);
-    const [projects, setProjects] = useState<{ id: string, name: string }[]>([]);
+    const [projects, setProjects] = useState<{ id: string, name: string, entity_id: string }[]>([]);
     const [users, setUsers] = useState<{ id: string, full_name: string }[]>([]);
     const [loadingData, setLoadingData] = useState(false);
 
@@ -59,14 +59,23 @@ export function HiringModal({ isOpen, onClose, onSave, onUpdatePhase, process, e
         }
     }, [process, isOpen, entityId]);
 
+
     useEffect(() => {
         const fetchData = async () => {
             setLoadingData(true);
             const supabase = createClient();
+
+            // Fix: Handle 'all' entity case
+            let projectsQuery = supabase.from('projects').select('id, name, entity_id');
+            if (entityId && entityId !== 'all') {
+                projectsQuery = projectsQuery.eq('entity_id', entityId);
+            }
+
             const [projectsRes, usersRes] = await Promise.all([
-                supabase.from('projects').select('id, name').eq('entity_id', entityId),
+                projectsQuery,
                 supabase.from('profiles').select('id, full_name').eq('is_active', true)
             ]);
+
             if (projectsRes.data) setProjects(projectsRes.data);
             if (usersRes.data) setUsers(usersRes.data);
             setLoadingData(false);
@@ -142,7 +151,15 @@ export function HiringModal({ isOpen, onClose, onSave, onUpdatePhase, process, e
                                     <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                     <select
                                         value={formData.project_id || ''}
-                                        onChange={(e) => setFormData({ ...formData, project_id: e.target.value || null })}
+                                        onChange={(e) => {
+                                            const newProjectId = e.target.value || null;
+                                            const selectedProject = projects.find(p => p.id === newProjectId);
+                                            setFormData({
+                                                ...formData,
+                                                project_id: newProjectId,
+                                                entity_id: selectedProject?.entity_id || (entityId !== 'all' ? entityId : formData.entity_id)
+                                            });
+                                        }}
                                         disabled={readOnly}
                                         className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:border-primary transition-all text-xs font-bold appearance-none disabled:opacity-60"
                                     >

@@ -107,5 +107,18 @@ export const userService = {
         const supabase = createClient();
         const { error } = await supabase.from('profiles').update({ is_active: status }).eq('id', id);
         if (error) throw error;
+    },
+
+    async adminUpdatePassword(userId: string, newPassword: string): Promise<void> {
+        const response = await fetch('/api/users/update-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, newPassword })
+        });
+
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.error || 'Error actualizando contraseña');
+        }
     }
 };

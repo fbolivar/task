@@ -143,4 +143,15 @@ export const authService = {
         if (error) throw error;
         return data || [];
     },
+
+    async resetPasswordForEmail(email: string) {
+        const supabase = createClient();
+        // Redirect to a page that handles password updates (e.g. settings or dashboard)
+        // Ideally, it should be a dedicated /update-password page for "Recovery Mode"
+        const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/dashboard` : undefined,
+        });
+        if (error) throw error;
+        return data;
+    },
 };

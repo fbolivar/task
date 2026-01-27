@@ -12,6 +12,40 @@ export async function middleware(request: NextRequest) {
     response.headers.set('Cache-Control', 'no-store, must-revalidate');
     response.headers.set('Pragma', 'no-cache');
 
+    // --- WAF SECURITY HEADERS ---
+
+    // 1. Content Security Policy (CSP)
+    // Allows 'unsafe-eval' and 'unsafe-inline' for Next.js hydration compatibility
+    // In strict mode these should be removed in favor of Nonces
+    const cspHeader = `
+        default-src 'self';
+        script-src 'self' 'unsafe-eval' 'unsafe-inline';
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' blob: data:;
+        font-src 'self';
+        object-src 'none';
+        base-uri 'self';
+        form-action 'self';
+        frame-ancestors 'none';
+        block-all-mixed-content;
+        upgrade-insecure-requests;
+    `;
+    response.headers.set(
+        'Content-Security-Policy',
+        cspHeader.replace(/\s{2,}/g, ' ').trim()
+    );
+
+    // 2. Permissions Policy
+    // Disables sensitive features by default
+    response.headers.set(
+        'Permissions-Policy',
+        'camera=(), microphone=(), geolocation=(), payment=(), usb=(), vr=()'
+    );
+
+    // 3. Additional Hardening
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

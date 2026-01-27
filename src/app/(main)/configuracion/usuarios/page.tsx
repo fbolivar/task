@@ -2,8 +2,10 @@
 
 import { useState, useMemo } from 'react';
 import { useUsers } from '@/features/users/hooks/useUsers';
+import { userService } from '@/features/users/services/userService';
 import { UserTable } from '@/features/users/components/UserTable';
 import { UserModal } from '@/features/users/components/UserModal';
+import { ChangePasswordModal } from '@/features/users/components/ChangePasswordModal';
 import { UserProfile, UserFormData } from '@/features/users/types';
 import { Shield, Plus, Search, Loader2, Users } from 'lucide-react';
 
@@ -21,7 +23,9 @@ export default function UsuariosPage() {
 
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+    const [passwordUser, setPasswordUser] = useState<UserProfile | null>(null);
 
     const filteredUsers = useMemo(() => {
         return users.filter(u =>
@@ -115,6 +119,10 @@ export default function UsuariosPage() {
                     onEdit={handleOpenEdit}
                     onDelete={handleDelete}
                     onToggleStatus={toggleUserStatus}
+                    onChangePassword={(user) => {
+                        setPasswordUser(user);
+                        setIsPasswordModalOpen(true);
+                    }}
                 />
             ) : (
                 <div className="bg-white dark:bg-slate-900 rounded-[3rem] border-2 border-dashed border-slate-200 dark:border-slate-800 p-20 flex flex-col items-center text-center">
@@ -136,6 +144,19 @@ export default function UsuariosPage() {
                 user={editingUser}
                 roles={roles}
                 entities={entities}
+            />
+
+            {/* Password Modal */}
+            <ChangePasswordModal
+                isOpen={isPasswordModalOpen}
+                onClose={() => setIsPasswordModalOpen(false)}
+                user={passwordUser}
+                onConfirm={async (newPassword) => {
+                    if (passwordUser) {
+                        await userService.adminUpdatePassword(passwordUser.id, newPassword);
+                        alert('Contraseña actualizada correctamente para ' + passwordUser.full_name);
+                    }
+                }}
             />
         </div>
     );

@@ -60,7 +60,9 @@ export function useUsers() {
         createUser,
         updateUser,
         deleteUser,
+
         toggleUserStatus,
+        updatePassword: userService.adminUpdatePassword,
         refresh: fetchData
     };
 }

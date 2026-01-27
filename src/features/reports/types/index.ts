@@ -3,6 +3,9 @@ export interface ReportFilter {
     start_date: string;
     end_date: string;
     entity_id: string | 'all';
+    status?: string[];
+    priority?: string[];
+    assignee_id?: string;
 }
 
 export interface TeamEfficacyMember {
@@ -52,10 +55,16 @@ export interface ReportStats {
     pending_tasks: number;
     avg_progress: number;
     tasks_by_status: Record<string, number>;
+    tasks_by_priority: Record<string, number>;
     team_efficacy: TeamEfficacyMember[];
     projects_list?: ProjectStat[];
     hiring_processes?: HiringProcessStat[];
     tasks_list?: TaskStat[];
+    // New fields for real visualization data
+    burndown_data?: BurndownPoint[];
+    resource_metrics?: ResourceMetric[];
+    financial_metrics?: FinancialMetric[];
+    trend_data?: { month: string; amount: number }[];
 }
 
 export interface ProjectData {
@@ -64,4 +73,26 @@ export interface ProjectData {
     entity_id: string;
     entity_name?: string;
     entity_logo_url?: string | null;
+}
+
+export interface BurndownPoint {
+    day: string;
+    ideal: number;
+    actual: number;
+    remaining: number;
+}
+
+export interface ResourceMetric {
+    name: string;
+    role: string;
+    allocation: number; // 0-100%
+    tasks_count: number;
+    efficiency_score: number;
+}
+
+export interface FinancialMetric {
+    category: string;
+    amount: number;
+    type: 'income' | 'expense' | 'budget';
+    description?: string;
 }

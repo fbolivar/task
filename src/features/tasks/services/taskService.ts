@@ -46,7 +46,7 @@ export const taskService = {
 
         let query = supabase
             .from('tasks')
-            .select('*, project:projects(id, name, entity_id), assignee:profiles(id, full_name)')
+            .select('*, project:projects(id, name, entity_id), assignee:profiles!tasks_assigned_to_fkey(id, full_name)')
             .order('end_date', { ascending: true });
 
         const { data, error } = await query;
@@ -86,7 +86,7 @@ export const taskService = {
                     is_change_control_required: task.is_change_control_required || false,
                     created_by: user?.id
                 })
-                .select('*, project:projects(id, name, entity_id), assignee:profiles(id, full_name)')
+                .select('*, project:projects(id, name, entity_id), assignee:profiles!tasks_assigned_to_fkey(id, full_name)')
                 .single();
 
             if (error) {
@@ -159,7 +159,7 @@ export const taskService = {
                 .from('tasks')
                 .update(cleanUpdates)
                 .eq('id', id)
-                .select('*, project:projects(id, name, entity_id), assignee:profiles(id, full_name)')
+                .select('*, project:projects(id, name, entity_id), assignee:profiles!tasks_assigned_to_fkey(id, full_name)')
                 .single();
 
             if (error) {
@@ -208,7 +208,7 @@ export const taskService = {
 
         let query = supabase
             .from('tasks')
-            .select('*, project:projects(id, name, entity_id), assignee:profiles(id, full_name)')
+            .select('*, project:projects(id, name, entity_id), assignee:profiles!tasks_assigned_to_fkey(id, full_name)')
             .eq('priority', 'Alta')
             .neq('status', 'Completado')
             .lt('end_date', now);
