@@ -29,9 +29,20 @@ export interface Project {
     has_support: boolean;
     actual_cost: number;
     budget?: number;
+    has_budget: boolean;
+    expenses?: RecurrentExpense[];
     created_at: string;
     entity?: Entity;
     sub_projects?: SubProject[];
+}
+
+export interface RecurrentExpense {
+    id: string;
+    project_id: string;
+    description: string;
+    amount: number;
+    frequency: 'mensual' | 'anual' | 'unico';
+    created_at: string;
 }
 
 export interface ProjectFormData {
@@ -44,5 +55,7 @@ export interface ProjectFormData {
     end_date: string | null;
     contract_active: boolean;
     has_support: boolean;
+    has_budget: boolean;
     budget: number;
+    expenses: Omit<RecurrentExpense, 'id' | 'project_id' | 'created_at'>[];
 }

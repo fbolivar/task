@@ -77,104 +77,96 @@ export function AssetCard({ asset, onEdit, onDelete }: AssetCardProps) {
     const currentValue = calculateCurrentValue();
 
     return (
-        <div className="card-premium group relative flex flex-col h-full hover:translate-y-[-8px] transition-all duration-500">
+        <div className="card-premium group relative p-6 transition-all duration-500 hover:translate-y-[-4px] h-full flex flex-col">
+            {/* Header: Icon, Title, Actions */}
+            <div className="flex justify-between items-start mb-6">
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 shadow-sm group-hover:scale-105 transition-transform">
+                        <CategoryIcon className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h3 className="font-black text-lg text-foreground tracking-tight leading-none mb-1.5 truncate max-w-[140px]" title={asset.name}>
+                            {asset.name}
+                        </h3>
+                        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
+                            <Tag className="w-3 h-3" />
+                            {asset.category}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex gap-1">
+                    <button
+                        onClick={() => generateAssetReceipt(asset)}
+                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        <FileText className="w-4 h-4" />
+                    </button>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(asset);
+                        }}
+                        className="p-1.5 hover:bg-primary/10 rounded-lg text-muted-foreground hover:text-primary transition-colors"
+                    >
+                        <Edit2 className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
+
+            {/* Body: Stacked Pills */}
+            <div className="flex flex-col gap-3 flex-1">
+                {/* Serial */}
+                <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-transparent dark:border-white/5">
+                    <Hash className="w-4 h-4 text-slate-400" />
+                    <span className="text-xs font-black text-slate-600 dark:text-slate-300 tracking-wider">
+                        {asset.serial_number || 'SIN SERIAL'}
+                    </span>
+                </div>
+
+                {/* Location */}
+                <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <MapPin className="w-4 h-4 text-slate-400" />
+                    <span className="text-xs font-black text-slate-600 dark:text-slate-300 tracking-wider uppercase">
+                        {asset.location || 'SIN UBICACIÓN'}
+                    </span>
+                </div>
+
+                {/* Value */}
+                {currentValue !== null && (
+                    <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/10">
+                        <DollarSign className="w-4 h-4 text-emerald-600" />
+                        <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 tracking-wider">
+                            {currentValue.toLocaleString('es-CO', { maximumFractionDigits: 0, notation: 'compact' })} M
+                        </span>
+                    </div>
+                )}
+            </div>
+
+            <div className="my-6 h-px w-full bg-slate-100 dark:bg-slate-800" />
+
+            {/* Footer: Assignee & Status */}
+            <div className="flex justify-between items-center mt-auto">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700">
+                        <User className="w-5 h-5 text-slate-500" />
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest leading-tight">Asignado A</span>
+                        <span className="text-xs font-black text-foreground uppercase tracking-tight">
+                            {asset.assignee?.full_name?.split(' ')[0] || 'NADIE'}
+                        </span>
+                    </div>
+                </div>
+
+                <div className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider ${statusColors[asset.status]}`}>
+                    {asset.status}
+                </div>
+            </div>
+
             {warranty && (
-                <div className={`absolute top-0 left-8 px-4 py-1.5 rounded-b-2xl text-[9px] font-black uppercase tracking-[0.2em] border-x border-b transition-all duration-500 z-10 group-hover:scale-105 ${warranty.color} shadow-sm`}>
-                    {warranty.label}
-                </div>
+                <div className={`absolute top-4 right-20 w-2 h-2 rounded-full ${warranty.color.includes('rose') ? 'bg-rose-500' : 'bg-amber-500'}`} title={warranty.label} />
             )}
-
-            <div className="p-8 flex-1 relative z-10">
-                <div className="flex justify-between items-start mb-8">
-                    <div className="flex items-center gap-5">
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                            <div className="relative w-16 h-16 rounded-3xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-white/5 dark:to-white/10 flex items-center justify-center text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/10 shadow-xl group-hover:rotate-6 transition-transform duration-500">
-                                <CategoryIcon className="w-8 h-8 group-hover:text-primary transition-colors" />
-                            </div>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <h3 className="font-black text-xl text-foreground tracking-tight truncate group-hover:text-primary transition-all leading-tight mb-2" title={asset.name}>
-                                {asset.name}
-                            </h3>
-                            <div className={`inline-flex px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border shadow-sm ${statusColors[asset.status]}`}>
-                                {asset.status}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all">
-                        <button
-                            onClick={() => generateAssetReceipt(asset)}
-                            className="p-2.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-all hover:scale-110"
-                            title={t('inventory.action.receipt')}
-                        >
-                            <FileText className="w-5 h-5 text-muted-foreground" />
-                        </button>
-                        <button
-                            onClick={() => onEdit(asset)}
-                            className="p-2.5 hover:bg-primary/10 hover:text-primary rounded-xl transition-all hover:scale-110"
-                        >
-                            <Edit2 className="w-5 h-5" />
-                        </button>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-5 mb-8">
-                    <div className="grid grid-cols-2 gap-4">
-                        <InfoItem icon={<Hash />} label={t('inventory.form.serial')} text={asset.serial_number || 'N/A'} />
-                        <InfoItem icon={<Tag />} label={t('inventory.form.category')} text={asset.category} />
-                    </div>
-                    <InfoItem icon={<MapPin />} label={t('inventory.form.location')} text={asset.location || t('inventory.location.none')} />
-
-                    <div className="flex items-center justify-between p-5 rounded-3xl bg-slate-50/50 dark:bg-white/5 border border-slate-100 dark:border-white/5 shadow-inner">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2.5 rounded-xl bg-emerald-500/10">
-                                <TrendingDown className="w-4 h-4 text-emerald-500" />
-                            </div>
-                            <div>
-                                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none mb-1.5">{t('inventory.estimatedValue')}</p>
-                                <p className="text-sm font-black text-foreground tracking-tight">
-                                    ${currentValue?.toLocaleString('es-CO', { maximumFractionDigits: 0 }) || '---'}
-                                </p>
-                            </div>
-                        </div>
-                        <Sparkles className="w-4 h-4 text-primary animate-pulse opacity-40" />
-                    </div>
-                </div>
-
-                {/* Assigned Section */}
-                {asset.assigned_to && (
-                    <div className="flex items-center gap-4 group/user p-1">
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full opacity-0 group-hover/user:opacity-100 transition-opacity" />
-                            <div className="relative w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 flex items-center justify-center text-primary font-black text-[12px] shadow-sm">
-                                <User className="w-4 h-4" />
-                            </div>
-                        </div>
-                        <div className="min-w-0">
-                            <p className="text-[9px] font-black uppercase text-muted-foreground/50 tracking-widest leading-none mb-1.5">{t('inventory.form.assignedTo')}</p>
-                            <p className="text-[11px] font-black text-foreground uppercase tracking-tight truncate max-w-[150px]">{asset.assignee?.full_name || 'Legacy Assignee'}</p>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            <div className="px-8 py-5 bg-slate-50/30 dark:bg-white/5 border-t border-slate-100 dark:border-white/5 mt-auto rounded-b-[2rem] flex items-center justify-between">
-                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
-                    <Calendar className="w-4 h-4 text-primary/50" />
-                    {asset.purchase_date ? new Date(asset.purchase_date).toLocaleDateString('es-CO', { month: 'short', year: 'numeric' }) : 'Indefinido'}
-                </div>
-                {asset.purchase_value && (
-                    <div className="flex flex-col items-end">
-                        <span className="text-[8px] font-black uppercase text-muted-foreground/40 tracking-tighter mb-0.5">Original Cost</span>
-                        <div className="flex items-center gap-1 text-lg font-black text-foreground tracking-tighter">
-                            <DollarSign className="w-4 h-4 text-emerald-500" />
-                            <span>{parseFloat(asset.purchase_value.toString()).toLocaleString('es-CO', { minimumFractionDigits: 0 })}</span>
-                        </div>
-                    </div>
-                )}
-            </div>
         </div>
     );
 }

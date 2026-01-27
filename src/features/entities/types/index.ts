@@ -13,6 +13,7 @@ export interface Entity {
     contact_name: string | null;
     contact_email: string | null;
     logo_url: string | null;
+    is_change_management_enabled: boolean;
     created_at: string;
 }
 
@@ -26,4 +27,5 @@ export interface EntityFormData {
     contact_name: string;
     contact_email: string;
     logo_url: string;
+    is_change_management_enabled: boolean;
 }

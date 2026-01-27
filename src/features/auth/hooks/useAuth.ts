@@ -75,9 +75,16 @@ export function useAuth() {
                 setUser(session.user);
                 const userProfile = await authService.getProfile(session.user.id);
                 setProfile(userProfile);
-            }
 
-            router.push('/dashboard');
+                // Role-based redirect
+                if (userProfile?.role?.name === 'Gerente') {
+                    router.push('/analisis');
+                } else {
+                    router.push('/dashboard');
+                }
+            } else {
+                router.push('/dashboard');
+            }
         } catch (error) {
             throw error;
         } finally {

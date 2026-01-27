@@ -56,7 +56,7 @@ export const authService = {
         const supabase = createClient();
         const { data, error } = await supabase
             .from('profiles')
-            .select('*, role:roles(*), profile_entities(entity:entities(id, name))')
+            .select('*, role:roles(*), profile_entities(entity:entities(id, name, is_change_management_enabled))')
             .eq('id', userId)
             .single();
 
@@ -68,6 +68,20 @@ export const authService = {
             console.error('Error fetching profile:', error);
             return null;
         }
+
+        // Si tiene acceso a todas las entidades, poblar profile_entities con todas las entidades existentes
+        // para que componentes como el Sidebar puedan verificar estados (ej: gestión de cambios) correctamente
+        if (data?.has_all_entities_access) {
+            const { data: allEntities } = await supabase
+                .from('entities')
+                .select('id, name, is_change_management_enabled')
+                .order('name');
+
+            if (allEntities) {
+                data.profile_entities = allEntities.map((entity: any) => ({ entity }));
+            }
+        }
+
         return data;
     },
 

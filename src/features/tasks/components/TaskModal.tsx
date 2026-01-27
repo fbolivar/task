@@ -11,7 +11,8 @@ import {
     Briefcase,
     User as UserIcon,
     Flag,
-    AlertCircle
+    AlertCircle,
+    HardDrive
 } from 'lucide-react';
 import { Task, TaskFormData, TaskPriority, TaskStatus, TaskSubStatus } from '../types';
 import { createClient } from '@/lib/supabase/client';
@@ -34,6 +35,7 @@ const initialFormData: TaskFormData = {
     end_date: null,
     assigned_to: null,
     evidence_link: null,
+    is_change_control_required: false,
 };
 
 export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
@@ -58,6 +60,7 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                 end_date: task.end_date,
                 assigned_to: task.assigned_to,
                 evidence_link: task.evidence_link || null,
+                is_change_control_required: task.is_change_control_required || false,
             });
         } else {
             setFormData(initialFormData);
@@ -81,6 +84,12 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (formData.is_change_control_required && !formData.project_id) {
+            alert('Debes seleccionar un proyecto para activar el Control de Cambios.');
+            return;
+        }
+
         try {
             setIsSaving(true);
             await onSave(formData);
@@ -224,7 +233,7 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Google Drive (Link)</label>
+                            <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">{t('tasks.form.evidence') || 'Evidencia (Link)'}</label>
                             <div className="relative">
                                 <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                 <input
@@ -236,6 +245,25 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                                 />
                             </div>
                         </div>
+                    </div>
+
+                    <div className="space-y-1.5 p-4 rounded-xl bg-amber-500/5 border border-amber-500/10">
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                            <div className="relative flex items-center">
+                                <input
+                                    type="checkbox"
+                                    checked={formData.is_change_control_required}
+                                    onChange={(e) => setFormData({ ...formData, is_change_control_required: e.target.checked })}
+                                    className="peer sr-only"
+                                />
+                                <div className="w-10 h-6 bg-slate-200 dark:bg-slate-800 rounded-full peer peer-checked:bg-amber-500 transition-all duration-300" />
+                                <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all peer-checked:translate-x-4 shadow-sm" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-sm font-bold text-foreground group-hover:text-amber-600 transition-colors">¿Requiere Control de Cambios?</span>
+                                <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Activa el módulo de gestión de cambios para esta tarea</span>
+                            </div>
+                        </label>
                     </div>
 
                     <div className="space-y-1.5">

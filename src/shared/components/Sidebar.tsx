@@ -1,10 +1,13 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { Settings, Home, Building2, Briefcase, CheckSquare, BarChart3, Package, DollarSign, X } from 'lucide-react';
+import { Settings, Home, Building2, Briefcase, CheckSquare, BarChart3, Package, DollarSign, X, FileText, Shield, GitPullRequest, Target, PieChart } from 'lucide-react';
+import { useAuthStore } from '@/features/auth/store/authStore';
+import { createClient } from '@/lib/supabase/client';
 
 interface SidebarProps {
     isOpen?: boolean;
@@ -17,12 +20,66 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     const { profile } = useAuth();
     const { t } = settings;
 
+    const { activeEntityId } = useAuthStore();
+    const [realtimeEnabled, setRealtimeEnabled] = useState<boolean | null>(null);
+
+    // Initial check and Realtime Sync
+    useEffect(() => {
+        const supabase = createClient();
+
+        // Initial state from profile
+        const getInitialState = () => !!profile?.profile_entities?.some((pe: any) => {
+            const entity = Array.isArray(pe.entity) ? pe.entity[0] : pe.entity;
+            if (activeEntityId === 'all') return entity?.is_change_management_enabled;
+            return entity?.id === activeEntityId && entity?.is_change_management_enabled;
+        });
+        setRealtimeEnabled(getInitialState());
+
+        const filter = activeEntityId === 'all' ? undefined : `id=eq.${activeEntityId}`;
+
+        // Listen for changes
+        const channel = supabase
+            .channel('entity-changes-global')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'entities',
+                    filter: filter
+                },
+                (payload: any) => {
+                    const changedId = payload.new.id;
+                    const isEnabled = payload.new.is_change_management_enabled;
+
+                    if (activeEntityId === 'all') {
+                        // If any entity has it enabled, show it
+                        setRealtimeEnabled(prev => isEnabled || prev);
+                    } else if (changedId === activeEntityId) {
+                        setRealtimeEnabled(isEnabled);
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [activeEntityId, profile]);
+
+    const isChangeManagementEnabled = realtimeEnabled;
+
+    console.log('Sidebar CM Visibility:', { isChangeManagementEnabled, activeEntityId, entities: profile?.profile_entities?.length });
+
     const navItems = [
         { href: '/dashboard', label: t('nav.dashboard'), icon: Home },
         { href: '/entidades', label: t('nav.entities'), icon: Building2 },
         { href: '/proyectos', label: t('nav.projects'), icon: Briefcase },
         { href: '/tareas', label: t('nav.tasks'), icon: CheckSquare },
         { href: '/inventario', label: t('nav.inventory'), icon: Package },
+        { href: '/analisis', label: 'Análisis', icon: PieChart },
+        { href: '/contratacion', label: t('nav.hiring'), icon: Target },
+        { href: '/cambios', label: t('nav.change_management'), icon: GitPullRequest, visible: isChangeManagementEnabled },
         { href: '/reportes', label: t('nav.reports'), icon: BarChart3 },
     ];
 
@@ -79,12 +136,18 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                         // Define access per role
                         const roleAccess: Record<string, string[]> = {
                             'Admin': [], // Empty means all access
-                            'Gerente': ['/dashboard', '/reportes'],
-                            'Operativo': ['/dashboard', '/proyectos', '/tareas', '/inventario', '/reportes'],
+                            'Gerente': ['/analisis', '/contratacion', '/reportes', '/cambios'],
+                            'Operativo': ['/dashboard', '/contratacion', '/proyectos', '/tareas', '/inventario', '/reportes', '/cambios'],
                         };
 
                         return navItems
                             .filter(item => {
+                                // First check custom visibility
+                                if ('visible' in item && item.visible === false) return false;
+
+                                // Hiring module is accessible by everyone
+                                if (item.href === '/contratacion') return true;
+
                                 if (roleName === 'Admin') return true;
                                 const allowedRoutes = roleAccess[roleName] || [];
                                 return allowedRoutes.includes(item.href);
@@ -119,8 +182,8 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
 
                     <div className="h-px bg-slate-200/50 dark:bg-white/5 my-6 mx-4" />
 
-                    {/* Settings Link - Only Admin and Gerente */}
-                    {(profile?.role?.name === 'Admin' || profile?.role?.name === 'Gerente') && (
+                    {/* Settings Link - Only Admin */}
+                    {(profile?.role?.name === 'Admin') && (
                         <Link
                             href="/configuracion"
                             onClick={onClose}

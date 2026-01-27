@@ -16,6 +16,8 @@ export interface ProjectShort {
 
 export interface Task {
     id: string;
+    is_change_control_required?: boolean;
+    change_request_id?: string;
     project_id: string | null;
     title: string;
     notes: string | null;
@@ -41,4 +43,5 @@ export interface TaskFormData {
     end_date: string | null;
     assigned_to: string | null;
     evidence_link: string | null;
+    is_change_control_required?: boolean;
 }

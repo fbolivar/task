@@ -42,7 +42,14 @@ export const userService = {
             body: JSON.stringify(user)
         });
 
-        const data = await response.json();
+        let data;
+        const text = await response.text();
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            console.error('Non-JSON response from server:', text);
+            throw new Error(`Error del servidor (No JSON): ${response.status} ${response.statusText}`);
+        }
 
         if (!response.ok) {
             throw new Error(data.error || 'Error creando usuario');

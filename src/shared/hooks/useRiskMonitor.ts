@@ -5,12 +5,12 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { taskService } from '@/features/tasks/services/taskService';
 import { thresholdService } from '@/features/entities/services/thresholdService';
 
-export function useRiskMonitor() {
+export function useRiskMonitor(enabled: boolean = true) {
     const { getExhaustionEstimate, activeEntityId } = useReports();
     const user = useAuthStore(state => state.user);
 
     useEffect(() => {
-        if (!user || activeEntityId === 'all') return;
+        if (!enabled || !user || activeEntityId === 'all') return;
 
         const checkRisks = async () => {
             // 0. Fetch Custom Thresholds

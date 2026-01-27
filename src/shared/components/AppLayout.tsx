@@ -20,16 +20,19 @@ export function AppLayout({ children }: AppLayoutProps) {
     const router = useRouter();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
-    // Start background risk monitoring
-    useRiskMonitor();
-
     // Role-based access control - define allowed routes per role
     const roleName = profile?.role?.name || '';
 
+    // Start background risk monitoring (Exclude Gerente)
+    // Start background risk monitoring (Exclude Gerente)
+    // We pass the flag inside the hook to avoid "Rules of Hooks" violation
+    const shouldMonitorRisk = roleName !== 'Gerente';
+    useRiskMonitor(shouldMonitorRisk);
+
     const roleRouteAccess: Record<string, string[]> = {
         'Admin': [], // Empty means all access
-        'Gerente': ['/dashboard', '/finanzas', '/reportes', '/configuracion/politicas', '/configuracion/auditoria'],
-        'Operativo': ['/dashboard', '/proyectos', '/tareas', '/inventario', '/reportes'],
+        'Gerente': ['/analisis', '/finanzas', '/reportes', '/configuracion/politicas', '/configuracion/auditoria', '/contratacion', '/cambios'],
+        'Operativo': ['/dashboard', '/proyectos', '/tareas', '/inventario', '/reportes', '/contratacion', '/cambios'],
     };
 
     // Check if current route is allowed for this role
@@ -80,7 +83,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                     </div>
 
                     <div className="flex items-center gap-4 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl px-4 py-2 rounded-2xl border border-white/50 dark:border-white/5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
-                        <NotificationDropdown />
+                        {roleName !== 'Gerente' && <NotificationDropdown />}
                         <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block" />
                         <UserMenu />
                         <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block" />

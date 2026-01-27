@@ -67,5 +67,39 @@ export const integrationService = {
         if (!response.ok) {
             throw new Error(data.error || 'Error al probar la conexión');
         }
+    },
+    async configureGoogleDrive(config: any): Promise<void> {
+        const supabase = createClient();
+
+        // 1. Check if integration exists
+        const { data: existing } = await supabase
+            .from('integrations')
+            .select('id')
+            .eq('provider', 'google_drive')
+            .single();
+
+        if (existing) {
+            // Update
+            const { error } = await supabase
+                .from('integrations')
+                .update({
+                    config: config,
+                    is_active: true,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', existing.id);
+            if (error) throw error;
+        } else {
+            // Create
+            const { error } = await supabase
+                .from('integrations')
+                .insert({
+                    provider: 'google_drive',
+                    name: 'Google Drive',
+                    config: config,
+                    is_active: true
+                });
+            if (error) throw error;
+        }
     }
 };

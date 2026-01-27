@@ -34,13 +34,24 @@ export async function POST(request: Request) {
         }
 
         // 3. Initialize Admin Client
-        const supabaseAdmin = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+        if (!supabaseUrl || !supabaseServiceKey || supabaseServiceKey.includes('PEGA_AQUÍ')) {
+            const reason = !supabaseUrl ? 'falta NEXT_PUBLIC_SUPABASE_URL' :
+                (!supabaseServiceKey ? 'falta SUPABASE_SERVICE_ROLE_KEY' : 'la llave SUPABASE_SERVICE_ROLE_KEY es inválida (contiene texto de instrucción)');
+
+            console.error(`Configuración de Supabase inválida: ${reason}`);
+            return NextResponse.json({
+                error: `Configuración incompleta: ${reason}. Asegúrate de que el valor en .env.local sea CORRECTO y NO incluya el texto "PEGA_AQUÍ...". Reinicia el servidor tras corregirlo.`
+            }, { status: 500 });
+        }
+
+        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
         // 4. Create User in Auth
         const tempPassword = password || Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
+        let userId: string;
 
         const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
             email,
@@ -50,37 +61,49 @@ export async function POST(request: Request) {
         });
 
         if (createError) {
-            console.error('Create User Error:', createError);
-            return NextResponse.json({ error: createError.message }, { status: 400 });
+            if (createError.message.includes('already been registered')) {
+                // User exists in Auth, but maybe not in Profiles. 
+                // We need to find the ID to "repair" the setup.
+                console.log(`User ${email} already registered, looking up ID...`);
+                // Note: listUsers is the only way as admin to find by email if not in public tables
+                const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+                const existingUser = users?.find(u => u.email === email);
+
+                if (existingUser) {
+                    userId = existingUser.id;
+                    console.log(`Found existing ID: ${userId}. Proceeding with idempotent setup.`);
+                } else {
+                    return NextResponse.json({ error: 'El usuario ya existe pero no se pudo localizar su ID de sistema.' }, { status: 400 });
+                }
+            } else {
+                console.error('Create User Error:', createError);
+                return NextResponse.json({ error: createError.message }, { status: 400 });
+            }
+        } else {
+            if (!newUser.user) {
+                return NextResponse.json({ error: 'User creation failed unexpectedly' }, { status: 500 });
+            }
+            userId = newUser.user.id;
         }
 
-        if (!newUser.user) {
-            return NextResponse.json({ error: 'User creation failed unexpectedly' }, { status: 500 });
-        }
-
-        const userId = newUser.user.id;
-
-        // 5. Update Profile (Role, etc)
-        // Trigger might have created profile, but we overwrite to be sure/fast
+        // 5. Ensure Profile exists and is updated (Role, etc)
+        // We use upsert to avoid race conditions with the database trigger
         const { error: profileError } = await supabaseAdmin
             .from('profiles')
-            .update({
+            .upsert({
+                id: userId,
                 full_name,
                 role_id,
                 has_all_entities_access,
                 is_active: is_active ?? true,
-                must_change_password: true
-            })
-            .eq('id', userId);
+                must_change_password: true,
+                email: email // Keep email in sync
+            }, { onConflict: 'id' });
 
         if (profileError) {
-            // If trigger failed or hasn't run, we might need to insert? 
-            // Normally trigger runs ON INSERT. 
-            // Try Update first. If user not found (trigger lag?), wait? 
-            // Actually, admin.createUser inserts into auth.users -> Trigger -> public.profiles.
-            // We can retry update if it fails?
-            console.error('Profile Update Error:', profileError);
-            // We continue, but warn?
+            console.error('Profile Upsert Error:', profileError);
+            // This is critical because entities and notifications depend on the profile
+            return NextResponse.json({ error: `Error actualizando perfil: ${profileError.message}` }, { status: 500 });
         }
 
         // 6. Assign Entities
@@ -93,12 +116,17 @@ export async function POST(request: Request) {
                 .from('profile_entities')
                 .insert(entityInserts);
 
-            if (entityError) console.error('Entity Assign Error:', entityError);
+            if (entityError) {
+                console.error('Entity Assign Error:', entityError);
+                return NextResponse.json({ error: `Error asignando entidades: ${entityError.message}` }, { status: 500 });
+            }
         }
 
-        // 7. Prepare Email Data
-        // Fetch Role Name for email
-        const { data: roleData } = await supabaseAdmin.from('roles').select('name').eq('id', role_id).single();
+        // 7. Prepare Role Name for email
+        const { data: roleData, error: roleError } = await supabaseAdmin.from('roles').select('name').eq('id', role_id).single();
+        if (roleError) {
+            console.warn('Could not fetch role name:', roleError);
+        }
         const assignedRoleName = roleData?.name || 'Usuario';
 
         // Fetch Entity Names
@@ -128,13 +156,47 @@ export async function POST(request: Request) {
             try {
                 const { email: smtpEmail, app_password, smtp_host, smtp_port } = integration.config;
 
+                // 8. Fetch and Prepare Email Template
+                const { data: template } = await supabaseAdmin
+                    .from('email_templates')
+                    .select('*')
+                    .eq('code', 'welcome_user')
+                    .eq('is_active', true)
+                    .single();
+
                 // App Settings
                 const { data: settings } = await supabaseAdmin.from('app_settings').select('app_name, header_color').single();
                 const appName = settings?.app_name || 'GestorPro';
-                const headerColor = settings?.header_color || '#2563EB';
 
-                // HARDCODED URL FIX
-                const appUrl = 'https://task-eosin-nu.vercel.app';
+                const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://task-eosin-nu.vercel.app';
+                const entityListStr = entityNames.join(', ');
+
+                let subject = `Bienvenido a ${appName} - Tus credenciales de acceso`;
+                let html = '';
+
+                if (template) {
+                    subject = template.subject || subject;
+                    html = template.body_html || '';
+
+                    const vars: Record<string, string> = {
+                        name: full_name,
+                        email: email,
+                        password: tempPassword,
+                        role: assignedRoleName,
+                        entities: entityListStr,
+                        app_name: appName,
+                        app_url: appUrl
+                    };
+
+                    Object.entries(vars).forEach(([key, value]) => {
+                        const regex = new RegExp(`{{${key}}}`, 'g');
+                        subject = subject.replace(regex, value);
+                        html = html.replace(regex, value);
+                    });
+                } else {
+                    // Fallback to minimal text if template missing
+                    html = `Hola ${full_name}, tus credenciales son: Email: ${email}, Password: ${tempPassword}`;
+                }
 
                 const transporter = nodemailer.createTransport({
                     host: smtp_host || 'smtp.gmail.com',
@@ -143,54 +205,11 @@ export async function POST(request: Request) {
                     auth: { user: smtpEmail, pass: app_password }
                 });
 
-                const entityListStr = entityNames.join(', ');
-
                 const mailOptions = {
                     from: `"${appName}" <${smtpEmail}>`,
                     to: email,
-                    subject: `Bienvenido a ${appName} - Tus credenciales de acceso`,
-                    html: `
-                        <!DOCTYPE html>
-                        <html lang="es">
-                        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; background-color: #f4f4f5;">
-                            <table role="presentation" style="width: 100%; border-collapse: collapse;">
-                                <tr>
-                                    <td align="center" style="padding: 40px 20px;">
-                                        <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                                            <tr>
-                                                <td style="background: linear-gradient(135deg, ${headerColor}, ${headerColor}dd); padding: 40px 30px; text-align: center;">
-                                                    <h1 style="margin: 0; color: white; font-size: 28px; font-weight: 800;">¡Bienvenido a ${appName}!</h1>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td style="padding: 40px 30px;">
-                                                    <p>Hola <strong>${full_name}</strong>,</p>
-                                                    <p>Credenciales de acceso:</p>
-                                                    <table style="width: 100%; background: #f9fafb; border-radius: 12px; margin-bottom: 20px; padding: 15px;">
-                                                        <tr><td><strong>Email:</strong> ${email}</td></tr>
-                                                        <tr><td><strong>Contraseña:</strong> <code style="background: #e5e7eb; padding: 4px; border-radius: 4px;">${tempPassword}</code></td></tr>
-                                                        <tr><td><strong>Rol:</strong> ${assignedRoleName}</td></tr>
-                                                        <tr><td><strong>Entidades:</strong> ${entityListStr}</td></tr>
-                                                    </table>
-                                                    
-                                                    <div style="background: #fee2e2; color: #991b1b; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                                                        <strong>⚠️ Importante:</strong> Por seguridad, deberás cambiar tu contraseña en el primer inicio de sesión.
-                                                    </div>
-
-                                                    <div style="text-align: center;">
-                                                        <a href="${appUrl}/login" style="display: inline-block; background: ${headerColor}; color: white; padding: 16px 40px; border-radius: 12px; text-decoration: none; font-weight: bold;">
-                                                            INICIAR SESIÓN
-                                                        </a>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </table>
-                        </body>
-                        </html>
-                    `
+                    subject: subject,
+                    html: html
                 };
 
                 await transporter.sendMail(mailOptions);

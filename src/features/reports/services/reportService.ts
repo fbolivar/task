@@ -133,13 +133,58 @@ export const reportService = {
             };
         });
 
+        // 5. Additional Data for Report
+        const promises = [];
+
+        // 5.1 Projects List
+        let projectsQuery = supabase.from('projects').select('id, name, status, risk_level, budget').order('created_at', { ascending: false });
+        if (filter.entity_id !== 'all') projectsQuery = projectsQuery.eq('entity_id', filter.entity_id);
+        promises.push(projectsQuery);
+
+        // 5.2 Hiring Processes
+        let hiringQuery = supabase.from('hiring_processes').select('id, title, status, total_progress, assignee:profiles(full_name)').order('created_at', { ascending: false });
+        if (filter.entity_id !== 'all') hiringQuery = hiringQuery.eq('entity_id', filter.entity_id);
+        if (filter.project_id !== 'all') hiringQuery = hiringQuery.eq('project_id', filter.project_id);
+        promises.push(hiringQuery);
+
+        const [projectsRes, hiringRes] = await Promise.all(promises);
+
+        const projectsList = (projectsRes.data || []).map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            status: p.status,
+            progress: 0, // Calculate if needed, or fetch from summary
+            budget: p.budget,
+            risk_level: p.risk_level
+        }));
+
+        const hiringList = (hiringRes.data || []).map((h: any) => ({
+            id: h.id,
+            title: h.title,
+            status: h.status,
+            total_progress: h.total_progress,
+            assigned_to_name: h.assignee?.full_name || 'Sin Asignar'
+        }));
+
+        const tasksList = filteredTasks.map((t: any) => ({
+            id: t.id,
+            title: t.title,
+            status: t.status,
+            priority: t.priority,
+            end_date: t.end_date,
+            assigned_to_name: t.profiles?.full_name || 'Sin Asignar'
+        })).slice(0, 50); // Limit to top 50 to avoid PDF explosion
+
         return {
             total_tasks: total,
             completed_tasks: completed,
             pending_tasks: pending,
             avg_progress: Math.round(avgProgress),
             tasks_by_status: tasksByStatus,
-            team_efficacy: teamEfficacy as any
+            team_efficacy: teamEfficacy as any,
+            projects_list: projectsList,
+            hiring_processes: hiringList,
+            tasks_list: tasksList
         };
     },
 

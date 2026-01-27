@@ -6,8 +6,10 @@ export const es = {
     'nav.users': 'Usuarios',
     'nav.entities': 'Entidades',
     'nav.finance': 'Finanzas',
-    'nav.inventory': 'Inventarios',
+    'nav.inventory': 'Inventario',
     'nav.reports': 'Reportes',
+    'nav.hiring': 'Contratación',
+    'nav.change_management': 'Gestión de Cambios',
     'nav.config': 'Configuración',
     'nav.logout': 'Cerrar Sesión',
 
@@ -74,6 +76,7 @@ export const es = {
     'tasks.form.risk': 'Detalle de Riesgo',
     'tasks.form.dueDate': 'Fecha de Entrega',
     'tasks.form.notes': 'Notas Adicionales',
+    'tasks.form.evidence': 'Evidencia (Link)',
     'tasks.form.unassigned': 'Sin asignar',
 
     'finance.title': 'Rentabilidad y Presupuestos',
@@ -247,7 +250,9 @@ export const en = {
     'nav.finance': 'Finance',
     'nav.inventory': 'Inventory',
     'nav.reports': 'Reports',
-    'nav.config': 'Settings',
+    'nav.hiring': 'Hiring',
+    'nav.change_management': 'Change Management',
+    'nav.config': 'Configuration',
     'nav.logout': 'Logout',
 
     // General
@@ -313,6 +318,7 @@ export const en = {
     'tasks.form.risk': 'Risk Detail',
     'tasks.form.dueDate': 'Due Date',
     'tasks.form.notes': 'Additional Notes',
+    'tasks.form.evidence': 'Evidence (Link)',
     'tasks.form.unassigned': 'Unassigned',
 
     'finance.title': 'Profitability & Budgets',

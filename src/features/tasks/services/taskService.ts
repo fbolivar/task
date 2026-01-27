@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/client';
 import { Task, TaskFormData } from '../types';
+import { notificationService } from '@/shared/services/notificationService';
 
 // Send email notification for task assignment
 async function sendAssignmentNotificationEmail(
@@ -10,26 +11,32 @@ async function sendAssignmentNotificationEmail(
 ): Promise<void> {
     try {
         const supabase = createClient();
-        console.log('Sending task notification email:', { taskId, taskTitle, assignedTo, assignerName });
 
-        const { data, error } = await supabase.functions.invoke('send-task-notification', {
-            body: {
-                type: 'assignment',
-                task_id: taskId,
-                task_title: taskTitle,
-                user_id: assignedTo,
-                assigner_name: assignerName
-            }
-        });
+        // Get recipient email
+        const { data: userData } = await supabase
+            .from('profiles')
+            .select('email, full_name')
+            .eq('id', assignedTo)
+            .single();
 
-        if (error) {
-            console.error('Edge function error:', error);
-        } else {
-            console.log('Email notification result:', data);
+        if (!userData?.email) {
+            console.warn('Cannot send notification: User has no email');
+            return;
         }
+
+        console.log(`Triggering notification for updated task to ${userData.email}`);
+        await notificationService.notifyWithTemplate(
+            userData.email,
+            'task_assigned',
+            {
+                name: userData.full_name || 'Usuario',
+                title: taskTitle,
+                assigner: assignerName,
+                link: `${window.location.origin}/tablero`
+            }
+        );
     } catch (error) {
-        console.error('Error sending notification email:', error);
-        // Don't throw - email is non-blocking
+        console.error('Error sending task notification email:', error);
     }
 }
 
@@ -74,13 +81,40 @@ export const taskService = {
 
             const { data, error } = await supabase
                 .from('tasks')
-                .insert(task)
+                .insert({
+                    ...task,
+                    is_change_control_required: task.is_change_control_required || false
+                })
                 .select('*, project:projects(id, name, entity_id), assignee:profiles(id, full_name)')
                 .single();
 
             if (error) {
-                console.error('Supabase error in createTask:', error);
+                console.error('Supabase error details in createTask:', {
+                    message: error.message,
+                    details: error.details,
+                    hint: error.hint,
+                    code: error.code
+                });
                 throw error;
+            }
+
+            // If change control required, create Draft Change Request
+            if (task.is_change_control_required && task.project_id && user) {
+                const { error: crError } = await supabase
+                    .from('change_requests')
+                    .insert({
+                        project_id: task.project_id,
+                        task_id: data.id,
+                        requester_id: user.id,
+                        title: `Cambio: ${task.title}`,
+                        description: `Solicitud automática generada desde la tarea: ${task.title}`,
+                        priority: 'medium',
+                        status: 'draft'
+                    });
+
+                if (crError) {
+                    console.error("Error generating automatic Change Request", crError);
+                }
             }
 
             // Send email notification if task is assigned

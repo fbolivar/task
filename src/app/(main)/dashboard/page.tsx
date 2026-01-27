@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import {
@@ -62,8 +62,15 @@ export default function DashboardPage() {
   const [executiveAlerts, setExecutiveAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [availableEntities, setAvailableEntities] = useState<{ id: string, name: string }[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
 
   const supabase = createClient();
+
+
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // --- Data Fetching ---
   useEffect(() => {
@@ -102,11 +109,10 @@ export default function DashboardPage() {
           projectsQuery = projectsQuery.eq('entity_id', activeEntityId);
           assetsQuery = assetsQuery.eq('entity_id', activeEntityId);
 
+
           if (pIds.length > 0) {
             tasksQuery = tasksQuery.in('project_id', pIds);
-            // Limit pIds to avoid header too large errors in Supabase URL
-            const safePds = pIds.slice(0, 50);
-            activityQuery = activityQuery.or(`entity_id.eq.${activeEntityId},project_id.in.(${safePds.join(',')})`);
+            activityQuery = activityQuery.eq('entity_id', activeEntityId);
           } else {
             tasksQuery = tasksQuery.is('project_id', null).eq('id', '00000000-0000-0000-0000-000000000000'); // Force empty if no projects
             activityQuery = activityQuery.eq('entity_id', activeEntityId);
@@ -343,21 +349,23 @@ export default function DashboardPage() {
               <BarChart3 className="w-4 h-4 text-primary" />
             </div>
           </div>
-          <div className="h-[350px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={projectPortfolioData}>
-                <PolarGrid stroke="currentColor" className="text-slate-200 dark:text-white/10" />
-                <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fontWeight: 800, fill: 'currentColor' }} className="text-muted-foreground" />
-                <Radar
-                  name="Métricas"
-                  dataKey="A"
-                  stroke="var(--primary)"
-                  fill="var(--primary)"
-                  fillOpacity={0.3}
-                  strokeWidth={3}
-                />
-              </RadarChart>
-            </ResponsiveContainer>
+          <div className="h-[350px] w-full min-w-0 relative">
+            {isMounted && (
+              <ChartWrapper>
+                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={projectPortfolioData}>
+                  <PolarGrid stroke="currentColor" className="text-slate-200 dark:text-white/10" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fontWeight: 800, fill: 'currentColor' }} className="text-muted-foreground" />
+                  <Radar
+                    name="Métricas"
+                    dataKey="A"
+                    stroke="var(--primary)"
+                    fill="var(--primary)"
+                    fillOpacity={0.3}
+                    strokeWidth={3}
+                  />
+                </RadarChart>
+              </ChartWrapper>
+            )}
           </div>
         </div>
 
@@ -372,23 +380,25 @@ export default function DashboardPage() {
               <div className="flex items-center gap-2"><div className="w-3 h-1 bg-emerald-500 rounded-full" /><span className="text-[9px] font-bold uppercase">Real</span></div>
             </div>
           </div>
-          <div className="h-[350px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={efficiencyTreads}>
-                <defs>
-                  <linearGradient id="colorReal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-100 dark:text-white/5" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 700, fill: 'currentColor' }} className="text-muted-foreground" />
-                <YAxis hide />
-                <Tooltip contentStyle={{ backgroundColor: 'black', color: 'white', borderRadius: '16px', border: 'none' }} itemStyle={{ color: 'white' }} />
-                <Area type="monotone" dataKey="planned" stroke="#6366f1" strokeWidth={3} fill="transparent" />
-                <Area type="monotone" dataKey="actual" stroke="#10b981" strokeWidth={4} fill="url(#colorReal)" />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="h-[350px] w-full min-w-0 relative">
+            {isMounted && (
+              <ChartWrapper>
+                <AreaChart data={efficiencyTreads}>
+                  <defs>
+                    <linearGradient id="colorReal" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-100 dark:text-white/5" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 700, fill: 'currentColor' }} className="text-muted-foreground" />
+                  <YAxis hide />
+                  <Tooltip contentStyle={{ backgroundColor: 'black', color: 'white', borderRadius: '16px', border: 'none' }} itemStyle={{ color: 'white' }} />
+                  <Area type="monotone" dataKey="planned" stroke="#6366f1" strokeWidth={3} fill="transparent" />
+                  <Area type="monotone" dataKey="actual" stroke="#10b981" strokeWidth={4} fill="url(#colorReal)" />
+                </AreaChart>
+              </ChartWrapper>
+            )}
           </div>
         </div>
 
@@ -442,6 +452,7 @@ export default function DashboardPage() {
 
 // --- Executive UI Components ---
 
+
 function ExecutiveCard({ title, value, trend, trendUp, subtitle, icon, gradient }: any) {
   return (
     <div className="stat-card group hover:translate-y-[-8px] transition-all duration-500 cursor-default">
@@ -471,6 +482,56 @@ function ExecutiveCard({ title, value, trend, trendUp, subtitle, icon, gradient 
       </div>
 
       <div className="h-1 w-0 bg-primary absolute bottom-0 left-0 transition-all duration-700 group-hover:w-full" />
+    </div>
+  );
+}
+
+// --- Chart Wrapper for Robust Rendering ---
+// This component ensures the parent container has valid dimensions before rendering the chart
+// forcing a layout check and using ResizeObserver effectively.
+
+function ChartWrapper({ children, className = "h-[350px] w-full" }: { children: React.ReactNode, className?: string }) {
+  const [ready, setReady] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    // Use ResizeObserver to continuously monitor dimensions
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const { width, height } = entry.contentRect;
+        // Only render if we have actual pixels
+        if (width > 0 && height > 0) {
+          // Debounce the ready state slightly to avoid thrashing
+          requestAnimationFrame(() => setReady(true));
+        } else {
+          setReady(false);
+        }
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  return (
+    <div className={`${className} min-w-0 relative`} ref={containerRef}>
+      {ready ? (
+        <ResponsiveContainer width="100%" height="100%" debounce={50}>
+          {children as any}
+        </ResponsiveContainer>
+      ) : (
+        <div className="w-full h-full flex items-center justify-center bg-slate-50/50 dark:bg-slate-900/50 rounded-xl">
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <span className="text-[10px] uppercase font-bold text-muted-foreground animate-pulse">Cargando Gráfica...</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

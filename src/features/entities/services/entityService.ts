@@ -15,6 +15,7 @@ const mapFormDataToPayload = (form: EntityFormData) => {
         contact_name: form.contact_name ? String(form.contact_name).trim() : null,
         contact_email: form.contact_email ? String(form.contact_email).trim() : null,
         logo_url: form.logo_url && String(form.logo_url).trim() !== '' ? String(form.logo_url).trim() : null,
+        is_change_management_enabled: form.is_change_management_enabled || false
     };
 };
 

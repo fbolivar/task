@@ -24,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es" className={`${inter.variable} ${outfit.variable} scroll-smooth`}>
+    <html lang="es" className={`${inter.variable} ${outfit.variable}`} style={{ scrollBehavior: 'smooth' }} data-scroll-behavior="smooth">
       <body className="antialiased font-sans bg-background text-foreground selection:bg-primary/20">
         <SettingsProvider>
           {children}

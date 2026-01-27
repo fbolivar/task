@@ -15,7 +15,8 @@ import {
     Briefcase,
     Target,
     DollarSign,
-    Upload
+    Upload,
+    GitPullRequest
 } from 'lucide-react';
 import { Entity, EntityFormData, EntityType } from '../types';
 import { useSettings } from '@/shared/contexts/SettingsContext';
@@ -38,6 +39,7 @@ const initialFormData: EntityFormData = {
     contact_name: '',
     contact_email: '',
     logo_url: '',
+    is_change_management_enabled: false,
 };
 
 export function EntityModal({ isOpen, onClose, onSave, entity }: EntityModalProps) {
@@ -60,6 +62,7 @@ export function EntityModal({ isOpen, onClose, onSave, entity }: EntityModalProp
                 contact_name: entity.contact_name || '',
                 contact_email: entity.contact_email || '',
                 logo_url: entity.logo_url || '',
+                is_change_management_enabled: entity.is_change_management_enabled || false,
             });
         } else {
             setFormData(initialFormData);
@@ -267,6 +270,30 @@ export function EntityModal({ isOpen, onClose, onSave, entity }: EntityModalProp
                                     />
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Module Activation Card */}
+                    <div className="p-6 rounded-3xl bg-orange-500/5 border border-orange-500/10 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <h4 className="text-[11px] font-black text-orange-600 uppercase tracking-[0.3em] flex items-center gap-2">
+                                    <GitPullRequest className="w-4 h-4" /> Módulos Especializados
+                                </h4>
+                                <p className="text-sm font-bold text-foreground">Gestión de Control de Cambios</p>
+                                <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest leading-tight max-w-sm">
+                                    Este módulo permite rastrear cambios críticos en proyectos. Se activará automáticamente si una tarea lo requiere.
+                                </p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={formData.is_change_management_enabled}
+                                    onChange={(e) => setFormData({ ...formData, is_change_management_enabled: e.target.checked })}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-slate-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                            </label>
                         </div>
                     </div>
 

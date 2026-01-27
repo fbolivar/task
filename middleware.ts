@@ -66,8 +66,8 @@ export async function middleware(request: NextRequest) {
             const path = request.nextUrl.pathname;
 
             const roleRouteAccess: Record<string, string[]> = {
-                'Gerente': ['/dashboard', '/finanzas', '/reportes', '/configuracion/politicas', '/configuracion/auditoria'],
-                'Operativo': ['/dashboard', '/proyectos', '/tareas', '/inventario', '/reportes'],
+                'Gerente': ['/dashboard', '/finanzas', '/reportes', '/configuracion/politicas', '/configuracion/auditoria', '/cambios'],
+                'Operativo': ['/dashboard', '/proyectos', '/tareas', '/inventario', '/contratacion', '/reportes', '/cambios'],
             };
 
             // Check if route is restricted for this role
@@ -83,7 +83,7 @@ export async function middleware(request: NextRequest) {
                 }
 
                 // Block access to main routes not allowed for this role
-                const mainRoutes = ['/entidades', '/proyectos', '/tareas', '/inventario', '/finanzas', '/dashboard'];
+                const mainRoutes = ['/entidades', '/proyectos', '/tareas', '/inventario', '/finanzas', '/dashboard', '/contratacion', '/cambios'];
                 const isMainRoute = mainRoutes.some(route => path === route || path.startsWith(route + '/'));
 
                 if (isMainRoute && !isAllowed) {

@@ -20,6 +20,32 @@ export interface TeamEfficacyMember {
     predicted_delay_risk: number;
 }
 
+export interface ProjectStat {
+    id: string;
+    name: string;
+    status: string;
+    progress: number;
+    budget: number;
+    risk_level: string;
+}
+
+export interface HiringProcessStat {
+    id: string;
+    title: string;
+    status: string;
+    total_progress: number;
+    assigned_to_name: string;
+}
+
+export interface TaskStat {
+    id: string;
+    title: string;
+    status: string;
+    priority: string;
+    end_date: string;
+    assigned_to_name: string;
+}
+
 export interface ReportStats {
     total_tasks: number;
     completed_tasks: number;
@@ -27,6 +53,9 @@ export interface ReportStats {
     avg_progress: number;
     tasks_by_status: Record<string, number>;
     team_efficacy: TeamEfficacyMember[];
+    projects_list?: ProjectStat[];
+    hiring_processes?: HiringProcessStat[];
+    tasks_list?: TaskStat[];
 }
 
 export interface ProjectData {
