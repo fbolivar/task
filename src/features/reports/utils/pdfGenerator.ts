@@ -10,13 +10,18 @@ export const generateExecutivePDF = async (
     entityLogoUrl?: string | null
 ) => {
     const doc = new jsPDF();
-    const primaryColor: [number, number, number] = [37, 99, 235]; // Tailwind blue-600
-    const secondaryColor: [number, number, number] = [71, 85, 105]; // Slate-600
+    const primaryColor: [number, number, number] = [47, 133, 90]; // PNN Green (approx #2F855A)
+    const secondaryColor: [number, number, number] = [26, 32, 44]; // Slate-900
 
     // Header with Design
     const headerHeight = 60;
     doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
     doc.rect(0, 0, 210, headerHeight, 'F');
+
+    // Decorative line
+    doc.setDrawColor(255, 255, 255);
+    doc.setLineWidth(0.5);
+    doc.line(15, headerHeight - 10, 195, headerHeight - 10);
 
     // Add Logo if available
     if (entityLogoUrl) {
@@ -37,16 +42,16 @@ export const generateExecutivePDF = async (
             const h = img.height * ratio;
 
             // Position (Right aligned in the box at 155, 10)
-            const boxX = 155;
-            const boxY = 10;
+            const boxX = 145;
+            const boxY = 15;
+
+            // Add white background container adjusted
+            doc.setFillColor(255, 255, 255);
+            doc.roundedRect(boxX - 5, boxY - 5, maxWidth + 10, maxHeight + 10, 2, 2, 'F');
 
             // Center in box
             const x = boxX + (maxWidth - w) / 2;
             const y = boxY + (maxHeight - h) / 2;
-
-            // Add white background container adjusted to image size (optional, or kept fixed)
-            doc.setFillColor(255, 255, 255);
-            doc.roundedRect(boxX, boxY, maxWidth, maxHeight, 3, 3, 'F');
 
             const format = entityLogoUrl.toLowerCase().endsWith('.png') ? 'PNG' : 'JPEG';
             doc.addImage(img, format, x, y, w, h);
@@ -56,51 +61,67 @@ export const generateExecutivePDF = async (
     }
 
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(24);
+    doc.setFontSize(22);
     doc.setFont('helvetica', 'bold');
 
     // Dynamic text positioning
     const title = 'INFORME EJECUTIVO DE GESTIÓN';
-    const titleLines = doc.splitTextToSize(title, 135);
-    doc.text(titleLines, 15, 25);
-
-    // Calculate offset based on title lines (approx 10 units per line for size 24)
-    const titleOffset = (titleLines.length * 10);
-    const nextY = 25 + titleOffset - 5; // Adjust slightly up to reduce gap
+    doc.text(title, 15, 25);
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
+    doc.text('SISTEMA DE GESTIÓN INTEGRAL', 15, 32);
+
     const rangeText = `PERIODO DE ANÁLISIS: ${startDate || 'HISTÓRICO'} AL ${endDate || 'ACTUAL'}`;
-    doc.text(rangeText, 15, nextY, { maxWidth: 135 });
-    doc.text(`PROYECTO: ${projectName.toUpperCase()}`, 15, nextY + 7, { maxWidth: 190 });
+    doc.text(rangeText, 15, 42);
+    doc.text(`PROYECTO: ${projectName.toUpperCase()}`, 15, 47, { maxWidth: 120 });
 
     // Executive Summary
-    let y = headerHeight + 15;
-    doc.setTextColor(50, 50, 50);
-    doc.setFontSize(16);
-    doc.text('1. Resumen Ejecutivo', 15, y);
+    let y = headerHeight + 20;
+    doc.setTextColor(47, 133, 90); // Primary Text
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('1. RESUMEN EJECUTIVO', 15, y);
+
+    // Underline
+    doc.setDrawColor(200, 200, 200);
+    doc.line(15, y + 2, 195, y + 2);
     y += 10;
 
     autoTable(doc, {
         startY: y,
-        head: [['Métrica de Desempeño', 'Valor']],
+        head: [['INDICADOR CLAVE', 'VALOR']],
         body: [
             ['Total de Tareas Gestionadas', stats.total_tasks.toString()],
-            ['KPI de Cumplimiento (Completadas)', stats.completed_tasks.toString()],
+            ['Tareas Completadas', stats.completed_tasks.toString()],
             ['Avance Promedio del Portafolio', `${stats.avg_progress}%`],
-            ['Tareas en Cola / Pendientes', stats.pending_tasks.toString()]
+            ['Tareas Pendientes / En Proceso', stats.pending_tasks.toString()]
         ],
-        theme: 'striped',
-        headStyles: { fillColor: primaryColor },
-        styles: { fontSize: 11, cellPadding: 5 }
+        theme: 'grid',
+        headStyles: {
+            fillColor: primaryColor,
+            fontSize: 10,
+            fontStyle: 'bold',
+            halign: 'center'
+        },
+        bodyStyles: {
+            fontSize: 10,
+            cellPadding: 6
+        },
+        columnStyles: {
+            0: { fontStyle: 'bold' },
+            1: { halign: 'center' }
+        }
     });
 
     y = (doc as any).lastAutoTable.finalY + 20;
 
     // Status Breakdown
-    doc.setFontSize(16);
-    doc.text('2. Desglose Operativo por Estados', 15, y);
-    y += 5;
+    doc.setTextColor(47, 133, 90);
+    doc.setFontSize(14);
+    doc.text('2. DESGLOSE POR ESTADOS', 15, y);
+    doc.line(15, y + 2, 195, y + 2);
+    y += 10;
 
     const statusRows = Object.entries(stats.tasks_by_status).map(([status, count]) => [
         status,
@@ -110,11 +131,15 @@ export const generateExecutivePDF = async (
 
     autoTable(doc, {
         startY: y,
-        head: [['Estado', 'Cantidad', 'Porcentaje']],
+        head: [['ESTADO', 'CANTIDAD', 'PORCENTAJE']],
         body: statusRows,
-        theme: 'grid',
+        theme: 'striped',
         headStyles: { fillColor: secondaryColor },
-        styles: { fontSize: 10 }
+        styles: { fontSize: 9, cellPadding: 4 },
+        columnStyles: {
+            1: { halign: 'center' },
+            2: { halign: 'center' }
+        }
     });
 
     y = (doc as any).lastAutoTable.finalY + 20;
@@ -122,13 +147,15 @@ export const generateExecutivePDF = async (
     // Team Efficacy
     if (y > 230) { doc.addPage(); y = 20; }
 
-    doc.setFontSize(16);
-    doc.text('3. Indicadores de Eficacia por Colaborador', 15, y);
-    y += 5;
+    doc.setTextColor(47, 133, 90);
+    doc.setFontSize(14);
+    doc.text('3. INDICADORES DE EFICACIA', 15, y);
+    doc.line(15, y + 2, 195, y + 2);
+    y += 10;
 
     autoTable(doc, {
         startY: y,
-        head: [['Colaborador', 'Eficacia', 'Puntualidad', 'Eficiencia', 'Carga']],
+        head: [['COLABORADOR', 'EFICACIA', 'PUNTUAL.', 'EFICIENCIA', 'CARGA']],
         body: stats.team_efficacy.map(m => [
             m.full_name,
             `${m.efficacy}%`,
@@ -136,8 +163,14 @@ export const generateExecutivePDF = async (
             `${m.efficiency}%`,
             m.load.toString()
         ]),
-        headStyles: { fillColor: [79, 70, 229] }, // Indigo
-        styles: { fontSize: 9 }
+        headStyles: { fillColor: secondaryColor },
+        styles: { fontSize: 8, cellPadding: 3 },
+        columnStyles: {
+            1: { halign: 'center' },
+            2: { halign: 'center' },
+            3: { halign: 'center' },
+            4: { halign: 'center' }
+        }
     });
 
     y = (doc as any).lastAutoTable.finalY + 20;
@@ -145,22 +178,23 @@ export const generateExecutivePDF = async (
     // 4. Projects Status
     if (stats.projects_list && stats.projects_list.length > 0) {
         if (y > 230) { doc.addPage(); y = 20; }
+        doc.setTextColor(47, 133, 90);
+        doc.setFontSize(14);
+        doc.text('4. ESTADO DE PROYECTOS', 15, y);
+        doc.line(15, y + 2, 195, y + 2);
         y += 10;
-        doc.setFontSize(16);
-        doc.text('4. Estado de Proyectos', 15, y);
-        y += 5;
 
         autoTable(doc, {
             startY: y,
-            head: [['Proyecto', 'Estado', 'Riesgo', 'Presupuesto']],
+            head: [['PROYECTO', 'ESTADO', 'RIESGO', 'PRESUPUESTO']],
             body: stats.projects_list.map(p => [
                 p.name,
                 p.status,
                 p.risk_level,
                 `$ ${p.budget.toLocaleString()}`
             ]),
-            headStyles: { fillColor: [15, 118, 110] }, // Emerald-700
-            styles: { fontSize: 9 }
+            headStyles: { fillColor: primaryColor },
+            styles: { fontSize: 8 }
         });
         y = (doc as any).lastAutoTable.finalY + 10;
     }
@@ -168,38 +202,41 @@ export const generateExecutivePDF = async (
     // 5. Hiring Processes
     if (stats.hiring_processes && stats.hiring_processes.length > 0) {
         if (y > 230) { doc.addPage(); y = 20; }
-        y += 10;
-        doc.setFontSize(16);
-        doc.text('5. Procesos de Contratación Activos', 15, y);
         y += 5;
+        doc.setTextColor(47, 133, 90);
+        doc.setFontSize(14);
+        doc.text('5. PROCESOS DE CONTRATACIÓN', 15, y);
+        doc.line(15, y + 2, 195, y + 2);
+        y += 10;
 
         autoTable(doc, {
             startY: y,
-            head: [['Proceso', 'Estado', 'Avance', 'Responsable']],
+            head: [['PROCESO', 'ESTADO', 'AVANCE', 'RESPONSABLE']],
             body: stats.hiring_processes.map(h => [
                 h.title,
                 h.status,
                 `${h.total_progress}%`,
                 h.assigned_to_name
             ]),
-            headStyles: { fillColor: [180, 83, 9] }, // Amber-700
-            styles: { fontSize: 9 }
+            headStyles: { fillColor: secondaryColor },
+            styles: { fontSize: 8 }
         });
         y = (doc as any).lastAutoTable.finalY + 10;
     }
 
     // 6. Detailed Tasks List (Top 50)
     if (stats.tasks_list && stats.tasks_list.length > 0) {
-        if (y > 230) { doc.addPage(); y = 20; }
-        doc.addPage(); // Force new page for detailed list usually
+        doc.addPage();
         y = 20;
-        doc.setFontSize(16);
-        doc.text('6. Seguimiento Detallado de Tareas (Top 50)', 15, y);
-        y += 5;
+        doc.setTextColor(47, 133, 90);
+        doc.setFontSize(14);
+        doc.text('6. DETALLE OPERATIVO (Top 50)', 15, y);
+        doc.line(15, y + 2, 195, y + 2);
+        y += 10;
 
         autoTable(doc, {
             startY: y,
-            head: [['Tarea', 'Estado', 'Prioridad', 'Fecha Límite', 'Responsable']],
+            head: [['TAREA', 'ESTADO', 'PRIORIDAD', 'VENCE', 'RESPONSABLE']],
             body: stats.tasks_list.map(t => [
                 t.title,
                 t.status,
@@ -207,8 +244,11 @@ export const generateExecutivePDF = async (
                 t.end_date ? new Date(t.end_date).toLocaleDateString() : 'Sin Fecha',
                 t.assigned_to_name
             ]),
-            headStyles: { fillColor: [67, 56, 202] }, // Indigo-700
-            styles: { fontSize: 8 }
+            headStyles: { fillColor: primaryColor },
+            styles: { fontSize: 8 },
+            columnStyles: {
+                2: { halign: 'center' }
+            }
         });
     }
 
@@ -217,14 +257,20 @@ export const generateExecutivePDF = async (
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
         doc.setFontSize(8);
-        doc.setTextColor(150);
+        doc.setTextColor(100);
         doc.text(
-            `Generado automáticamente por SaaS Factory Intelligence - Página ${i} de ${pageCount}`,
+            `Generado el ${new Date().toLocaleString()} • Página ${i} de ${pageCount}`,
             105,
             285,
             { align: 'center' }
         );
+        doc.text(
+            'Sistema de Gestión - Parques Nacionales Naturales de Colombia',
+            105,
+            290,
+            { align: 'center' }
+        );
     }
 
-    doc.save(`reporte-ejecutivo-${new Date().getTime()}.pdf`);
+    doc.save(`Reporte_Gestion_${projectName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
 };

@@ -28,6 +28,7 @@ export interface Task {
     assigned_to: string | null;
     evidence_link: string | null;
     created_at: string;
+    created_by?: string;
     archived?: boolean;
     project?: ProjectShort;
     assignee?: Assignee;
@@ -44,4 +45,5 @@ export interface TaskFormData {
     assigned_to: string | null;
     evidence_link: string | null;
     is_change_control_required?: boolean;
+    created_by?: string;
 }

@@ -7,67 +7,96 @@ const styles = StyleSheet.create({
     page: {
         padding: 40,
         fontFamily: 'Helvetica',
-        fontSize: 11,
+        fontSize: 10,
         lineHeight: 1.5,
+        backgroundColor: '#fff'
     },
     header: {
         marginBottom: 20,
-        textAlign: 'center',
-        borderBottom: 1,
-        borderBottomColor: '#ccc',
-        paddingBottom: 10,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderBottom: 2,
+        borderBottomColor: '#2F855A', // PNN Green
+        paddingBottom: 15,
+    },
+    headerText: {
+        flex: 1,
     },
     title: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold',
-        marginBottom: 4,
         textTransform: 'uppercase',
+        color: '#2F855A',
     },
     subtitle: {
-        fontSize: 12,
-        color: '#666',
-        marginBottom: 20,
+        fontSize: 10,
+        color: '#444',
+        marginTop: 4,
     },
     section: {
         marginBottom: 15,
+        padding: 10,
+        backgroundColor: '#f8f9fa',
+        borderRadius: 4,
     },
     sectionTitle: {
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: 'bold',
-        marginTop: 10,
-        marginBottom: 5,
-        backgroundColor: '#f0f0f0',
-        padding: 4,
+        marginBottom: 8,
+        color: '#1a202c',
+        borderBottom: 1,
+        borderBottomColor: '#e2e8f0',
+        paddingBottom: 4,
     },
     row: {
         flexDirection: 'row',
-        marginBottom: 4,
+        marginBottom: 6,
     },
     label: {
-        width: 120,
+        width: 140,
         fontWeight: 'bold',
-        color: '#444',
+        color: '#4a5568',
+        fontSize: 9,
     },
     value: {
         flex: 1,
+        color: '#2d3748',
+        fontSize: 9,
     },
     legalText: {
-        marginTop: 20,
-        marginBottom: 40,
-        fontSize: 10,
+        marginTop: 10,
+        marginBottom: 20,
+        fontSize: 9,
         textAlign: 'justify',
+        color: '#4a5568',
+        lineHeight: 1.6,
     },
     signatures: {
-        marginTop: 50,
+        marginTop: 40,
         flexDirection: 'row',
         justifyContent: 'space-between',
+        paddingTop: 20,
     },
     signatureBlock: {
         width: '45%',
-        borderTop: 1,
-        borderTopColor: '#000',
-        paddingTop: 10,
         alignItems: 'center',
+    },
+    signLine: {
+        width: '100%',
+        borderTop: 1,
+        borderTopColor: '#2d3748',
+        marginBottom: 8,
+    },
+    signLabel: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        color: '#2d3748',
+    },
+    signSubLabel: {
+        fontSize: 8,
+        color: '#718096',
+        marginTop: 2,
     },
     footer: {
         position: 'absolute',
@@ -76,9 +105,9 @@ const styles = StyleSheet.create({
         right: 40,
         fontSize: 8,
         textAlign: 'center',
-        color: '#999',
+        color: '#a0aec0',
         borderTop: 1,
-        borderTopColor: '#eee',
+        borderTopColor: '#edf2f7',
         paddingTop: 10,
     }
 });
@@ -88,25 +117,30 @@ interface DeliveryActProps {
     companyName?: string;
 }
 
-const ActDocument = ({ asset, companyName = 'BC FABRIC SAS' }: DeliveryActProps) => (
+const ActDocument = ({ asset, companyName = 'Parques Nacionales Naturales de Colombia' }: DeliveryActProps) => (
     <Document>
         <Page size="LETTER" style={styles.page}>
             <View style={styles.header}>
-                <Text style={styles.title}>ACTA DE ENTREGA DE ACTIVOS</Text>
-                <Text style={styles.subtitle}>{companyName} - Control de Inventario</Text>
-                <Text style={{ fontSize: 10, marginTop: 5 }}>
-                    Fecha: {new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}
-                </Text>
+                <View style={styles.headerText}>
+                    <Text style={styles.title}>Acta de Entrega de Activos</Text>
+                    <Text style={styles.subtitle}>{companyName}</Text>
+                    <Text style={{ fontSize: 9, marginTop: 4, color: '#666' }}>Sistema de Gestión de Inventarios</Text>
+                </View>
+                <View>
+                    <Text style={{ fontSize: 9, color: '#666' }}>
+                        Fecha: {new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </Text>
+                </View>
             </View>
 
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>1. INFORMACIÓN DEL ACTIVO</Text>
                 <View style={styles.row}>
-                    <Text style={styles.label}>Nombre:</Text>
+                    <Text style={styles.label}>Nombre del Bien:</Text>
                     <Text style={styles.value}>{asset.name}</Text>
                 </View>
                 <View style={styles.row}>
-                    <Text style={styles.label}>Serial/Código:</Text>
+                    <Text style={styles.label}>Serial / Placa:</Text>
                     <Text style={styles.value}>{asset.serial_number || 'N/A'}</Text>
                 </View>
                 <View style={styles.row}>
@@ -114,11 +148,11 @@ const ActDocument = ({ asset, companyName = 'BC FABRIC SAS' }: DeliveryActProps)
                     <Text style={styles.value}>{asset.category}</Text>
                 </View>
                 <View style={styles.row}>
-                    <Text style={styles.label}>Estado:</Text>
+                    <Text style={styles.label}>Estado Actual:</Text>
                     <Text style={styles.value}>{asset.status}</Text>
                 </View>
                 <View style={styles.row}>
-                    <Text style={styles.label}>Valor:</Text>
+                    <Text style={styles.label}>Valor Registrado:</Text>
                     <Text style={styles.value}>
                         {asset.purchase_value
                             ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(asset.purchase_value)
@@ -128,23 +162,23 @@ const ActDocument = ({ asset, companyName = 'BC FABRIC SAS' }: DeliveryActProps)
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>2. ASIGNACIÓN</Text>
+                <Text style={styles.sectionTitle}>2. DATOS DE ASIGNACIÓN</Text>
                 <View style={styles.row}>
-                    <Text style={styles.label}>Responsable:</Text>
+                    <Text style={styles.label}>Funcionario Responsable:</Text>
                     <Text style={styles.value}>{asset.assignee?.full_name || 'Sin Asignar'}</Text>
                 </View>
                 <View style={styles.row}>
-                    <Text style={styles.label}>Entidad:</Text>
+                    <Text style={styles.label}>Entidad / Área:</Text>
                     <Text style={styles.value}>{asset.entity?.name || 'N/A'}</Text>
                 </View>
                 <View style={styles.row}>
-                    <Text style={styles.label}>Ubicación:</Text>
+                    <Text style={styles.label}>Ubicación Física:</Text>
                     <Text style={styles.value}>{asset.location || 'N/A'}</Text>
                 </View>
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>3. GARANTÍA Y VIDA ÚTIL</Text>
+                <Text style={styles.sectionTitle}>3. DETALLES TÉCNICOS</Text>
                 <View style={styles.row}>
                     <Text style={styles.label}>Vencimiento Garantía:</Text>
                     <Text style={styles.value}>
@@ -159,35 +193,30 @@ const ActDocument = ({ asset, companyName = 'BC FABRIC SAS' }: DeliveryActProps)
                 </View>
             </View>
 
-            <View style={styles.section}>
+            <View style={{ marginTop: 10, padding: 10 }}>
+                <Text style={{ fontSize: 10, fontWeight: 'bold', marginBottom: 5 }}>DECLARACIÓN DE RESPONSABILIDAD</Text>
                 <Text style={styles.legalText}>
-                    Por medio del presente documento, el Responsable declara recibir el activo descrito en perfectas condiciones de funcionamiento (salvo las observaciones anotadas) y se compromete a:
-                    {'\n\n'}
-                    1. Darle el uso adecuado y exclusivo para actividades laborales.
-                    {'\n'}
-                    2. Custodiarlo y protegerlo contra daños o pérdidas.
-                    {'\n'}
-                    3. Reportar inmediatamente cualquier falla, daño o pérdida al departamento administrativo.
-                    {'\n'}
-                    4. Devolver el activo en las mismas condiciones al finalizar su vínculo laboral o cuando sea requerido.
+                    El funcionario responsable declara recibir el activo descrito anteriormente en las condiciones estipuladas. Se compromete a custodiarlo, utilizarlo exclusivamente para el cumplimiento de sus funciones laborales y a devolverlo en el mismo estado de conservación (salvo el deterioro normal por uso) al finalizar la asignación o su vinculación con la entidad. Cualquier pérdida o daño injustificado será responsabilidad del funcionario.
                 </Text>
             </View>
 
             <View style={styles.signatures}>
                 <View style={styles.signatureBlock}>
-                    <Text>ENTREGA</Text>
-                    <Text style={{ marginTop: 30, fontSize: 9 }}>Administrativo / Inventario</Text>
-                    <Text style={{ fontSize: 8, color: '#666' }}>{companyName}</Text>
+                    <View style={styles.signLine} />
+                    <Text style={styles.signLabel}>QUIEN ENTREGA</Text>
+                    <Text style={styles.signSubLabel}>Almacén / Inventarios</Text>
+                    <Text style={styles.signSubLabel}>{companyName}</Text>
                 </View>
                 <View style={styles.signatureBlock}>
-                    <Text>RECIBE</Text>
-                    <Text style={{ marginTop: 30, fontSize: 9 }}>{asset.assignee?.full_name || 'Firma Responsable'}</Text>
-                    <Text style={{ fontSize: 8, color: '#666' }}>C.C. ____________________</Text>
+                    <View style={styles.signLine} />
+                    <Text style={styles.signLabel}>QUIEN RECIBE</Text>
+                    <Text style={styles.signSubLabel}>{asset.assignee?.full_name || 'Funcionario Responsable'}</Text>
+                    <Text style={styles.signSubLabel}>C.C.</Text>
                 </View>
             </View>
 
             <Text style={styles.footer}>
-                Generado automáticamente por el Sistema de Gestión {companyName} • {new Date().toISOString()}
+                Documento generado automáticamente • {companyName} • {new Date().toISOString()} • Control ID: {asset.id.slice(0, 8)}
             </Text>
         </Page>
     </Document>

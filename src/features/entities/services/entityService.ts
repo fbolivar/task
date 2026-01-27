@@ -60,6 +60,17 @@ export const entityService = {
             console.error('Service: Error creating entity', error);
             throw error;
         }
+
+        // Auto-assign the creator to the entity
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            await supabase.from('profile_entities').insert({
+                profile_id: user.id,
+                entity_id: data.id,
+                assigned_at: new Date().toISOString()
+            });
+        }
+
         return data;
     },
 

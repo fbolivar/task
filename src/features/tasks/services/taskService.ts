@@ -83,7 +83,8 @@ export const taskService = {
                 .from('tasks')
                 .insert({
                     ...task,
-                    is_change_control_required: task.is_change_control_required || false
+                    is_change_control_required: task.is_change_control_required || false,
+                    created_by: user?.id
                 })
                 .select('*, project:projects(id, name, entity_id), assignee:profiles(id, full_name)')
                 .single();
