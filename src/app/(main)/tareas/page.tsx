@@ -81,6 +81,7 @@ export default function TareasPage() {
                 onNewTask={handleOpenCreateModal}
                 onStatusFilter={setStatusFilter}
                 totalTasks={tasks.length}
+                currentStatus={statusFilter}
             />
 
             {filteredTasks.length > 0 ? (
