@@ -149,7 +149,7 @@ export const authService = {
         // Redirect to a page that handles password updates (e.g. settings or dashboard)
         // Ideally, it should be a dedicated /update-password page for "Recovery Mode"
         const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/dashboard` : undefined,
+            redirectTo: `https://gespro.bc-security.com/login`,
         });
         if (error) throw error;
         return data;

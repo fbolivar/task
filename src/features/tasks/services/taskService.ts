@@ -32,7 +32,7 @@ async function sendAssignmentNotificationEmail(
                 name: userData.full_name || 'Usuario',
                 title: taskTitle,
                 assigner: assignerName,
-                link: `${window.location.origin}/tablero`
+                link: `https://gespro.bc-security.com/login`
             }
         );
     } catch (error) {

@@ -115,17 +115,15 @@ export const changeService = {
                     .single();
 
                 if (approver?.email) {
-                    const origin = window.location.origin;
                     await notificationService.notifyWithTemplate(
                         approver.email,
-                        'change_auth_request',
+                        'change_submitted',
                         {
-                            approver_name: approver.full_name || 'Autorizador',
-                            requester_name: newCRFull.requester?.full_name || 'Usuario',
-                            code: newCRFull.code,
+                            name: approver.full_name || 'Aprobador',
                             title: newCRFull.title,
                             project: newCRFull.project?.name || 'N/A',
-                            link: `${origin}/cambios`
+                            code: newCRFull.code,
+                            link: `https://gespro.bc-security.com/login`
                         }
                     );
                 }
@@ -289,7 +287,7 @@ export const changeService = {
                 code: cr.code,
                 title: cr.title,
                 project: cr.project?.name || 'N/A',
-                link: `${window.location.origin}/cambios`
+                link: `https://gespro.bc-security.com/login`
             },
             attachments
         );

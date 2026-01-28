@@ -11,13 +11,9 @@ export async function requestPasswordResetAction(email: string) {
         // Need to define the redirect URL. Usually the update password page.
         // If the user clicks the link, they are logged in and tokens are exchanged.
         // We set redirect to /dashboard or a settings page where they can change the password.
-        const getBaseUrl = () => {
-            if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
-            if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-            return 'http://localhost:3000';
-        };
+        const getBaseUrl = () => 'https://gespro.bc-security.com';
 
-        const redirectTo = `${getBaseUrl()}/dashboard`;
+        const redirectTo = `${getBaseUrl()}/login`;
 
         // 0. Check if user exists in Profiles
         const { data: userProfile, error: profileError } = await supabase
