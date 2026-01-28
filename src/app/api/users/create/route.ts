@@ -173,7 +173,7 @@ export async function POST(request: Request) {
                 const { data: settings } = await supabaseAdmin.from('app_settings').select('app_name, header_color').single();
                 const appName = settings?.app_name || 'GestorPro';
 
-                const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://task-eosin-nu.vercel.app';
+                const appUrl = 'https://task-eosin-nu.vercel.app';
                 const entityListStr = entityNames.join(', ');
 
                 let subject = `Bienvenido a ${appName} - Tus credenciales de acceso`;
