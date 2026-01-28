@@ -78,5 +78,6 @@ export function TaskHeader({ onSearch, onNewTask, onStatusFilter, totalTasks, cu
                     </button>
                 </div>
             </div>
-            );
+        </div>
+    );
 }
