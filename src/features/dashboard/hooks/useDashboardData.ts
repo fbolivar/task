@@ -31,7 +31,7 @@ export interface ChartData {
 }
 
 interface Project { id: string; budget: number; actual_cost: number; risk_level: string; name: string; priority: string; status: string; entity_id: string; }
-interface Task { id: string; status: string; end_date: string; project_id: string; assigned_to: string; }
+interface Task { id: string; status: string; end_date: string; project_id: string; assigned_to: string; title: string; priority: string; }
 interface Asset { id: string; purchase_value: number; warranty_expiration: string; purchase_date: string; useful_life_years: number; entity_id: string; }
 interface ActivityLog { id: string; description: string; created_at: string; profiles: { full_name: string }; entity_id: string; }
 
@@ -56,6 +56,7 @@ export const useDashboardData = () => {
         weeklyVelocity: []
     });
 
+    const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const supabase = createClient();
 
@@ -183,6 +184,14 @@ export const useDashboardData = () => {
                     weeklyVelocity: efficiencyTrends // Reuse for now
                 });
 
+                // 5. Upcoming Tasks
+                const upcoming = tasks
+                    .filter(t => t.status !== 'Completado' && t.status !== 'Archivado' && t.end_date)
+                    .sort((a, b) => new Date(a.end_date).getTime() - new Date(b.end_date).getTime())
+                    .slice(0, 5);
+                setUpcomingTasks(upcoming);
+
+
             } catch (error) {
                 console.error('Error fetching dashboard data:', error);
             } finally {
@@ -193,5 +202,14 @@ export const useDashboardData = () => {
         fetchDashboardData();
     }, [activeEntityId, profile]);
 
-    return { stats, chartsData, loading };
+    // Calculate upcoming tasks from the already fetched (and potentially stored) tasks?
+    // Since tasks are scoped inside useEffect, we need to store them in state if we want to return them.
+    // However, currently we only store 'stats'. We should probably add 'upcomingTasks' to the state or return it separately.
+    // To minimize refactoring, I'll add a new state for upcomingTasks.
+
+    // WAIT: I cannot access 'tasks' here because it's inside useEffect. 
+    // I need to change how state is managed or add 'upcomingTasks' to the state definition.
+    // Let's modify the return type and add a state.
+
+    return { stats, chartsData, loading, upcomingTasks };
 };

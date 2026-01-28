@@ -10,7 +10,7 @@ import { Zap, ShieldAlert, Target, ArrowDownRight, Package } from 'lucide-react'
 
 export default function DashboardPage() {
   const { profile, activeEntityId, setActiveEntityId } = useAuthStore();
-  const { stats, chartsData, loading } = useDashboardData();
+  const { stats, chartsData, loading, upcomingTasks } = useDashboardData();
   const [availableEntities, setAvailableEntities] = useState<{ id: string, name: string }[]>([]);
   const supabase = createClient();
 
@@ -89,7 +89,7 @@ export default function DashboardPage() {
 
       {/* --- Dynamic Dashboard Content --- */}
       {isOperativo ? (
-        <OperativoDashboard stats={stats} chartsData={chartsData} />
+        <OperativoDashboard stats={stats} chartsData={chartsData} upcomingTasks={upcomingTasks} />
       ) : (
         <AdminDashboard stats={stats} chartsData={chartsData} />
       )}

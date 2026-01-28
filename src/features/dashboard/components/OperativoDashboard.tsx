@@ -5,9 +5,10 @@ import { DashboardStats, ChartData } from '../hooks/useDashboardData';
 interface OperativoDashboardProps {
     stats: DashboardStats;
     chartsData: ChartData;
+    upcomingTasks?: any[];
 }
 
-export const OperativoDashboard = ({ stats, chartsData }: OperativoDashboardProps) => {
+export const OperativoDashboard = ({ stats, chartsData, upcomingTasks }: OperativoDashboardProps) => {
     const COLORS = ['#ef4444', '#f59e0b', '#10b981']; // Pendiente (Red), Progreso (Amber), Compl (Emerald)
 
     return (
@@ -66,23 +67,38 @@ export const OperativoDashboard = ({ stats, chartsData }: OperativoDashboardProp
                 <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl p-6 shadow-sm">
                     <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-6">Próximos Vencimientos</h3>
                     <div className="space-y-4">
-                        {/* This would ideally come from useDashboardData sorted by due date, for now using stats or placeholder list if not in chartsData */}
-                        {stats.overdueTasks > 0 && (
-                            <div className="p-4 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-xl flex items-center gap-4">
-                                <div className="p-2 bg-red-100 dark:bg-red-800/20 rounded-lg text-red-600">
-                                    <Calendar className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-bold text-red-700 dark:text-red-400">Tienes {stats.overdueTasks} tareas vencidas</p>
-                                    <p className="text-xs text-red-600/80">Revisa tu lista de pendientes urgente.</p>
-                                </div>
-                                <ArrowRight className="ml-auto w-4 h-4 text-red-500" />
+                        {upcomingTasks && upcomingTasks.length > 0 ? (
+                            upcomingTasks.map((task: any) => {
+                                const isOverdue = new Date(task.end_date) < new Date(new Date().setHours(0, 0, 0, 0));
+                                const isToday = new Date(task.end_date).toDateString() === new Date().toDateString();
+
+                                return (
+                                    <div key={task.id} className="p-3 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-white/5 transition-all flex items-start gap-3 group">
+                                        <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${task.priority === 'Alta' ? 'bg-red-500' :
+                                            task.priority === 'Media' ? 'bg-yellow-500' : 'bg-emerald-500'
+                                            }`} />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">{task.title}</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <Calendar className="w-3 h-3 text-muted-foreground" />
+                                                <span className={`text-xs font-medium ${isOverdue ? 'text-red-500' :
+                                                    isToday ? 'text-orange-500' : 'text-muted-foreground'
+                                                    }`}>
+                                                    {isToday ? 'Hoy' : new Date(task.end_date).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/20 rounded-xl border border-slate-100 dark:border-white/5 border-dashed">
+                                <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2 opacity-50" />
+                                <p className="text-sm font-semibold text-muted-foreground">¡Todo al día!</p>
+                                <p className="text-xs text-muted-foreground/60">No tienes tareas próximas a vencer.</p>
                             </div>
                         )}
-
-                        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-center text-sm text-muted-foreground">
-                            Revisa el módulo de "Mis Tareas" para más detalles.
-                        </div>
                     </div>
                 </div>
 
