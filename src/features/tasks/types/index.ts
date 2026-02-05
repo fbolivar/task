@@ -2,6 +2,33 @@ export type TaskStatus = 'Pendiente' | 'En Progreso' | 'Revisión' | 'Completado
 export type TaskSubStatus = 'En Tiempo' | 'En Riesgo' | 'Demorado' | 'Bloqueado';
 export type TaskPriority = 'Baja' | 'Media' | 'Alta';
 
+export interface TaskComment {
+    id: string;
+    task_id: string;
+    user_id: string;
+    content: string;
+    created_at: string;
+    type: 'comment' | 'system';
+    user?: {
+        full_name: string;
+        avatar_url?: string;
+    };
+}
+
+export interface TaskFollowup {
+    id: string;
+    task_id: string;
+    user_id: string;
+    report_date: string;
+    content_progress: string;
+    content_issues?: string;
+    created_at: string;
+    user?: {
+        full_name: string;
+        avatar_url?: string;
+    };
+}
+
 export interface Assignee {
     id: string;
     full_name: string;

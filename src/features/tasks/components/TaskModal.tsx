@@ -17,6 +17,7 @@ import {
 import { Task, TaskFormData, TaskPriority, TaskStatus, TaskSubStatus } from '../types';
 import { createClient } from '@/lib/supabase/client';
 import { useSettings } from '@/shared/contexts/SettingsContext';
+import { TrackingSection } from './TrackingSection';
 
 interface TaskModalProps {
     isOpen: boolean;
@@ -275,6 +276,13 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                             placeholder="Instrucciones o detalles de la tarea..."
                         />
                     </div>
+
+                    {/* Tracking Section - Only on Edit Mode */}
+                    {task && (
+                        <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+                            <TrackingSection taskId={task.id} />
+                        </div>
+                    )}
 
                     {/* Footer Actions */}
                     <div className="flex gap-4 pt-4 border-t border-slate-200 dark:border-slate-800 mt-4">
