@@ -17,6 +17,8 @@ export interface TeamEfficacyMember {
     efficacy: number;
     punctuality: number;
     efficiency: number;
+    estHours: number;
+    actHours: number;
     load: number;
     overdue_critical: number;
     historical_avg_delay: number;

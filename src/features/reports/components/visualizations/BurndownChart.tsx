@@ -1,7 +1,7 @@
 'use client';
 
 import {
-    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area
+    ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import { BurndownPoint } from '../../types';
 
@@ -12,7 +12,7 @@ interface Props {
 
 import { useState, useEffect } from 'react';
 
-export function BurndownChart({ data, title = "Burndown de Proyecto" }: Props) {
+export function BurndownChart({ data, title = "Progreso de Ejecución (Burndown)" }: Props) {
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -35,23 +35,23 @@ export function BurndownChart({ data, title = "Burndown de Proyecto" }: Props) {
             <div className="w-full h-[300px] relative">
                 <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
                     <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                        <ComposedChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                             <defs>
-                                <linearGradient id="colorRemaining" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1} />
-                                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                <linearGradient id="colorActual" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
+                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.5} />
                             <XAxis
                                 dataKey="day"
-                                tick={{ fontSize: 10, fontWeight: 800 }}
+                                tick={{ fontSize: 10, fontWeight: 700 }}
                                 stroke="#94a3b8"
                                 tickLine={false}
                                 axisLine={false}
                             />
                             <YAxis
-                                tick={{ fontSize: 10, fontWeight: 800 }}
+                                tick={{ fontSize: 10, fontWeight: 700 }}
                                 stroke="#94a3b8"
                                 tickLine={false}
                                 axisLine={false}
@@ -64,39 +64,31 @@ export function BurndownChart({ data, title = "Burndown de Proyecto" }: Props) {
                                     backgroundColor: 'rgba(255, 255, 255, 0.95)'
                                 }}
                                 itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
-                                formatter={(value: any) => [Number.isNaN(Number(value)) ? '0' : value, undefined]}
                             />
                             <Legend wrapperStyle={{ paddingTop: '10px' }} />
 
+                            {/* Guideline: Ideal Burndown */}
                             <Line
                                 type="monotone"
                                 dataKey="ideal"
+                                name="Ritmo Ideal"
                                 stroke="#94a3b8"
                                 strokeDasharray="5 5"
                                 strokeWidth={2}
-                                name="Progreso Ideal"
                                 dot={false}
                             />
 
-                            <Line
+                            {/* Actual Progress */}
+                            <Area
                                 type="monotone"
                                 dataKey="actual"
-                                stroke="#f43f5e"
-                                strokeWidth={3}
-                                name="Progreso Real"
-                                dot={{ r: 4, strokeWidth: 2 }}
-                                activeDot={{ r: 6, strokeWidth: 0 }}
-                            />
-
-                            <Line
-                                type="monotone"
-                                dataKey="remaining"
-                                stroke="#3b82f6"
-                                strokeWidth={2}
                                 name="Trabajo Restante"
-                                dot={false}
+                                stroke="#10b981"
+                                strokeWidth={3}
+                                fillOpacity={1}
+                                fill="url(#colorActual)"
                             />
-                        </LineChart>
+                        </ComposedChart>
                     </ResponsiveContainer>
                 </div>
             </div>

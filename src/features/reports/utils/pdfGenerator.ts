@@ -94,7 +94,7 @@ export const generateExecutivePDF = async (
         body: [
             ['Total de Tareas Gestionadas', stats.total_tasks.toString()],
             ['Tareas Completadas', stats.completed_tasks.toString()],
-            ['Avance Promedio del Portafolio', `${stats.avg_progress}%`],
+            // Removed 'Avance Promedio del Portafolio' as requested
             ['Tareas Pendientes / En Proceso', stats.pending_tasks.toString()]
         ],
         theme: 'grid',
@@ -155,11 +155,13 @@ export const generateExecutivePDF = async (
 
     autoTable(doc, {
         startY: y,
-        head: [['COLABORADOR', 'EFICACIA', 'PUNTUAL.', 'EFICIENCIA', 'CARGA']],
+        head: [['COLABORADOR', 'EFICACIA', 'PUNTUAL.', 'H. EST.', 'H. REAL', 'EFICIENCIA', 'CARGA']],
         body: stats.team_efficacy.map(m => [
             m.full_name,
             `${m.efficacy}%`,
             `${m.punctuality}%`,
+            m.estHours.toString(),
+            m.actHours.toString(),
             `${m.efficiency}%`,
             m.load.toString()
         ]),
@@ -169,7 +171,9 @@ export const generateExecutivePDF = async (
             1: { halign: 'center' },
             2: { halign: 'center' },
             3: { halign: 'center' },
-            4: { halign: 'center' }
+            4: { halign: 'center' },
+            5: { halign: 'center' },
+            6: { halign: 'center' }
         }
     });
 
@@ -186,15 +190,20 @@ export const generateExecutivePDF = async (
 
         autoTable(doc, {
             startY: y,
-            head: [['PROYECTO', 'ESTADO', 'RIESGO', 'PRESUPUESTO']],
+            head: [['PROYECTO', 'ESTADO', 'AVANCE', 'RIESGO', 'PRESUPUESTO']],
             body: stats.projects_list.map(p => [
                 p.name,
                 p.status,
+                `${p.progress}%`,
                 p.risk_level,
                 `$ ${p.budget.toLocaleString()}`
             ]),
             headStyles: { fillColor: primaryColor },
-            styles: { fontSize: 8 }
+            styles: { fontSize: 8 },
+            columnStyles: {
+                2: { halign: 'center' },
+                4: { halign: 'right' }
+            }
         });
         y = (doc as any).lastAutoTable.finalY + 10;
     }

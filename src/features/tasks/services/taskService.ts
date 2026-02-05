@@ -44,10 +44,30 @@ export const taskService = {
     async getTasks(activeEntityId: string | 'all'): Promise<Task[]> {
         const supabase = createClient();
 
+        // 1. Get Current User & Role
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role:roles(name)')
+            .eq('id', user.id)
+            .single();
+
+        // Safe extraction of role name
+        const roleData = profile?.role as any;
+        const roleName = Array.isArray(roleData) ? roleData[0]?.name : roleData?.name;
+
+        // 2. Build Query
         let query = supabase
             .from('tasks')
             .select('*, project:projects(id, name, entity_id), assignee:profiles!tasks_assigned_to_fkey(id, full_name)')
             .order('end_date', { ascending: true });
+
+        // 3. Apply RBAC: If not Admin/Gerente, only show assigned tasks
+        if (roleName !== 'Admin' && roleName !== 'Gerente') {
+            query = query.eq('assigned_to', user.id);
+        }
 
         const { data, error } = await query;
         if (error) {
