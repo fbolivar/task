@@ -261,6 +261,38 @@ export const generateExecutivePDF = async (
         });
     }
 
+    // 7. Bitácora de Seguimiento
+    if (stats.followups && stats.followups.length > 0) {
+        doc.addPage();
+        y = 20;
+        doc.setTextColor(47, 133, 90);
+        doc.setFontSize(14);
+        doc.text('7. BITÁCORA DE SEGUIMIENTO', 15, y);
+        doc.line(15, y + 2, 195, y + 2);
+        y += 10;
+
+        autoTable(doc, {
+            startY: y,
+            head: [['FECHA', 'TAREA', 'RESPONSABLE', 'AVANCE', 'OBSERVACIONES']],
+            body: stats.followups.map(f => [
+                new Date(f.report_date).toLocaleDateString(),
+                f.task_title,
+                f.user_name,
+                f.progress,
+                f.issues || '-'
+            ]),
+            headStyles: { fillColor: secondaryColor },
+            styles: { fontSize: 8, cellPadding: 3 },
+            columnStyles: {
+                0: { cellWidth: 25 },
+                1: { cellWidth: 40 },
+                2: { cellWidth: 30 },
+                3: { cellWidth: 'auto' },
+                4: { cellWidth: 40 }
+            }
+        });
+    }
+
     // Footer
     const pageCount = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {

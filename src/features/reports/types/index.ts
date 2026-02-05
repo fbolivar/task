@@ -67,6 +67,17 @@ export interface ReportStats {
     resource_metrics?: ResourceMetric[];
     financial_metrics?: FinancialMetric[];
     trend_data?: { month: string; amount: number }[];
+    followups?: TaskFollowupReport[];
+}
+
+export interface TaskFollowupReport {
+    id: string;
+    task_title: string;
+    user_name: string;
+    report_date: string;
+    progress: string;
+    issues?: string;
+    created_at: string;
 }
 
 export interface ProjectData {

@@ -1,6 +1,7 @@
 import { ArrowRight, CheckCircle2, Clock, Calendar, ListTodo } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { DashboardStats, ChartData } from '../hooks/useDashboardData';
+import { FollowupLookupWidget } from './FollowupLookupWidget';
 
 interface OperativoDashboardProps {
     stats: DashboardStats;
@@ -100,6 +101,11 @@ export const OperativoDashboard = ({ stats, chartsData, upcomingTasks }: Operati
                             </div>
                         )}
                     </div>
+                </div>
+
+                {/* --- NEW: Followup Explorer --- */}
+                <div className="md:col-span-1 lg:col-span-2">
+                    <FollowupLookupWidget />
                 </div>
 
             </div>

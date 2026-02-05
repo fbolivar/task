@@ -51,8 +51,10 @@ export function TrackingSection({ taskId }: TrackingSectionProps) {
             // Reset form (keep date)
             setProgress('');
             setIssues('');
+            setIssues('');
         } catch (error) {
             console.error('Error adding followup:', error);
+            alert(`Error al guardar: ${(error as any).message || 'Error desconocido'}`);
         } finally {
             setSending(false);
         }

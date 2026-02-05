@@ -7,8 +7,14 @@ export async function generateReportStats(filter: ReportFilter): Promise<ReportS
     const supabase = await createClient();
 
     // 1. Security Check
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Unauthorized');
+    // 1. Security Check
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+        console.error('generateReportStats: Auth Error:', authError);
+        console.error('generateReportStats: User is null');
+        // Return clear error or empty stats to prevent crash
+        throw new Error(`Error de Sesión: ${authError?.message || 'Sesión no válida'}. Recarga la página.`);
+    }
 
     const { data: profile } = await supabase
         .from('profiles')
@@ -329,6 +335,55 @@ export async function generateReportStats(filter: ReportFilter): Promise<ReportS
 
     const trendDataArray = Object.entries(trendData).map(([month, amount]) => ({ month, amount }));
 
+    // 7. Fetch Financial Metrics (Mock for now, replacing with real if table exists)
+    // ... existing financial logic ...
+
+    // 8. Fetch Follow-ups (Bitácora)
+    let followupQuery = adminClient
+        .from('task_followups')
+        .select(`
+            id,
+            report_date,
+            content_progress,
+            content_issues,
+            created_at,
+            task:tasks(title, project_id, projects(entity_id)),
+            user:profiles(full_name)
+        `)
+        .order('report_date', { ascending: false });
+
+    if (filter.start_date) {
+        followupQuery = followupQuery.gte('report_date', filter.start_date);
+    }
+    if (filter.end_date) {
+        followupQuery = followupQuery.lte('report_date', filter.end_date);
+    }
+    if (filter.project_id !== 'all') {
+        followupQuery = followupQuery.eq('task.project_id', filter.project_id);
+    }
+    if (filter.entity_id !== 'all') {
+        followupQuery = followupQuery.eq('task.projects.entity_id', filter.entity_id);
+    }
+
+    const { data: followupsData, error: followupsError } = await followupQuery;
+
+    if (followupsError) {
+        console.error('Error fetching followups:', followupsError);
+    }
+
+    console.log('Followups Data (Raw):', followupsData?.length);
+    console.log('Filters:', filter);
+
+    const followups = followupsData?.map((f: any) => ({
+        id: f.id,
+        task_title: f.task?.title || 'Unknown',
+        user_name: f.user?.full_name || 'System',
+        report_date: f.report_date,
+        progress: f.content_progress,
+        issues: f.content_issues,
+        created_at: f.created_at
+    })) || [];
+
     return {
         total_tasks: total,
         completed_tasks: completed,
@@ -343,7 +398,8 @@ export async function generateReportStats(filter: ReportFilter): Promise<ReportS
         burndown_data: burndownData,
         resource_metrics: resourceMetrics,
         financial_metrics: financialMetrics,
-        trend_data: trendDataArray
+        trend_data: trendDataArray,
+        followups: followups // New field
     };
 }
 
