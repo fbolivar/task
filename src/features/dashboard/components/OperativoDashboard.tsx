@@ -12,6 +12,31 @@ interface OperativoDashboardProps {
 export const OperativoDashboard = ({ stats, chartsData, upcomingTasks }: OperativoDashboardProps) => {
     const COLORS = ['#ef4444', '#f59e0b', '#10b981']; // Pendiente (Red), Progreso (Amber), Compl (Emerald)
 
+    // Helper to safely parse dates that works across browsers (including mobile Safari/Chrome)
+    const safeDate = (dateStr: string | null | undefined): Date | null => {
+        if (!dateStr) return null;
+        // Try standard constructor
+        const d = new Date(dateStr);
+        if (!isNaN(d.getTime())) return d;
+
+        // Fallback for Safari/Mobile sometimes if format is weird, handled here if needed
+        // For now, if invalid, return null to avoid crash
+        return null;
+    };
+
+    const isToday = (date: Date) => {
+        const today = new Date();
+        return date.getDate() === today.getDate() &&
+            date.getMonth() === today.getMonth() &&
+            date.getFullYear() === today.getFullYear();
+    };
+
+    const isOverdue = (date: Date) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return date < today;
+    };
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
 
@@ -45,22 +70,26 @@ export const OperativoDashboard = ({ stats, chartsData, upcomingTasks }: Operati
                 <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl p-6 shadow-sm">
                     <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-6">Estado de mis Tareas</h3>
                     <div className="h-[300px] w-full flex items-center justify-center">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={chartsData.taskStatusDistribution}
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {chartsData.taskStatusDistribution.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                            </PieChart>
-                        </ResponsiveContainer>
+                        {chartsData?.taskStatusDistribution?.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={chartsData.taskStatusDistribution}
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                    >
+                                        {chartsData.taskStatusDistribution.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="text-sm text-muted-foreground">Sin datos para mostrar</div>
+                        )}
                     </div>
                 </div>
 
@@ -70,8 +99,12 @@ export const OperativoDashboard = ({ stats, chartsData, upcomingTasks }: Operati
                     <div className="space-y-4">
                         {upcomingTasks && upcomingTasks.length > 0 ? (
                             upcomingTasks.map((task: any) => {
-                                const isOverdue = new Date(task.end_date) < new Date(new Date().setHours(0, 0, 0, 0));
-                                const isToday = new Date(task.end_date).toDateString() === new Date().toDateString();
+                                const d = safeDate(task.end_date);
+                                // If invalid date, treat as far future or handling gracefully
+                                if (!d) return null;
+
+                                const overdue = isOverdue(d);
+                                const today = isToday(d);
 
                                 return (
                                     <div key={task.id} className="p-3 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-white/5 transition-all flex items-start gap-3 group">
@@ -82,10 +115,10 @@ export const OperativoDashboard = ({ stats, chartsData, upcomingTasks }: Operati
                                             <p className="text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">{task.title}</p>
                                             <div className="flex items-center gap-2 mt-1">
                                                 <Calendar className="w-3 h-3 text-muted-foreground" />
-                                                <span className={`text-xs font-medium ${isOverdue ? 'text-red-500' :
-                                                    isToday ? 'text-orange-500' : 'text-muted-foreground'
+                                                <span className={`text-xs font-medium ${overdue ? 'text-red-500' :
+                                                    today ? 'text-orange-500' : 'text-muted-foreground'
                                                     }`}>
-                                                    {isToday ? 'Hoy' : new Date(task.end_date).toLocaleDateString()}
+                                                    {today ? 'Hoy' : d.toLocaleDateString()}
                                                 </span>
                                             </div>
                                         </div>

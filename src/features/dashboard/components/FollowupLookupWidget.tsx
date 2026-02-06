@@ -93,7 +93,7 @@ export function FollowupLookupWidget() {
                         <option value="">-- Selecciona una Tarea --</option>
                         {tasks.map(task => (
                             <option key={task.id} value={task.id}>
-                                {task.title} {task.project_title ? `(${task.project_title})` : ''}
+                                {task.title} {task?.project_title ? `(${task.project_title})` : ''}
                             </option>
                         ))}
                     </select>
