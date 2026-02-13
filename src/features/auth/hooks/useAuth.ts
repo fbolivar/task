@@ -63,7 +63,7 @@ export function useAuth() {
         };
     }, [initialized, setUser, setProfile, setLoading, setInitialized]);
 
-    const signIn = async (credentials: LoginCredentials) => {
+    const signIn = async (credentials: LoginCredentials, options?: { preventRedirect?: boolean }) => {
         try {
             setLoading(true);
             await authService.signIn(credentials);
@@ -71,20 +71,26 @@ export function useAuth() {
             // Force load profile before redirect
             const supabase = createClient();
             const { data: { session } } = await supabase.auth.getSession();
+            let userProfile = null;
+
             if (session?.user) {
                 setUser(session.user);
-                const userProfile = await authService.getProfile(session.user.id);
+                userProfile = await authService.getProfile(session.user.id);
                 setProfile(userProfile);
 
-                // Role-based redirect
-                if (userProfile?.role?.name === 'Gerente') {
-                    router.push('/analisis');
-                } else {
-                    router.push('/dashboard');
+                if (!options?.preventRedirect) {
+                    // Role-based redirect
+                    if (userProfile?.role?.name === 'Gerente') {
+                        router.push('/analisis');
+                    } else {
+                        router.push('/dashboard');
+                    }
                 }
-            } else {
+            } else if (!options?.preventRedirect) {
                 router.push('/dashboard');
             }
+
+            return { user: session?.user, profile: userProfile };
         } catch (error) {
             throw error;
         } finally {
@@ -138,5 +144,11 @@ export function useAuth() {
         signUp,
         signOut,
         updatePassword,
+        // MFA Methods
+        enrollMFA: authService.enrollMFA,
+        verifyMFA: authService.verifyMFA,
+        listFactors: authService.listFactors,
+        unenrollMFA: authService.unenrollMFA,
+        getAssuranceLevel: authService.getAssuranceLevel,
     };
 }

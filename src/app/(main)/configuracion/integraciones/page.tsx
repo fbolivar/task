@@ -18,17 +18,26 @@ export default function IntegrationsPage() {
         try {
             setLoading(true);
             const data = await integrationService.getIntegrations();
-            // Mock Google Drive for Phase 7
-            const driveIntegration: Integration = {
-                id: 'drive-001',
-                name: 'Google Drive',
-                provider: 'google_drive',
-                is_active: false,
-                config: {},
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            };
-            setIntegrations([...data, driveIntegration]);
+            // Check if Google Drive integration already exists
+            const hasDrive = data?.some(i => i.provider === 'google_drive');
+
+            let allIntegrations = [...(data || [])];
+
+            if (!hasDrive) {
+                // Mock Google Drive for Phase 7 (First setup)
+                const driveIntegration: Integration = {
+                    id: 'drive-001',
+                    name: 'Google Drive',
+                    provider: 'google_drive',
+                    is_active: false,
+                    config: {},
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+                allIntegrations.push(driveIntegration);
+            }
+
+            setIntegrations(allIntegrations);
         } catch (error) {
             console.error('Error fetching integrations:', error);
         } finally {

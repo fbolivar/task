@@ -49,30 +49,6 @@ export function DriveModal({ isOpen, onClose, integration, onSuccess }: Props) {
                 project_id: parsedKey.project_id
             };
 
-            // If we are creating a new integration logic (e.g. if it didn't exist in DB)
-            // But here we rely on the ID being real. 
-            // NOTE: In the page.tsx, we mocked the ID 'drive-001'. We need to ENSURE it exists in DB first.
-            // Since we mocked it in fetchIntegrations, it might NOT exist in DB yet.
-            // We should use integrationService to properly UPSERT it.
-
-            // However, integrationService relies on an existing ID usually.
-            // Let's assume for now we use the id if it exists, or create a new row if it matches the 'provider'.
-
-            // Actually, we must check if the mocked integration has a real DB counterpart.
-            // The Page.tsx mocked it. So `integration.id` might be 'drive-001' which is fake.
-
-            // Let's try to update using provider = 'google_drive' if ID is fake.
-            let realId = integration.id;
-
-            if (realId === 'drive-001') {
-                // It's a mock ID from the frontend. We need to FIND or CREATE the real integration row.
-                // We'll handle this in the service call if possible, or just hack it here by 
-                // calling a dedicated 'configureDrive' method.
-
-                // Since I cannot change the service right now easily without context of "create", 
-                // I will create a new method in integrationService "configureGoogleDrive(config)"
-            }
-
             await integrationService.configureGoogleDrive(config);
 
             onSuccess();

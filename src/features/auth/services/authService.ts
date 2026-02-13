@@ -154,4 +154,57 @@ export const authService = {
         if (error) throw error;
         return data;
     },
+
+    // --- MFA / 2FA Methods ---
+
+    async enrollMFA() {
+        const supabase = createClient();
+        const { data, error } = await supabase.auth.mfa.enroll({
+            factorType: 'totp',
+        });
+        if (error) throw error;
+        return data;
+    },
+
+    async verifyMFA(factorId: string, code: string, challengeId?: string) {
+        const supabase = createClient();
+        if (challengeId) {
+            const { data, error } = await supabase.auth.mfa.verify({
+                factorId,
+                challengeId,
+                code,
+            });
+            if (error) throw error;
+            return data;
+        } else {
+            // For enrollment verification
+            const { data, error } = await supabase.auth.mfa.challengeAndVerify({
+                factorId,
+                code,
+            });
+            if (error) throw error;
+            return data;
+        }
+    },
+
+    async listFactors() {
+        const supabase = createClient();
+        const { data, error } = await supabase.auth.mfa.listFactors();
+        if (error) throw error;
+        return data;
+    },
+
+    async unenrollMFA(factorId: string) {
+        const supabase = createClient();
+        const { data, error } = await supabase.auth.mfa.unenroll({ factorId });
+        if (error) throw error;
+        return data;
+    },
+
+    async getAssuranceLevel() {
+        const supabase = createClient();
+        const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (error) throw error;
+        return data;
+    }
 };

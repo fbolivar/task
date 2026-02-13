@@ -66,8 +66,8 @@ export function AppLayout({ children }: AppLayoutProps) {
 
     const roleRouteAccess: Record<string, string[]> = {
         'Admin': [], // Empty means all access
-        'Gerente': ['/analisis', '/finanzas', '/reportes', '/configuracion/politicas', '/configuracion/auditoria', '/contratacion', '/cambios'],
-        'Operativo': ['/dashboard', '/proyectos', '/tareas', '/inventario', '/contratacion', '/cambios'],
+        'Gerente': ['/analisis', '/finanzas', '/reportes', '/configuracion/politicas', '/configuracion/auditoria', '/contratacion', '/cambios', '/perfil'],
+        'Operativo': ['/dashboard', '/proyectos', '/tareas', '/inventario', '/contratacion', '/cambios', '/perfil'],
     };
 
     // Check if current route is allowed for this role
