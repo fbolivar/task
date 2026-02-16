@@ -136,8 +136,8 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                         // Define access per role
                         const roleAccess: Record<string, string[]> = {
                             'Admin': [], // Empty means all access
-                            'Gerente': ['/analisis', '/contratacion', '/reportes', '/cambios'],
-                            'Operativo': ['/dashboard', '/contratacion', '/proyectos', '/tareas', '/inventario', '/cambios'],
+                            'Gerente': ['/analisis', '/finanzas', '/reportes', '/configuracion/politicas', '/configuracion/auditoria', '/contratacion', '/cambios', '/perfil'],
+                            'Operativo': ['/dashboard', '/proyectos', '/tareas', '/inventario', '/contratacion', '/reportes', '/cambios', '/perfil'],
                         };
 
                         return navItems

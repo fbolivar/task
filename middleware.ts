@@ -101,8 +101,8 @@ export async function middleware(request: NextRequest) {
             const path = request.nextUrl.pathname;
 
             const roleRouteAccess: Record<string, string[]> = {
-                'Gerente': ['/dashboard', '/finanzas', '/reportes', '/configuracion/politicas', '/configuracion/auditoria', '/cambios'],
-                'Operativo': ['/dashboard', '/proyectos', '/tareas', '/inventario', '/contratacion', '/reportes', '/cambios'],
+                'Gerente': ['/dashboard', '/analisis', '/finanzas', '/reportes', '/configuracion/politicas', '/configuracion/auditoria', '/contratacion', '/cambios', '/perfil'],
+                'Operativo': ['/dashboard', '/proyectos', '/tareas', '/inventario', '/contratacion', '/reportes', '/cambios', '/perfil'],
             };
 
             // Check if route is restricted for this role
