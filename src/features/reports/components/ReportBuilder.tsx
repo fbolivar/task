@@ -110,8 +110,8 @@ export function ReportBuilder({
         <div className="space-y-8 animate-in fade-in duration-500">
 
             {/* 1. Header & Type Selector */}
-            <div className="glass-card p-2 flex flex-wrap items-center justify-between gap-4 sticky top-4 z-30 backdrop-blur-md">
-                <div className="flex gap-2 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl w-full sm:w-auto overflow-x-auto">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8">
+                <div className="flex gap-2 bg-slate-100 dark:bg-slate-900/50 p-1.5 rounded-xl w-full sm:w-auto overflow-x-auto border border-slate-200 dark:border-slate-800">
                     {reportTypes.map((type) => {
                         const Icon = type.icon;
                         const isActive = activeType === type.id;
@@ -119,9 +119,9 @@ export function ReportBuilder({
                             <button
                                 key={type.id}
                                 onClick={() => onTypeChange(type.id as ReportType)}
-                                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${isActive
-                                    ? 'bg-white dark:bg-slate-800 text-foreground shadow-sm scale-105'
-                                    : 'text-muted-foreground hover:text-foreground'
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${isActive
+                                    ? 'bg-white dark:bg-slate-800 text-foreground shadow-md scale-105'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-slate-800/50'
                                     }`}
                             >
                                 <Icon className={`w-4 h-4 ${isActive ? type.color : ''}`} />
@@ -157,7 +157,8 @@ export function ReportBuilder({
                     <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Proyecto</label>
                         <select
-                            className="w-full input-field"
+                            className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-bold text-sm appearance-none cursor-pointer"
+                            style={{ backgroundColor: '#020617', color: '#f8fafc' }}
                             value={filters.projectId}
                             onChange={(e) => setFilters(prev => ({ ...prev, projectId: e.target.value }))}
                         >
@@ -171,7 +172,8 @@ export function ReportBuilder({
                         <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Desde</label>
                         <input
                             type="date"
-                            className="w-full input-field"
+                            className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-bold text-sm"
+                            style={{ backgroundColor: '#020617', color: '#f8fafc' }}
                             value={filters.start}
                             onChange={(e) => setFilters(prev => ({ ...prev, start: e.target.value }))}
                         />
@@ -180,7 +182,8 @@ export function ReportBuilder({
                         <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Hasta</label>
                         <input
                             type="date"
-                            className="w-full input-field"
+                            className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-bold text-sm"
+                            style={{ backgroundColor: '#020617', color: '#f8fafc' }}
                             value={filters.end}
                             onChange={(e) => setFilters(prev => ({ ...prev, end: e.target.value }))}
                         />
@@ -252,7 +255,8 @@ export function ReportBuilder({
                         <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Asignado a</label>
                             <select
-                                className="w-full input-field"
+                                className="w-full h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-bold text-sm appearance-none cursor-pointer"
+                                style={{ backgroundColor: '#020617', color: '#f8fafc' }}
                                 value={filters.assignee_id || 'all'}
                                 onChange={(e) => setFilters(prev => ({ ...prev, assignee_id: e.target.value }))}
                             >
@@ -326,10 +330,10 @@ export function ReportBuilder({
 
 function KpiCard({ title, value, color }: { title: string, value: string | number, color: string }) {
     const colors: Record<string, string> = {
-        blue: 'bg-blue-500/10 text-blue-600',
-        emerald: 'bg-emerald-500/10 text-emerald-600',
-        amber: 'bg-amber-500/10 text-amber-600',
-        purple: 'bg-purple-500/10 text-purple-600',
+        blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+        emerald: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+        amber: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+        purple: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
     };
 
     return (

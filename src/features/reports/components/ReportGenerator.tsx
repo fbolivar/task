@@ -46,6 +46,7 @@ export function ReportGenerator({ projects, onGenerate, stats, loading }: Report
                                         <select
                                             id="report-project"
                                             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-bold appearance-none"
+                                            style={{ backgroundColor: '#020617', color: '#f8fafc' }}
                                         >
                                             <option value="all">{t('reports.allActiveProjects')}</option>
                                             {projects.map(p => (
@@ -62,6 +63,7 @@ export function ReportGenerator({ projects, onGenerate, stats, loading }: Report
                                             type="date"
                                             id="report-start"
                                             className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-bold"
+                                            style={{ backgroundColor: '#020617', color: '#f8fafc' }}
                                         />
                                     </div>
                                     <div className="space-y-1.5">
@@ -70,6 +72,7 @@ export function ReportGenerator({ projects, onGenerate, stats, loading }: Report
                                             type="date"
                                             id="report-end"
                                             className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-bold"
+                                            style={{ backgroundColor: '#020617', color: '#f8fafc' }}
                                         />
                                     </div>
                                 </div>
@@ -111,16 +114,16 @@ export function ReportGenerator({ projects, onGenerate, stats, loading }: Report
                                             <p className="text-2xl font-black text-foreground">{stats.total_tasks}</p>
                                         </div>
                                         <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
-                                            <p className="text-[10px] font-black uppercase tracking-wider text-emerald-600/70 mb-1">{t('reports.completed')}</p>
-                                            <p className="text-2xl font-black text-emerald-600">{stats.completed_tasks}</p>
+                                            <p className="text-[10px] font-black uppercase tracking-wider text-emerald-600/70 dark:text-emerald-400/70 mb-1">{t('reports.completed')}</p>
+                                            <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{stats.completed_tasks}</p>
                                         </div>
                                         <div className="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10">
-                                            <p className="text-[10px] font-black uppercase tracking-wider text-blue-600/70 mb-1">{t('reports.avgProgress')}</p>
-                                            <p className="text-2xl font-black text-blue-600">{stats.avg_progress}%</p>
+                                            <p className="text-[10px] font-black uppercase tracking-wider text-blue-600/70 dark:text-blue-400/70 mb-1">{t('reports.avgProgress')}</p>
+                                            <p className="text-2xl font-black text-blue-600 dark:text-blue-400">{stats.avg_progress}%</p>
                                         </div>
                                         <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10">
-                                            <p className="text-[10px] font-black uppercase tracking-wider text-amber-600/70 mb-1">{t('reports.pending')}</p>
-                                            <p className="text-2xl font-black text-amber-600">{stats.pending_tasks}</p>
+                                            <p className="text-[10px] font-black uppercase tracking-wider text-amber-600/70 dark:text-amber-400/70 mb-1">{t('reports.pending')}</p>
+                                            <p className="text-2xl font-black text-amber-600 dark:text-amber-400">{stats.pending_tasks}</p>
                                         </div>
                                     </div>
 
@@ -144,7 +147,7 @@ export function ReportGenerator({ projects, onGenerate, stats, loading }: Report
                                                                 </span>
                                                             </div>
                                                         </div>
-                                                        <div className={`text-lg font-black ${member.efficacy > 80 ? 'text-emerald-500' : 'text-blue-500'}`}>
+                                                        <div className={`text-lg font-black ${member.efficacy > 80 ? 'text-emerald-500 dark:text-emerald-400' : 'text-blue-500 dark:text-blue-400'}`}>
                                                             {member.efficacy}%
                                                         </div>
                                                     </div>
