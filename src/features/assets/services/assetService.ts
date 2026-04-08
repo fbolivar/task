@@ -20,7 +20,6 @@ export const assetService = {
         if (error) {
             // Errores de permisos no deben romper la app
             if (error.code === 'PGRST301' || error.code === '42501') {
-                console.warn('Assets: Sin permisos de acceso');
                 return [];
             }
             throw error;

@@ -19,7 +19,6 @@ export const notificationService = {
                 .single();
 
             if (error || !template) {
-                console.warn(`Template ${templateCode} not found or inactive. Falling back to default notification.`);
                 return;
             }
 
@@ -52,8 +51,8 @@ export const notificationService = {
 
             return await response.json();
 
-        } catch (error) {
-            console.error(`Error sending notification with template ${templateCode}:`, error);
+        } catch {
+            // Silent fail - notifications are non-critical
         }
     }
 };

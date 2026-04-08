@@ -72,7 +72,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     // Role-based access control
     const roleRouteAccess: Record<string, string[]> = {
         'Admin': [],
-        'Gerente': ['/analisis', '/finanzas', '/reportes', '/configuracion/politicas', '/configuracion/auditoria', '/contratacion', '/perfil'],
+        'Gerente': ['/analisis', '/reportes', '/configuracion/politicas', '/configuracion/auditoria', '/contratacion', '/perfil'],
         'Operativo': ['/dashboard', '/proyectos', '/tareas', '/inventario', '/contratacion', '/reportes', '/perfil'],
     };
 

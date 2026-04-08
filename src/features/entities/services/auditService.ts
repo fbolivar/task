@@ -26,8 +26,7 @@ export const auditService = {
 
         const { data, error } = await query;
         if (error) {
-            console.warn('Audit Log View missing or error:', error.message);
-            return []; // Fail gracefully returning empty logs
+            return [];
         }
         return data || [];
     }

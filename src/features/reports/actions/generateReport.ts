@@ -371,9 +371,6 @@ export async function generateReportStats(filter: ReportFilter): Promise<ReportS
         console.error('Error fetching followups:', followupsError);
     }
 
-    console.log('Followups Data (Raw):', followupsData?.length);
-    console.log('Filters:', filter);
-
     const followups = followupsData?.map((f: any) => ({
         id: f.id,
         task_title: f.task?.title || 'Unknown',

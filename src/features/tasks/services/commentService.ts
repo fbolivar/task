@@ -15,19 +15,9 @@ export const commentService = {
             .order('created_at', { ascending: true }); // Oldest first to show conversation flow
 
         if (error) {
-            console.error('Error fetching comments detail:', {
-                message: error.message,
-                code: error.code,
-                details: error.details,
-                hint: error.hint
-            });
-
-            // Graceful fallback for missing table
             if (error.code === '42P01') {
-                console.warn('Table task_comments does not exist yet.');
                 return [];
             }
-
             throw error;
         }
 
@@ -54,10 +44,7 @@ export const commentService = {
             `)
             .single();
 
-        if (error) {
-            console.error('Error adding comment:', error);
-            throw error;
-        }
+        if (error) throw error;
 
         return data as TaskComment;
     }
