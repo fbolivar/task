@@ -44,7 +44,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${inter.variable} ${outfit.variable}`} style={{ scrollBehavior: 'smooth' }} data-scroll-behavior="smooth">
       <head>
-        <meta name="theme-color" content="#166A2F" />
+        <meta name="theme-color" content="#2D6A5A" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </head>
       <body className="antialiased font-sans bg-background text-foreground selection:bg-primary/20">

@@ -105,12 +105,12 @@ export function MFAEnrollment(props: Props) {
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
             {loading && (
                 <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 backdrop-blur-sm">
-                    <Loader2 className="w-6 h-6 animate-spin text-[#166A2F]" />
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
                 </div>
             )}
 
             <div className="flex items-start gap-4 mb-6">
-                <div className={`p-3 rounded-xl ${hasMFA ? 'bg-[#166A2F]/10 text-[#166A2F]' : 'bg-slate-100 text-slate-500'}`}>
+                <div className={`p-3 rounded-xl ${hasMFA ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-500'}`}>
                     <ShieldCheck className="w-6 h-6" />
                 </div>
                 <div>
@@ -132,8 +132,8 @@ export function MFAEnrollment(props: Props) {
                 <div className="flex flex-col gap-4 p-4 bg-emerald-50 border border-emerald-100 rounded-xl">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-[#166A2F] rounded-full animate-pulse" />
-                            <span className="font-semibold text-[#166A2F]">2FA Activo</span>
+                            <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                            <span className="font-semibold text-primary">2FA Activo</span>
                         </div>
                         <button
                             onClick={() => handleUnenroll(factors[0].id)}
@@ -145,7 +145,7 @@ export function MFAEnrollment(props: Props) {
                     {props.onSuccess && (
                         <button
                             onClick={props.onSuccess}
-                            className="w-full py-2 bg-[#166A2F] text-white rounded-lg text-sm font-bold hover:bg-[#125a27] transition-all"
+                            className="w-full py-2 bg-primary text-primary-foreground rounded-lg text-sm font-bold hover:bg-primary/90 transition-all"
                         >
                             Continuar a la Aplicación
                         </button>
@@ -155,7 +155,7 @@ export function MFAEnrollment(props: Props) {
                 !enrollmentData ? (
                     <button
                         onClick={handleEnroll}
-                        className="px-4 py-2 bg-[#166A2F] text-white rounded-xl text-sm font-semibold hover:bg-[#125a27] transition-all"
+                        className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all"
                     >
                         Activar 2FA
                     </button>
@@ -194,13 +194,13 @@ export function MFAEnrollment(props: Props) {
                                             value={verifyCode}
                                             onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                                             placeholder="000 000"
-                                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:border-[#166A2F] focus:ring-4 focus:ring-[#166A2F]/5 transition-all text-center text-lg font-medium tracking-widest"
+                                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all text-center text-lg font-medium tracking-widest"
                                         />
                                     </div>
                                     <button
                                         type="submit"
                                         disabled={verifyCode.length !== 6 || loading}
-                                        className="w-full py-2.5 bg-[#166A2F] text-white rounded-xl font-semibold hover:bg-[#125a27] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                        className="w-full py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                                     >
                                         Verificar y Activar
                                     </button>

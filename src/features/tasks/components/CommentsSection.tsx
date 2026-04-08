@@ -20,7 +20,7 @@ function renderWithMentions(text: string) {
     const parts = text.split(/(@[\w\s]+?)(?=\s@|\s*$|[^a-zA-Z\s])/g);
     return parts.map((part, i) =>
         part.startsWith('@') ? (
-            <span key={i} className="text-[#166A2F] font-semibold dark:text-emerald-400">
+            <span key={i} className="text-primary font-semibold dark:text-emerald-400">
                 {part}
             </span>
         ) : (
@@ -232,11 +232,11 @@ export function CommentsSection({ taskId }: CommentsSectionProps) {
                                 onMouseDown={(e) => { e.preventDefault(); selectMention(user); }}
                                 className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors ${
                                     idx === mentionIndex
-                                        ? 'bg-[#166A2F]/10 text-[#166A2F] dark:bg-emerald-900/30 dark:text-emerald-400'
+                                        ? 'bg-primary/10 text-primary dark:bg-emerald-900/30 dark:text-emerald-400'
                                         : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-foreground'
                                 }`}
                             >
-                                <div className="w-6 h-6 rounded-full bg-[#166A2F]/15 flex items-center justify-center text-[#166A2F] dark:text-emerald-400 font-bold text-xs flex-shrink-0">
+                                <div className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center text-primary dark:text-emerald-400 font-bold text-xs flex-shrink-0">
                                     {user.full_name.charAt(0).toUpperCase()}
                                 </div>
                                 <span className="font-medium truncate">{user.full_name}</span>

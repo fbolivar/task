@@ -24,7 +24,7 @@ export default function ProfilePage() {
                 {/* User Info Card */}
                 <div className="md:col-span-1 space-y-6">
                     <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm text-center">
-                        <div className="w-24 h-24 mx-auto bg-[#166A2F]/10 rounded-full flex items-center justify-center text-[#166A2F] text-3xl font-bold mb-4">
+                        <div className="w-24 h-24 mx-auto bg-primary/10 rounded-full flex items-center justify-center text-primary text-3xl font-bold mb-4">
                             {profile?.full_name?.charAt(0) || user.email?.charAt(0)}
                         </div>
                         <h2 className="font-bold text-lg text-foreground">{profile?.full_name || 'Usuario'}</h2>
@@ -36,7 +36,7 @@ export default function ProfilePage() {
 
                     <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
                         <h3 className="font-bold text-foreground flex items-center gap-2">
-                            <Shield className="w-4 h-4 text-[#166A2F]" />
+                            <Shield className="w-4 h-4 text-primary" />
                             Detalles de Cuenta
                         </h3>
                         <div className="space-y-3">
@@ -60,7 +60,7 @@ export default function ProfilePage() {
                 <div className="md:col-span-2 space-y-6">
                     <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                         <h3 className="font-bold text-lg text-foreground mb-4 flex items-center gap-2">
-                            <Key className="w-5 h-5 text-[#166A2F]" />
+                            <Key className="w-5 h-5 text-primary" />
                             Seguridad
                         </h3>
 
@@ -72,7 +72,7 @@ export default function ProfilePage() {
                                 </p>
                                 <button
                                     onClick={() => setShowPasswordModal(true)}
-                                    className="text-sm font-semibold text-[#166A2F] hover:underline"
+                                    className="text-sm font-semibold text-primary hover:underline"
                                 >
                                     Cambiar contraseña &rarr;
                                 </button>
@@ -137,8 +137,8 @@ function PasswordChangeModal({ onClose, onSubmit }: { onClose: () => void; onSub
             <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
                 <div className="bg-slate-50 dark:bg-slate-950/50 p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                            <Lock className="w-5 h-5 text-emerald-600" />
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                            <Lock className="w-5 h-5 text-primary" />
                         </div>
                         <div>
                             <h3 className="font-bold text-lg text-foreground">Cambiar Contraseña</h3>
@@ -152,8 +152,8 @@ function PasswordChangeModal({ onClose, onSubmit }: { onClose: () => void; onSub
 
                 {success ? (
                     <div className="p-8 text-center space-y-3">
-                        <div className="w-16 h-16 mx-auto bg-emerald-100 dark:bg-emerald-900/20 rounded-full flex items-center justify-center">
-                            <CheckCircle className="w-8 h-8 text-emerald-600" />
+                        <div className="w-16 h-16 mx-auto bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center">
+                            <CheckCircle className="w-8 h-8 text-primary" />
                         </div>
                         <p className="font-bold text-foreground">Contraseña actualizada</p>
                         <p className="text-sm text-muted-foreground">Tu contraseña ha sido cambiada exitosamente.</p>
@@ -168,7 +168,7 @@ function PasswordChangeModal({ onClose, onSubmit }: { onClose: () => void; onSub
                                         type={showPassword ? 'text' : 'password'}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full pl-4 pr-10 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500/50 transition-all outline-none text-sm font-medium"
+                                        className="w-full pl-4 pr-10 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary/30 transition-all outline-none text-sm font-medium"
                                         placeholder="Mínimo 8 caracteres"
                                         autoFocus
                                     />
@@ -190,7 +190,7 @@ function PasswordChangeModal({ onClose, onSubmit }: { onClose: () => void; onSub
                                     type={showPassword ? 'text' : 'password'}
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500/50 transition-all outline-none text-sm font-medium"
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary/30 transition-all outline-none text-sm font-medium"
                                     placeholder="Repite la contraseña"
                                 />
                             </div>
@@ -214,7 +214,7 @@ function PasswordChangeModal({ onClose, onSubmit }: { onClose: () => void; onSub
                             <button
                                 type="submit"
                                 disabled={loading || !password}
-                                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                                className="flex-1 bg-primary hover:bg-primary/90 text-white py-3 rounded-xl font-bold transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                             >
                                 {loading ? (
                                     <span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
@@ -241,7 +241,7 @@ function PasswordChecks({ password }: { password: string }) {
     return (
         <div className="grid grid-cols-2 gap-1.5 pt-1">
             {checks.map((c) => (
-                <div key={c.label} className={`flex items-center gap-1.5 text-[10px] font-semibold ${c.met ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                <div key={c.label} className={`flex items-center gap-1.5 text-[10px] font-semibold ${c.met ? 'text-primary' : 'text-muted-foreground'}`}>
                     <Check className={`w-3 h-3 ${c.met ? 'opacity-100' : 'opacity-30'}`} />
                     {c.label}
                 </div>

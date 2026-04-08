@@ -10,7 +10,7 @@ interface OperativoDashboardProps {
 }
 
 export const OperativoDashboard = ({ stats, chartsData, upcomingTasks }: OperativoDashboardProps) => {
-    const COLORS = ['#ef4444', '#f59e0b', '#10b981']; // Pendiente (Red), Progreso (Amber), Compl (Emerald)
+    const COLORS = ['#ef4444', '#f59e0b', '#2D6A5A']; // Pendiente (Red), Progreso (Amber), Compl (Teal)
 
     // Helper to safely parse dates that works across browsers (including mobile Safari/Chrome)
     const safeDate = (dateStr: string | null | undefined): Date | null => {
@@ -45,22 +45,22 @@ export const OperativoDashboard = ({ stats, chartsData, upcomingTasks }: Operati
                     title="Tareas Pendientes"
                     value={stats.pendingTasks}
                     subtitle="Para esta semana"
-                    icon={<ListTodo className="w-6 h-6 text-orange-500" />}
-                    color="border-orange-500/20 bg-orange-500/5"
+                    icon={<ListTodo className="w-6 h-6 text-amber-500" />}
+                    color="border-amber-500/20 bg-amber-500/5"
                 />
                 <MyStatCard
                     title="En Progreso"
                     value={stats.inProgressTasks}
                     subtitle="Tareas activas"
-                    icon={<Clock className="w-6 h-6 text-blue-500" />}
-                    color="border-blue-500/20 bg-blue-500/5"
+                    icon={<Clock className="w-6 h-6 text-teal-600" />}
+                    color="border-teal-600/20 bg-teal-600/5"
                 />
                 <MyStatCard
                     title="Completadas"
                     value={stats.tasks - stats.pendingTasks}
                     subtitle="Total histórico"
-                    icon={<CheckCircle2 className="w-6 h-6 text-emerald-500" />}
-                    color="border-emerald-500/20 bg-emerald-500/5"
+                    icon={<CheckCircle2 className="w-6 h-6 text-primary" />}
+                    color="border-primary/20 bg-primary/5"
                 />
             </div>
 
@@ -128,7 +128,7 @@ export const OperativoDashboard = ({ stats, chartsData, upcomingTasks }: Operati
                             })
                         ) : (
                             <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/20 rounded-xl border border-slate-100 dark:border-white/5 border-dashed">
-                                <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2 opacity-50" />
+                                <CheckCircle2 className="w-8 h-8 text-primary mx-auto mb-2 opacity-50" />
                                 <p className="text-sm font-semibold text-muted-foreground">¡Todo al día!</p>
                                 <p className="text-xs text-muted-foreground/60">No tienes tareas próximas a vencer.</p>
                             </div>

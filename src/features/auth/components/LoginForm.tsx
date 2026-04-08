@@ -126,28 +126,28 @@ export function LoginForm() {
     const footerText = settings.footer_text || '© 2024 Parques Nacionales Naturales de Colombia';
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 selection:bg-[#166A2F] selection:text-white p-4 relative overflow-hidden">
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 selection:bg-[#2D6A5A] selection:text-white p-4 relative overflow-hidden">
             {/* Background Decorative Blobs */}
-            <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#166A2F]/5 rounded-full blur-3xl -z-0 pointer-events-none"></div>
-            <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-3xl -z-0 pointer-events-none delay-500"></div>
+            <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#2D6A5A]/5 rounded-full blur-3xl -z-0 pointer-events-none"></div>
+            <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-teal-500/5 rounded-full blur-3xl -z-0 pointer-events-none delay-500"></div>
 
             {/* Main Floating Card */}
             <div className="bg-white w-full max-w-5xl min-h-[600px] rounded-3xl shadow-2xl overflow-hidden flex relative z-10 mx-auto">
 
                 {/* Left Panel - Illustration & Branding */}
-                <div className="hidden lg:flex lg:w-1/2 relative bg-[#166A2F] flex-col justify-between p-12">
+                <div className="hidden lg:flex lg:w-1/2 relative bg-[#2D6A5A] flex-col justify-between p-12">
                     {/* Background Overlay & Effects */}
                     <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1518173946687-a4c88928d999?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay opacity-20"></div>
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#166A2F]/90 via-[#0B4D24]/80 to-[#052e16]/90"></div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#2D6A5A]/90 via-[#1F5147]/80 to-[#0d2e29]/90"></div>
 
                     {/* Animated Decorative Shapes */}
                     <div className="absolute top-[-50px] right-[-50px] w-40 h-40 bg-white/10 rounded-full blur-2xl animate-pulse delay-700"></div>
-                    <div className="absolute bottom-[50px] left-[-30px] w-32 h-32 bg-emerald-400/20 rounded-full blur-2xl animate-pulse"></div>
+                    <div className="absolute bottom-[50px] left-[-30px] w-32 h-32 bg-teal-400/20 rounded-full blur-2xl animate-pulse"></div>
 
                     {/* Branding Top */}
                     <div className="relative z-10 flex items-center gap-3">
                         <div className="bg-white/10 backdrop-blur-md p-2 rounded-xl border border-white/20 shadow-lg">
-                            <Leaf className="w-6 h-6 text-emerald-300" />
+                            <Leaf className="w-6 h-6 text-teal-300" />
                         </div>
                         <span className="text-white/90 font-medium tracking-wide text-sm bg-white/5 px-4 py-1.5 rounded-full backdrop-blur-sm border border-white/10">
                             {t('auth.tagline') || 'Gestión Inteligente'}
@@ -158,11 +158,11 @@ export function LoginForm() {
                     <div className="relative z-10 space-y-6">
                         <h1 className="text-4xl font-bold text-white leading-tight font-heading">
                             {t('auth.headline') || 'Conservación'}
-                            <span className="block text-emerald-200/90 font-light italic text-3xl mt-2">
+                            <span className="block text-teal-200/90 font-light italic text-3xl mt-2">
                                 {t('auth.headlineSub') || '& Tecnología'}
                             </span>
                         </h1>
-                        <p className="text-emerald-100/80 leading-relaxed font-light text-sm max-w-xs border-l-2 border-emerald-400/50 pl-4">
+                        <p className="text-teal-100/80 leading-relaxed font-light text-sm max-w-xs border-l-2 border-teal-400/50 pl-4">
                             {t('auth.description') || 'Plataforma avanzada para la gestión sostenible de recursos naturales.'}
                         </p>
                     </div>
@@ -170,9 +170,9 @@ export function LoginForm() {
                     {/* Bottom Stats/Info */}
                     <div className="relative z-10 flex gap-3">
                         <div className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 flex items-center gap-2">
-                            <Activity className="w-4 h-4 text-emerald-300" />
+                            <Activity className="w-4 h-4 text-teal-300" />
                             <div>
-                                <div className="text-[10px] text-emerald-200 uppercase tracking-wider">Estado</div>
+                                <div className="text-[10px] text-teal-200 uppercase tracking-wider">Estado</div>
                                 <div className="text-white font-bold text-xs">Operativo</div>
                             </div>
                         </div>
@@ -204,12 +204,12 @@ export function LoginForm() {
                                                 {t('auth.email')}
                                             </label>
                                             <div className="relative group">
-                                                <Mail className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-[#166A2F]" />
+                                                <Mail className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-primary" />
                                                 <input
                                                     type="email"
                                                     value={email}
                                                     onChange={(e) => setEmail(e.target.value)}
-                                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-12 py-3.5 outline-none focus:border-[#166A2F] focus:ring-4 focus:ring-[#166A2F]/5 transition-all font-medium text-slate-700 placeholder:text-slate-400"
+                                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-12 py-3.5 outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all font-medium text-slate-700 placeholder:text-slate-400"
                                                     placeholder="nombre@ejemplo.com"
                                                     required
                                                 />
@@ -224,18 +224,18 @@ export function LoginForm() {
                                                 <button
                                                     type="button"
                                                     onClick={() => { setShowForgotModal(true); setForgotError(''); }}
-                                                    className="text-xs font-semibold text-[#166A2F] hover:text-[#0B4D24] hover:underline"
+                                                    className="text-xs font-semibold text-primary hover:text-primary/80 hover:underline"
                                                 >
                                                     ¿Olvidaste tu contraseña?
                                                 </button>
                                             </div>
                                             <div className="relative group">
-                                                <Lock className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-[#166A2F]" />
+                                                <Lock className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-primary" />
                                                 <input
                                                     type={showPassword ? "text" : "password"}
                                                     value={password}
                                                     onChange={(e) => setPassword(e.target.value)}
-                                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-12 py-3.5 outline-none focus:border-[#166A2F] focus:ring-4 focus:ring-[#166A2F]/5 transition-all font-medium text-slate-700 placeholder:text-slate-400"
+                                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-12 py-3.5 outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all font-medium text-slate-700 placeholder:text-slate-400"
                                                     placeholder="••••••••"
                                                     required
                                                 />
@@ -253,7 +253,7 @@ export function LoginForm() {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full py-4 bg-[#166A2F] hover:bg-[#125a27] text-white rounded-xl font-bold shadow-lg shadow-[#166A2F]/20 hover:shadow-xl hover:shadow-[#166A2F]/30 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:hover:translate-y-0 disabled:shadow-none transition-all duration-300 flex items-center justify-center gap-2"
+                                        className="w-full py-4 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:hover:translate-y-0 disabled:shadow-none transition-all duration-300 flex items-center justify-center gap-2"
                                     >
                                         {loading ? (
                                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -270,7 +270,7 @@ export function LoginForm() {
                             <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
                                 <div className="space-y-2 text-center lg:text-left">
                                     <h2 className="text-3xl font-bold text-slate-900 tracking-tight font-heading flex items-center gap-3">
-                                        <ShieldCheck className="w-8 h-8 text-[#166A2F]" />
+                                        <ShieldCheck className="w-8 h-8 text-primary" />
                                         Autenticación 2FA
                                     </h2>
                                     <p className="text-slate-500 text-sm">
@@ -294,7 +294,7 @@ export function LoginForm() {
                                             type="text"
                                             value={mfaCode}
                                             onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 outline-none focus:border-[#166A2F] focus:ring-4 focus:ring-[#166A2F]/5 transition-all font-mono text-2xl text-center tracking-[0.5em] text-slate-800 placeholder:text-slate-300"
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all font-mono text-2xl text-center tracking-[0.5em] text-slate-800 placeholder:text-slate-300"
                                             placeholder="000000"
                                             autoFocus
                                             required
@@ -304,7 +304,7 @@ export function LoginForm() {
                                     <button
                                         type="submit"
                                         disabled={mfaLoading || mfaCode.length !== 6}
-                                        className="w-full py-4 bg-[#166A2F] hover:bg-[#125a27] text-white rounded-xl font-bold shadow-lg shadow-[#166A2F]/20 hover:shadow-xl hover:shadow-[#166A2F]/30 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:hover:translate-y-0 disabled:shadow-none transition-all duration-300 flex items-center justify-center gap-2"
+                                        className="w-full py-4 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:hover:translate-y-0 disabled:shadow-none transition-all duration-300 flex items-center justify-center gap-2"
                                     >
                                         {mfaLoading ? (
                                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -336,9 +336,9 @@ export function LoginForm() {
             {/* Forgot Password Modal */}
 
             {showForgotModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#051a0b]/80 backdrop-blur-sm animate-in fade-in duration-300 p-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0d2e29]/80 backdrop-blur-sm animate-in fade-in duration-300 p-4">
                     <div className="bg-white w-full max-w-md p-8 rounded-2xl shadow-2xl relative animate-in zoom-in-95 duration-300">
-                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-[#166A2F] rounded-full flex items-center justify-center shadow-xl ring-8 ring-white/10">
+                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-primary rounded-full flex items-center justify-center shadow-xl ring-8 ring-white/10">
                             <Mail className="w-10 h-10 text-white" />
                         </div>
 
@@ -363,12 +363,12 @@ export function LoginForm() {
                                             Correo Electrónico
                                         </label>
                                         <div className="relative">
-                                            <Mail className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-[#166A2F]" />
+                                            <Mail className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-primary" />
                                             <input
                                                 type="email"
                                                 value={forgotEmail}
                                                 onChange={(e) => setForgotEmail(e.target.value)}
-                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-12 py-3.5 outline-none focus:border-[#166A2F] focus:ring-4 focus:ring-[#166A2F]/5 transition-all font-medium text-slate-700 placeholder:text-slate-400"
+                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-12 py-3.5 outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all font-medium text-slate-700 placeholder:text-slate-400"
                                                 placeholder="nombre@ejemplo.com"
                                                 required
                                             />
@@ -386,7 +386,7 @@ export function LoginForm() {
                                         <button
                                             type="submit"
                                             disabled={forgotLoading}
-                                            className="flex-1 py-3 bg-[#166A2F] hover:bg-[#125a27] text-white rounded-xl font-semibold shadow-lg shadow-[#166A2F]/20 hover:shadow-xl hover:translate-y-[-1px] transition-all disabled:opacity-70 disabled:translate-y-0"
+                                            className="flex-1 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl font-semibold shadow-lg shadow-primary/20 hover:shadow-xl hover:translate-y-[-1px] transition-all disabled:opacity-70 disabled:translate-y-0"
                                         >
                                             {forgotLoading ? 'Enviando...' : 'Enviar Link'}
                                         </button>
@@ -398,7 +398,7 @@ export function LoginForm() {
                                 <h3 className="text-xl font-bold text-slate-900">¡Revisa tu correo!</h3>
                                 <p className="text-slate-500 text-sm mt-3 mb-8">
                                     Hemos enviado un enlace de recuperación a <br />
-                                    <span className="font-semibold text-[#166A2F]">{forgotEmail}</span>
+                                    <span className="font-semibold text-primary">{forgotEmail}</span>
                                 </p>
                                 <button
                                     onClick={() => { setShowForgotModal(false); setForgotSuccess(false); setForgotEmail(''); }}

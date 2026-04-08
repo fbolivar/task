@@ -40,7 +40,7 @@ function Toggle({ id, label, description, checked, onChange }: ToggleProps) {
                     onChange={(e) => onChange(e.target.checked)}
                     className="peer sr-only"
                 />
-                <div className="w-10 h-6 bg-slate-200 dark:bg-slate-800 rounded-full peer peer-checked:bg-[#166A2F] transition-all duration-300" />
+                <div className="w-10 h-6 bg-slate-200 dark:bg-slate-800 rounded-full peer peer-checked:bg-primary transition-all duration-300" />
                 <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all peer-checked:translate-x-4 shadow-sm" />
             </div>
         </label>
@@ -83,11 +83,11 @@ export function NotificationPreferences({ userId }: NotificationPreferencesProps
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
             <div className="flex items-center justify-between mb-5">
                 <h3 className="font-bold text-lg text-foreground flex items-center gap-2">
-                    <Bell className="w-5 h-5 text-[#166A2F]" />
+                    <Bell className="w-5 h-5 text-primary" />
                     Preferencias de Notificacion
                 </h3>
                 {saved && (
-                    <span className="text-xs font-semibold text-[#166A2F] animate-in fade-in duration-200">
+                    <span className="text-xs font-semibold text-primary animate-in fade-in duration-200">
                         Guardado
                     </span>
                 )}

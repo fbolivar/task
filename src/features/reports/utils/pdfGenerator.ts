@@ -10,7 +10,7 @@ export const generateExecutivePDF = async (
     entityLogoUrl?: string | null
 ) => {
     const doc = new jsPDF();
-    const primaryColor: [number, number, number] = [47, 133, 90]; // PNN Green (approx #2F855A)
+    const primaryColor: [number, number, number] = [45, 106, 90]; // Teal (#2D6A5A)
     const secondaryColor: [number, number, number] = [26, 32, 44]; // Slate-900
 
     // Header with Design

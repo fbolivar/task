@@ -17,7 +17,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         borderBottom: 2,
-        borderBottomColor: '#2F855A', // PNN Green
+        borderBottomColor: '#2D6A5A', // Teal
         paddingBottom: 15,
     },
     headerText: {
@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         textTransform: 'uppercase',
-        color: '#2F855A',
+        color: '#2D6A5A',
     },
     subtitle: {
         fontSize: 10,

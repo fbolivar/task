@@ -87,7 +87,7 @@ export function FollowupLookupWidget() {
                             const task = tasks.find(t => t.id === e.target.value);
                             setSelectedTask(task || null);
                         }}
-                        className="w-full appearance-none pl-4 pr-10 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-[#166A2F]/20 focus:border-[#166A2F] outline-none transition-all cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900"
+                        className="w-full appearance-none pl-4 pr-10 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900"
                         disabled={loadingTasks}
                     >
                         <option value="">-- Selecciona una Tarea --</option>
@@ -99,7 +99,7 @@ export function FollowupLookupWidget() {
                     </select>
                     {loadingTasks ? (
                         <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                            <Loader2 className="w-4 h-4 animate-spin text-[#166A2F]" />
+                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
                         </div>
                     ) : (
                         <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none transition-transform group-focus-within:rotate-180">
@@ -113,7 +113,7 @@ export function FollowupLookupWidget() {
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 min-h-[300px]">
                 {loadingFollowups ? (
                     <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-3">
-                        <Loader2 className="w-8 h-8 animate-spin text-[#166A2F]" />
+                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
                         <span className="text-xs font-bold animate-pulse">Cargando historial...</span>
                     </div>
                 ) : !selectedTask ? (
@@ -136,7 +136,7 @@ export function FollowupLookupWidget() {
                     <div className="space-y-6 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100 dark:before:bg-slate-800 before:-z-0">
                         {followups.map((item) => (
                             <div key={item.id} className="relative pl-8">
-                                <div className="absolute left-0 top-1 w-4 h-4 rounded-full bg-white dark:bg-slate-900 border-[3px] border-[#166A2F] z-10 shadow-sm" />
+                                <div className="absolute left-0 top-1 w-4 h-4 rounded-full bg-white dark:bg-slate-900 border-[3px] border-primary z-10 shadow-sm" />
 
                                 <div className="flex flex-col gap-3 group">
                                     <div className="flex items-center justify-between">
