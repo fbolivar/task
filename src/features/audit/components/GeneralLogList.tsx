@@ -1,10 +1,18 @@
 'use client';
 
-import { Activity, FileText, User } from 'lucide-react';
+import { Activity, FileText, User, Plus, Edit, Trash2, Eye, CheckCircle, AlertCircle, FolderKanban, Package } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { AuditLog } from './types';
-import { ACTION_ICONS, ACTION_COLORS, ENTITY_ICONS } from './constants';
+import { ACTION_COLORS } from './constants';
+
+const ACTION_ICONS: Record<string, typeof Activity> = {
+    create: Plus, update: Edit, delete: Trash2, view: Eye,
+    login: User, logout: User, approve: CheckCircle, reject: AlertCircle,
+};
+const ENTITY_ICONS: Record<string, typeof FileText> = {
+    task: FileText, project: FolderKanban, asset: Package, user: User,
+};
 
 interface GeneralLogListProps {
     logs: AuditLog[];

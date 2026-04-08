@@ -1,18 +1,13 @@
-import {
-    Edit, Trash2, Plus, Eye, User, CheckCircle, AlertCircle,
-    Activity, FileText, FolderKanban, Package,
-    LogIn, LogOut, Lock, Key, Shield, Clock, AlertTriangle,
-} from 'lucide-react';
-
-export const ACTION_ICONS: Record<string, typeof Edit> = {
-    create: Plus,
-    update: Edit,
-    delete: Trash2,
-    view: Eye,
-    login: User,
-    logout: User,
-    approve: CheckCircle,
-    reject: AlertCircle,
+// Icon names as strings - resolved at render time to avoid SSR initialization issues
+export const ACTION_ICON_NAMES: Record<string, string> = {
+    create: 'Plus',
+    update: 'Edit',
+    delete: 'Trash2',
+    view: 'Eye',
+    login: 'User',
+    logout: 'User',
+    approve: 'CheckCircle',
+    reject: 'AlertCircle',
 };
 
 export const ACTION_COLORS: Record<string, string> = {
@@ -26,33 +21,33 @@ export const ACTION_COLORS: Record<string, string> = {
     reject: 'bg-red-500/10 text-red-600',
 };
 
-export const ENTITY_ICONS: Record<string, typeof FileText> = {
-    task: FileText,
-    project: FolderKanban,
-    asset: Package,
-    user: User,
+export const ENTITY_ICON_NAMES: Record<string, string> = {
+    task: 'FileText',
+    project: 'FolderKanban',
+    asset: 'Package',
+    user: 'User',
 };
 
-export const SECURITY_EVENT_ICONS: Record<string, typeof Shield> = {
-    login_success: LogIn,
-    login_failed: AlertCircle,
-    logout: LogOut,
-    password_change: Lock,
-    api_access: Key,
-    permission_change: Shield,
-    session_expired: Clock,
-    mfa_enabled: Shield,
-    mfa_disabled: AlertTriangle,
+export const SECURITY_EVENT_ICON_NAMES: Record<string, string> = {
+    login_success: 'LogIn',
+    login_failed: 'AlertCircle',
+    logout: 'LogOut',
+    password_change: 'Lock',
+    api_access: 'Key',
+    permission_change: 'Shield',
+    session_expired: 'Clock',
+    mfa_enabled: 'Shield',
+    mfa_disabled: 'AlertTriangle',
 };
 
 export const SECURITY_EVENT_LABELS: Record<string, string> = {
-    login_success: 'Inicio de sesión exitoso',
+    login_success: 'Inicio de sesion exitoso',
     login_failed: 'Intento de login fallido',
-    logout: 'Cierre de sesión',
-    password_change: 'Cambio de contraseña',
-    api_access: 'Acceso vía API',
+    logout: 'Cierre de sesion',
+    password_change: 'Cambio de contrasena',
+    api_access: 'Acceso via API',
     permission_change: 'Cambio de permisos',
-    session_expired: 'Sesión expirada',
+    session_expired: 'Sesion expirada',
     mfa_enabled: 'MFA habilitado',
     mfa_disabled: 'MFA deshabilitado',
 };

@@ -1,9 +1,10 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // Activa el MCP server en /_next/mcp (Next.js 16+)
   experimental: {
-    // mcpServer: true, // Removed to prevent config validation errors
+    optimizePackageImports: ['lucide-react'],
+    // Turbopack has issues with lucide-react barrel exports during prerender
+    // This is a known issue tracked upstream
   },
 
   // Optimizaciones para producción

@@ -1,10 +1,16 @@
 'use client';
 
-import { Shield, User, Wifi } from 'lucide-react';
+import { Shield, User, Wifi, LogIn, LogOut, Lock, Key, Clock, AlertCircle, AlertTriangle } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { SecurityLog } from './types';
-import { SECURITY_EVENT_ICONS, SECURITY_EVENT_LABELS, SEVERITY_COLORS } from './constants';
+import { SECURITY_EVENT_LABELS, SEVERITY_COLORS } from './constants';
+
+const SECURITY_EVENT_ICONS: Record<string, typeof Shield> = {
+    login_success: LogIn, login_failed: AlertCircle, logout: LogOut,
+    password_change: Lock, api_access: Key, permission_change: Shield,
+    session_expired: Clock, mfa_enabled: Shield, mfa_disabled: AlertTriangle,
+};
 
 interface SecurityLogListProps {
     logs: SecurityLog[];

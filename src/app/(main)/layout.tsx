@@ -1,7 +1,6 @@
 'use client';
 
 import { AppLayout } from '@/shared/components/AppLayout';
-import { SettingsProvider } from '@/shared/contexts/SettingsContext';
 
 export default function MainLayout({
   children,
