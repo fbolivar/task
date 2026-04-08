@@ -91,7 +91,7 @@ export default function DashboardPage() {
       {isOperativo ? (
         <OperativoDashboard stats={stats} chartsData={chartsData} upcomingTasks={upcomingTasks} />
       ) : (
-        <AdminDashboard stats={stats} chartsData={chartsData} />
+        <AdminDashboard stats={stats} chartsData={chartsData} upcomingTasks={upcomingTasks} />
       )}
 
     </div>

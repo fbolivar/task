@@ -8,6 +8,7 @@ export interface DashboardStats {
     tasks: number;
     activeProjects: number;
     completedProjects: number;
+    pausedProjects: number;
     pendingTasks: number;
     inProgressTasks: number;
     overdueTasks: number;
@@ -16,6 +17,8 @@ export interface DashboardStats {
     performanceIndex: number;
     totalBudget: number;
     totalActualCost: number;
+    totalEstimatedHours: number;
+    totalActualHours: number;
     inventoryValue: number;
     expiringWarranties: number;
 }
@@ -31,7 +34,7 @@ export interface ChartData {
 }
 
 interface Project { id: string; budget: number; actual_cost: number; risk_level: string; name: string; priority: string; status: string; entity_id: string; }
-interface Task { id: string; status: string; end_date: string; project_id: string; assigned_to: string; title: string; priority: string; }
+interface Task { id: string; status: string; end_date: string; project_id: string; assigned_to: string; title: string; priority: string; created_at: string; estimated_hours: number | null; actual_hours: number | null; }
 interface Asset { id: string; purchase_value: number; warranty_expiration: string; purchase_date: string; useful_life_years: number; entity_id: string; }
 interface ActivityLog { id: string; description: string; created_at: string; profiles: { full_name: string }; entity_id: string; }
 
@@ -39,10 +42,11 @@ export const useDashboardData = () => {
     const { profile, activeEntityId } = useAuthStore();
     const [stats, setStats] = useState<DashboardStats>({
         entities: 0, projects: 0, tasks: 0,
-        activeProjects: 0, completedProjects: 0,
+        activeProjects: 0, completedProjects: 0, pausedProjects: 0,
         pendingTasks: 0, inProgressTasks: 0, overdueTasks: 0,
         avgTaskCompletion: 0, resourceUtilization: 0,
         performanceIndex: 0, totalBudget: 0, totalActualCost: 0,
+        totalEstimatedHours: 0, totalActualHours: 0,
         inventoryValue: 0, expiringWarranties: 0
     });
 
@@ -86,7 +90,7 @@ export const useDashboardData = () => {
 
                 // Base queries
                 let projectsQuery = supabase.from('projects').select('*');
-                let tasksQuery = supabase.from('tasks').select('*');
+                let tasksQuery = supabase.from('tasks').select('id, status, end_date, project_id, assigned_to, title, priority, created_at, estimated_hours, actual_hours');
                 let assetsQuery = supabase.from('assets').select('*');
                 let activityQuery = supabase.from('activity_logs').select('*, profiles(full_name)').order('created_at', { ascending: false }).limit(10);
 
@@ -141,12 +145,17 @@ export const useDashboardData = () => {
                     return diff <= 30 && diff > 0;
                 }).length;
 
+                // Hours aggregation
+                const totalEstimatedHours = tasks.reduce((acc, t) => acc + Number(t.estimated_hours || 0), 0);
+                const totalActualHours = tasks.reduce((acc, t) => acc + Number(t.actual_hours || 0), 0);
+
                 setStats({
                     entities: 0, // Not really used in cards
                     projects: projects.length,
                     tasks: tasks.length,
                     activeProjects: projects.filter(p => p.status === 'Activo').length,
                     completedProjects: projects.filter(p => p.status === 'Completado').length,
+                    pausedProjects: projects.filter(p => p.status === 'Pausado').length,
                     pendingTasks: tasks.filter(t => t.status !== 'Completado').length,
                     inProgressTasks: tasks.filter(t => t.status === 'En Progreso').length,
                     overdueTasks: overdue,
@@ -155,6 +164,8 @@ export const useDashboardData = () => {
                     performanceIndex: spi,
                     totalBudget,
                     totalActualCost,
+                    totalEstimatedHours,
+                    totalActualHours,
                     inventoryValue: inventoryVal,
                     expiringWarranties: expiring
                 });
@@ -162,21 +173,49 @@ export const useDashboardData = () => {
                 // --- Charts Data ---
 
                 // 1. Radar (Admin)
+                // On-time delivery rate: completed tasks whose created_at <= end_date
+                const onTimeRate = completedTasks > 0
+                    ? (tasks.filter(t =>
+                        t.status === 'Completado' &&
+                        t.end_date &&
+                        new Date(t.created_at) <= new Date(t.end_date)
+                    ).length / completedTasks) * 100
+                    : 0;
+
                 const portfolioRadar = [
-                    { subject: 'Progreso', A: avgCompletion, fullMark: 100 },
-                    { subject: 'Presupuesto', A: totalBudget > 0 ? (totalActualCost / totalBudget) * 100 : 0, fullMark: 100 },
-                    { subject: 'Riesgo', A: projects.length > 0 ? (projects.filter(p => p.risk_level === 'Bajo').length / projects.length) * 100 : 0, fullMark: 100 },
-                    { subject: 'Calidad', A: 85, fullMark: 100 }, // Mocked for now
+                    { subject: 'Progreso', A: Math.round(avgCompletion), fullMark: 100 },
+                    { subject: 'Presupuesto', A: totalBudget > 0 ? Math.round((totalActualCost / totalBudget) * 100) : 0, fullMark: 100 },
+                    { subject: 'Riesgo', A: projects.length > 0 ? Math.round((projects.filter(p => p.risk_level === 'Bajo').length / projects.length) * 100) : 0, fullMark: 100 },
+                    { subject: 'Puntualidad', A: Math.round(onTimeRate), fullMark: 100 },
                 ];
 
-                // 2. Efficiency (Mocked trend logic for now, real data approaches typically need aggregations)
-                const efficiencyTrends = [
-                    { name: 'S-4', planned: 50, actual: 45 },
-                    { name: 'S-3', planned: 60, actual: 55 },
-                    { name: 'S-2', planned: 70, actual: 75 },
-                    { name: 'S-1', planned: 80, actual: 78 },
-                    { name: 'Actual', planned: 90, actual: 88 },
-                ];
+                // 2. Real weekly velocity for the last 5 weeks
+                const now = new Date();
+                const weeklyData: { name: string; planned: number; actual: number }[] = [];
+                for (let i = 4; i >= 0; i--) {
+                    const weekStart = new Date(now);
+                    const dayOfWeek = weekStart.getDay() === 0 ? 7 : weekStart.getDay(); // Mon=1..Sun=7
+                    weekStart.setDate(weekStart.getDate() - (i * 7) - (dayOfWeek - 1));
+                    weekStart.setHours(0, 0, 0, 0);
+                    const weekEnd = new Date(weekStart);
+                    weekEnd.setDate(weekEnd.getDate() + 6);
+                    weekEnd.setHours(23, 59, 59, 999);
+
+                    const tasksInWeek = tasks.filter(t => {
+                        const d = new Date(t.created_at || t.end_date);
+                        return d >= weekStart && d <= weekEnd;
+                    });
+
+                    const completedInWeek = tasksInWeek.filter(t => t.status === 'Completado').length;
+
+                    weeklyData.push({
+                        name: `Sem ${weekStart.getDate()}/${weekStart.getMonth() + 1}`,
+                        planned: tasksInWeek.length,
+                        actual: completedInWeek,
+                    });
+                }
+
+                const efficiencyTrends = weeklyData;
 
                 // 3. Risk Matrix
                 const riskMap: Record<string, number> = { 'Bajo': 20, 'Medio': 50, 'Alto': 80, 'Crítico': 100 };
@@ -194,14 +233,44 @@ export const useDashboardData = () => {
                     { name: 'Completado', value: tasks.filter(t => t.status === 'Completado').length },
                 ];
 
+                // 6. Resource Load - tasks per assignee
+                const assigneeCounts: Record<string, { name: string; count: number }> = {};
+                tasks.forEach(t => {
+                    if (!t.assigned_to) return;
+                    if (!assigneeCounts[t.assigned_to]) {
+                        assigneeCounts[t.assigned_to] = { name: t.assigned_to, count: 0 };
+                    }
+                    assigneeCounts[t.assigned_to].count++;
+                });
+
+                // Resolve names from profiles if possible
+                const assigneeIds = Object.keys(assigneeCounts);
+                if (assigneeIds.length > 0) {
+                    const { data: profiles } = await supabase
+                        .from('profiles')
+                        .select('id, full_name')
+                        .in('id', assigneeIds);
+                    if (profiles) {
+                        profiles.forEach((p: { id: string; full_name: string }) => {
+                            if (assigneeCounts[p.id]) {
+                                assigneeCounts[p.id].name = p.full_name || p.id;
+                            }
+                        });
+                    }
+                }
+
+                const resourceLoad = Object.values(assigneeCounts)
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, 8);
+
                 setChartsData({
                     portfolioRadar,
                     efficiencyTrends,
                     riskMatrix,
-                    resourceLoad: [], // TODO: Calculate if needed
+                    resourceLoad,
                     recentActivity: activity,
                     taskStatusDistribution: statusDist,
-                    weeklyVelocity: efficiencyTrends // Reuse for now
+                    weeklyVelocity: weeklyData
                 });
 
                 // 5. Upcoming Tasks
