@@ -4,69 +4,67 @@
 
 @layer base {
     :root {
-        /* Parques Nacionales Palette */
-        /* Forest Green Primary */
-        --primary: 138 65% 25%;
-        /* #166A2F */
-        --primary-foreground: 120 40% 98%;
+        /* Modern Dashboard Palette */
+        --primary: 24 95% 53%;
+        /* Warm Orange #F97316 */
+        --primary-foreground: 0 0% 100%;
 
-        /* Oceanside Blue Secondary */
-        --secondary: 178 80% 30%;
-        /* Deep Cyan/Teal */
-        --secondary-foreground: 210 40% 98%;
+        /* Teal Secondary */
+        --secondary: 170 60% 45%;
+        --secondary-foreground: 0 0% 100%;
 
-        /* Wax Palm Gold Accent */
-        --accent: 45 90% 50%;
-        --accent-foreground: 224 71% 4%;
+        /* Gold/Yellow Accent */
+        --accent: 45 100% 50%;
+        --accent-foreground: 0 0% 10%;
 
-        --background: 140 30% 98%;
-        /* Soft Tint */
-        --foreground: 140 60% 10%;
-        /* Dark Green/Black text */
+        --background: 40 20% 96%;
+        /* Warm off-white */
+        --foreground: 0 0% 12%;
+        /* Near-black text */
 
         --card: 0 0% 100%;
-        --card-foreground: 140 60% 10%;
+        /* Pure white cards */
+        --card-foreground: 0 0% 12%;
 
-        --muted: 140 20% 94%;
-        --muted-foreground: 140 20% 40%;
+        --muted: 40 10% 93%;
+        --muted-foreground: 0 0% 45%;
 
-        --destructive: 0 84% 60%;
+        --destructive: 0 72% 51%;
         --destructive-foreground: 0 0% 98%;
 
-        --border: 140 20% 90%;
-        --ring: 138 65% 25%;
-        --radius: 0.75rem;
-        /* Slightly less rounded for a more institutional feel */
+        --border: 40 10% 90%;
+        --ring: 24 95% 53%;
+        --radius: 1.25rem;
+        /* 20px - large rounded corners */
 
         --font-sans: var(--font-inter);
         --font-heading: var(--font-outfit);
     }
 
     .dark {
-        --background: 140 60% 4%;
-        --foreground: 140 30% 98%;
+        --background: 0 0% 8%;
+        --foreground: 0 0% 95%;
 
-        --card: 140 60% 5%;
-        --card-foreground: 140 30% 98%;
+        --card: 0 0% 12%;
+        --card-foreground: 0 0% 95%;
 
-        --primary: 138 60% 45%;
-        /* Lighter green for dark mode visibility */
+        --primary: 24 95% 58%;
         --primary-foreground: 0 0% 100%;
 
-        --secondary: 178 60% 40%;
+        --secondary: 170 50% 50%;
         --secondary-foreground: 0 0% 100%;
 
-        --muted: 140 30% 15%;
-        --muted-foreground: 140 20% 65%;
+        --muted: 0 0% 15%;
+        --muted-foreground: 0 0% 60%;
 
-        --accent: 45 80% 50%;
+        --accent: 45 100% 50%;
         --accent-foreground: 0 0% 10%;
 
         --destructive: 0 62% 30%;
         --destructive-foreground: 210 40% 98%;
 
-        --border: 140 30% 20%;
-        --ring: 138 60% 45%;
+        --border: 0 0% 18%;
+        --ring: 24 95% 58%;
     }
 }
 
@@ -90,12 +88,9 @@
     .dark input,
     .dark select,
     .dark textarea {
-        background-color: #020617 !important;
-        /* slate-950 */
-        color: #f8fafc !important;
-        /* slate-50 */
-        border-color: #1e293b !important;
-        /* slate-800 */
+        background-color: #1a1a1a !important;
+        color: #f5f5f5 !important;
+        border-color: #2e2e2e !important;
     }
 
     .dark input[type="date"]::-webkit-calendar-picker-indicator {
@@ -113,73 +108,69 @@
 }
 
 @layer components {
+    /* Clean card — no glassmorphism */
     .glass {
-        @apply bg-white/60 dark:bg-slate-950/60 backdrop-blur-2xl border border-white/20 dark:border-white/5;
+        @apply bg-white dark:bg-[#1e1e1e] border border-[hsl(var(--border))];
     }
 
     .glass-card {
-        @apply glass rounded-2xl;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        @apply bg-white dark:bg-[#1e1e1e] rounded-[20px];
+        box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.06), 0 4px 16px 0 rgba(0, 0, 0, 0.04);
     }
 
     .dark .glass-card {
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.4);
     }
 
+    /* Dark sidebar */
     .glass-sidebar {
-        @apply bg-white/70 dark:bg-slate-950/70 backdrop-blur-3xl border-r border-slate-200/50 dark:border-slate-800/50;
+        background-color: #1c1c1c;
+        border-right: 1px solid #2a2a2a;
     }
 
     .btn-primary {
-        @apply relative inline-flex items-center justify-center rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-all duration-300 hover:bg-primary/90 hover:-translate-y-0.5 active:scale-95 disabled:opacity-50;
-        box-shadow: 0 4px 14px 0 rgba(124, 58, 237, 0.39);
+        @apply relative inline-flex items-center justify-center rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:bg-primary/90 hover:-translate-y-0.5 active:scale-95 disabled:opacity-50;
+        box-shadow: 0 4px 14px 0 rgba(249, 115, 22, 0.35);
     }
 
     .btn-primary:hover {
-        box-shadow: 0 6px 20px rgba(124, 58, 237, 0.23);
+        box-shadow: 0 6px 20px rgba(249, 115, 22, 0.25);
     }
 
     .btn-secondary {
-        @apply inline-flex items-center justify-center rounded-xl bg-white dark:bg-slate-900 px-6 py-2.5 text-sm font-semibold text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:-translate-y-0.5 active:scale-95 disabled:opacity-50;
+        @apply inline-flex items-center justify-center rounded-xl bg-white dark:bg-[#1e1e1e] px-6 py-2.5 text-sm font-semibold text-slate-900 dark:text-white border border-[hsl(var(--border))] shadow-sm transition-all duration-200 hover:bg-[hsl(var(--muted))] hover:-translate-y-0.5 active:scale-95 disabled:opacity-50;
     }
 
     .btn-ghost {
-        @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium transition-all hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95;
+        @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium transition-all hover:bg-[hsl(var(--muted))] dark:hover:bg-[#2a2a2a] active:scale-95;
     }
 
     .input-premium {
-        @apply block w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 px-4 py-3 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all backdrop-blur-sm;
+        @apply block w-full rounded-xl border border-[hsl(var(--border))] bg-white dark:bg-[#1e1e1e] px-4 py-3 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all;
     }
 
     .input-field {
-        @apply block w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all;
+        @apply block w-full rounded-xl border border-[hsl(var(--border))] bg-white dark:bg-[#1e1e1e] px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all;
     }
 
+    /* Clean card — larger radius, flat, subtle shadow only */
     .card-premium {
-        @apply rounded-2xl border border-white/50 dark:border-slate-800/50 bg-white dark:bg-slate-950 p-6 transition-all duration-300 hover:-translate-y-1 overflow-hidden;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02), 0 10px 15px -3px rgba(0, 0, 0, 0.03);
+        @apply rounded-[20px] bg-white dark:bg-[#1e1e1e] p-6 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 8px 24px 0 rgba(0, 0, 0, 0.05);
     }
 
     .card-premium:hover {
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.06), 0 16px 32px 0 rgba(0, 0, 0, 0.06);
     }
 
     .dark .card-premium {
-        box-shadow: none;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
     }
 
-    /* Premium Stat Card with glassmorphism and hover effects */
+    /* Clean stat card — no glass, no pseudo gradients */
     .stat-card {
-        @apply glass-card p-6 overflow-hidden relative;
-    }
-
-    .stat-card::before {
-        content: "";
-        @apply absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 transition-opacity duration-500;
-    }
-
-    .stat-card:hover::before {
-        @apply opacity-100;
+        @apply bg-white dark:bg-[#1e1e1e] rounded-[20px] p-6 overflow-hidden relative;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 8px 24px 0 rgba(0, 0, 0, 0.05);
     }
 
     /* Hours progress bar — discrete width steps used by HoursProgressBar component.
@@ -205,13 +196,13 @@
         appearance: none;
         background: transparent;
         border: none;
-        @apply bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden;
+        @apply bg-[hsl(var(--muted))] dark:bg-[#2a2a2a] rounded-full overflow-hidden;
     }
 
     /* WebKit (Chrome, Safari, Edge) */
     .analytics-meter::-webkit-meter-bar {
         background: transparent;
-        @apply bg-slate-100 dark:bg-slate-800 rounded-full;
+        @apply bg-[hsl(var(--muted))] dark:bg-[#2a2a2a] rounded-full;
     }
     .analytics-meter--green::-webkit-meter-optimum-value,
     .analytics-meter--green::-webkit-meter-suboptimum-value,
@@ -260,13 +251,13 @@
     }
 
     .animate-reveal {
-        animation: reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation: reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     @keyframes reveal {
         from {
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateY(16px);
         }
 
         to {
@@ -276,22 +267,11 @@
     }
 }
 
-/* Mesh Gradient Background */
-/* Mesh Gradient Background - Nature Theme */
+/* Subtle warm background — no heavy gradients */
 .mesh-gradient {
-    background-color: hsla(140, 30%, 98%, 1);
-    background-image:
-        radial-gradient(at 0% 0%, hsla(138, 65%, 25%, 0.1) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, hsla(178, 80%, 30%, 0.1) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, hsla(45, 90%, 50%, 0.1) 0px, transparent 50%),
-        radial-gradient(at 0% 100%, hsla(138, 65%, 25%, 0.05) 0px, transparent 50%);
+    background-color: hsl(40, 20%, 96%);
 }
 
 .dark .mesh-gradient {
-    background-color: hsla(140, 60%, 4%, 1);
-    background-image:
-        radial-gradient(at 0% 0%, hsla(138, 60%, 45%, 0.15) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, hsla(178, 60%, 40%, 0.1) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, hsla(45, 80%, 50%, 0.1) 0px, transparent 50%),
-        radial-gradient(at 0% 100%, hsla(138, 60%, 45%, 0.05) 0px, transparent 50%);
+    background-color: hsl(0, 0%, 8%);
 }
