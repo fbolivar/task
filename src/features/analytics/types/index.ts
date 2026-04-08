@@ -61,6 +61,21 @@ export interface InventorySummaryItem {
     count: number;
 }
 
+export interface ProjectVarianceItem {
+    name: string;
+    budget: number;
+    actual: number;
+    variance_pct: number;
+}
+
+export interface ProjectTimelineItem {
+    name: string;
+    status: string;
+    days_remaining: number;
+    progress_pct: number;
+    end_date: string | null;
+}
+
 export interface AnalyticsDashboardData {
     kpis: AnalyticsKPI;
     risk_matrix: ProjectRiskDistribution[];
@@ -69,4 +84,7 @@ export interface AnalyticsDashboardData {
     task_efficiency: TaskEfficiencyStats[];
     recent_hiring_processes: RecentHiringProcess[];
     inventory_summary: InventorySummaryItem[];
+    user_names: Record<string, string>;
+    project_variance: ProjectVarianceItem[];
+    project_timeline: ProjectTimelineItem[];
 }

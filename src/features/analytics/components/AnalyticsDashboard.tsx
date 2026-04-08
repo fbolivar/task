@@ -8,8 +8,9 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import {
     Loader2, Target, Zap, Activity, Users, DollarSign,
     ShieldAlert, AlertTriangle, Bell, FileDown, Package,
-    TrendingUp, Warehouse
+    TrendingUp, Warehouse, CalendarClock, BarChart3
 } from 'lucide-react';
+import { ProjectVarianceItem, ProjectTimelineItem } from '../types';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     RadialBarChart, RadialBar
@@ -80,7 +81,10 @@ function buildAlerts(kpis: AnalyticsDashboardData['kpis']): Alert[] {
     return alerts;
 }
 
-function buildUserProductivity(tasks: { assigned_to: string | null; status: string | null }[]): UserProductivity[] {
+function buildUserProductivity(
+    tasks: { assigned_to: string | null; status: string | null }[],
+    userNames: Record<string, string> = {}
+): UserProductivity[] {
     const map: Record<string, { completed: number; total: number }> = {};
     tasks.forEach((t) => {
         const key = t.assigned_to || 'Sin Asignar';
@@ -92,7 +96,7 @@ function buildUserProductivity(tasks: { assigned_to: string | null; status: stri
     return Object.entries(map)
         .map(([userId, stats]) => ({
             userId,
-            name: userId.length === 36 ? `Usuario ${userId.slice(0, 8)}` : userId,
+            name: userNames[userId] ?? (userId.length === 36 ? `Usuario ${userId.slice(0, 8)}` : userId),
             completed: stats.completed,
             total: stats.total,
             pct: stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0,
@@ -395,11 +399,316 @@ function InventorySummarySection({ kpis }: { kpis: AnalyticsDashboardData['kpis'
 }
 
 // ---------------------------------------------------------------------------
+// Gerente-specific Sub-components
+// ---------------------------------------------------------------------------
+
+type SemaphoreColor = 'green' | 'amber' | 'red';
+
+function getSemaphoreColor(
+    budgetPct: number,
+    overdueTasks: number,
+    highRiskCount: number,
+): SemaphoreColor {
+    if (budgetPct > 95 || overdueTasks > 7 || highRiskCount > 2) return 'red';
+    if (budgetPct > 80 || overdueTasks > 3 || highRiskCount > 0) return 'amber';
+    return 'green';
+}
+
+const SEMAPHORE_STYLES: Record<SemaphoreColor, { dot: string; label: string; card: string }> = {
+    green: {
+        dot: 'bg-emerald-500',
+        label: 'text-emerald-700 dark:text-emerald-400',
+        card: 'border-emerald-200 dark:border-emerald-900 bg-emerald-50/60 dark:bg-emerald-950/30',
+    },
+    amber: {
+        dot: 'bg-amber-500',
+        label: 'text-amber-700 dark:text-amber-400',
+        card: 'border-amber-200 dark:border-amber-900 bg-amber-50/60 dark:bg-amber-950/30',
+    },
+    red: {
+        dot: 'bg-red-500',
+        label: 'text-red-700 dark:text-red-400',
+        card: 'border-red-200 dark:border-red-900 bg-red-50/60 dark:bg-red-950/30',
+    },
+};
+
+interface SemaphoreIndicatorProps {
+    label: string;
+    color: SemaphoreColor;
+    detail: string;
+}
+
+function SemaphoreIndicator({ label, color, detail }: SemaphoreIndicatorProps) {
+    const styles = SEMAPHORE_STYLES[color];
+    return (
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+            <span className={`w-3 h-3 rounded-full shrink-0 ${styles.dot} shadow-sm`} aria-hidden="true" />
+            <div className="min-w-0">
+                <p className={`text-[10px] font-black uppercase tracking-widest ${styles.label}`}>{label}</p>
+                <p className="text-xs font-bold text-foreground truncate">{detail}</p>
+            </div>
+        </div>
+    );
+}
+
+function ExecutiveSemaphore({ kpis }: { kpis: AnalyticsDashboardData['kpis'] }) {
+    const budgetPct = kpis.budget_execution_percentage;
+    const overdueTasks = kpis.overdue_tasks;
+    const highRisk = kpis.high_risk_projects_count;
+
+    const budgetColor = getSemaphoreColor(budgetPct, 0, 0);
+    const tasksColor: SemaphoreColor = overdueTasks > 7 ? 'red' : overdueTasks > 3 ? 'amber' : 'green';
+    const riskColor: SemaphoreColor = highRisk > 2 ? 'red' : highRisk > 0 ? 'amber' : 'green';
+    const overallColor = getSemaphoreColor(budgetPct, overdueTasks, highRisk);
+    const overallStyles = SEMAPHORE_STYLES[overallColor];
+
+    return (
+        <section aria-labelledby="semaphore-heading">
+            <div className={`rounded-[2rem] border p-6 ${overallStyles.card}`}>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                    <div className="flex items-center gap-3 shrink-0">
+                        <div className="p-2 rounded-xl bg-white/60 dark:bg-slate-900/60">
+                            <BarChart3 className="w-5 h-5 text-slate-600 dark:text-slate-300" aria-hidden="true" />
+                        </div>
+                        <div>
+                            <h2 id="semaphore-heading" className="text-sm font-black text-foreground uppercase tracking-widest">
+                                Salud General
+                            </h2>
+                            <p className={`text-[10px] font-black uppercase tracking-wider ${overallStyles.label}`}>
+                                {overallColor === 'green' ? 'Operacion Normal' : overallColor === 'amber' ? 'Atencion Requerida' : 'Alerta Critica'}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700 hidden sm:block" aria-hidden="true" />
+
+                    <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 w-full sm:w-auto">
+                        <SemaphoreIndicator
+                            label="Presupuesto"
+                            color={budgetColor}
+                            detail={`${budgetPct.toFixed(1)}% ejecutado`}
+                        />
+                        <SemaphoreIndicator
+                            label="Tareas"
+                            color={tasksColor}
+                            detail={`${overdueTasks} vencidas`}
+                        />
+                        <SemaphoreIndicator
+                            label="Riesgo"
+                            color={riskColor}
+                            detail={`${highRisk} proyectos alto riesgo`}
+                        />
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+}
+
+function BudgetVarianceSection({ items }: { items: ProjectVarianceItem[] }) {
+    if (items.length === 0) {
+        return (
+            <section aria-labelledby="variance-heading">
+                <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 border border-slate-200 dark:border-slate-800">
+                    <h2 id="variance-heading" className="text-lg font-black text-foreground mb-2 flex items-center gap-2">
+                        <DollarSign className="w-5 h-5 text-emerald-500" aria-hidden="true" />
+                        Variacion Presupuestal por Proyecto
+                    </h2>
+                    <p className="text-xs text-muted-foreground">Sin proyectos con presupuesto registrado.</p>
+                </div>
+            </section>
+        );
+    }
+
+    return (
+        <section aria-labelledby="variance-heading">
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 border border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600">
+                        <DollarSign className="w-5 h-5" aria-hidden="true" />
+                    </div>
+                    <div>
+                        <h2 id="variance-heading" className="text-lg font-black text-foreground">
+                            Variacion Presupuestal por Proyecto
+                        </h2>
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                            Presupuesto vs Costo Real
+                        </p>
+                    </div>
+                </div>
+
+                <div className="overflow-x-auto -mx-2">
+                    <table className="w-full text-sm" aria-label="Variacion presupuestal por proyecto">
+                        <thead>
+                            <tr className="border-b border-slate-100 dark:border-slate-800">
+                                <th scope="col" className="text-left py-3 px-3 text-[10px] font-black uppercase tracking-wider text-muted-foreground">Proyecto</th>
+                                <th scope="col" className="text-right py-3 px-3 text-[10px] font-black uppercase tracking-wider text-muted-foreground">Presupuesto</th>
+                                <th scope="col" className="text-right py-3 px-3 text-[10px] font-black uppercase tracking-wider text-muted-foreground">Real</th>
+                                <th scope="col" className="text-right py-3 px-3 text-[10px] font-black uppercase tracking-wider text-muted-foreground">Variacion %</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+                            {items.map((item) => {
+                                const isOver = item.actual > item.budget;
+                                const isNear = !isOver && item.variance_pct >= -10;
+                                const varianceClass = isOver
+                                    ? 'text-red-600 dark:text-red-400 bg-red-500/10'
+                                    : isNear
+                                        ? 'text-amber-600 dark:text-amber-400 bg-amber-500/10'
+                                        : 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10';
+                                const sign = item.variance_pct > 0 ? '+' : '';
+                                return (
+                                    <tr key={item.name} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                        <td className="py-3 px-3 font-bold text-foreground max-w-[180px]">
+                                            <span className="block truncate" title={item.name}>{item.name}</span>
+                                        </td>
+                                        <td className="py-3 px-3 text-right text-muted-foreground tabular-nums">
+                                            {formatCurrency(item.budget)}
+                                        </td>
+                                        <td className="py-3 px-3 text-right text-foreground font-medium tabular-nums">
+                                            {formatCurrency(item.actual)}
+                                        </td>
+                                        <td className="py-3 px-3 text-right">
+                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-black tabular-nums ${varianceClass}`}>
+                                                {sign}{item.variance_pct.toFixed(1)}%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div className="flex flex-wrap gap-3 mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <span className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" aria-hidden="true" /> Bajo presupuesto
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground">
+                        <span className="w-2 h-2 rounded-full bg-amber-500" aria-hidden="true" /> Proximo al limite (90-100%)
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground">
+                        <span className="w-2 h-2 rounded-full bg-red-500" aria-hidden="true" /> Sobrepresupuestado
+                    </span>
+                </div>
+            </div>
+        </section>
+    );
+}
+
+function ProjectTimelineSection({ items }: { items: ProjectTimelineItem[] }) {
+    if (items.length === 0) {
+        return (
+            <section aria-labelledby="timeline-heading">
+                <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 border border-slate-200 dark:border-slate-800">
+                    <h2 id="timeline-heading" className="text-lg font-black text-foreground mb-2 flex items-center gap-2">
+                        <CalendarClock className="w-5 h-5 text-blue-500" aria-hidden="true" />
+                        Cronograma de Proyectos
+                    </h2>
+                    <p className="text-xs text-muted-foreground">Sin proyectos con fecha de cierre registrada.</p>
+                </div>
+            </section>
+        );
+    }
+
+    const statusConfig: Record<string, { badge: string; dot: string }> = {
+        'En Tiempo': { badge: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400', dot: 'bg-emerald-500' },
+        'Proximo a Vencer': { badge: 'bg-amber-500/10 text-amber-700 dark:text-amber-400', dot: 'bg-amber-500' },
+        'Retrasado': { badge: 'bg-red-500/10 text-red-700 dark:text-red-400', dot: 'bg-red-500' },
+    };
+
+    return (
+        <section aria-labelledby="timeline-heading">
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 border border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600">
+                        <CalendarClock className="w-5 h-5" aria-hidden="true" />
+                    </div>
+                    <div>
+                        <h2 id="timeline-heading" className="text-lg font-black text-foreground">
+                            Cronograma de Proyectos
+                        </h2>
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                            Estado de avance por fecha de cierre
+                        </p>
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    {items.map((item) => {
+                        const cfg = statusConfig[item.status] ?? statusConfig['En Tiempo'];
+                        const endFormatted = item.end_date
+                            ? new Date(item.end_date).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
+                            : '—';
+                        const daysLabel = item.days_remaining < 0
+                            ? `${Math.abs(item.days_remaining)} dias vencido`
+                            : `${item.days_remaining} dias restantes`;
+
+                        return (
+                            <div key={item.name} className="group p-4 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 transition-all">
+                                <div className="flex items-start justify-between gap-3 mb-3">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${cfg.dot}`} aria-hidden="true" />
+                                        <span className="font-bold text-sm text-foreground truncate" title={item.name}>{item.name}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <span className="text-[10px] text-muted-foreground font-medium">{endFormatted}</span>
+                                        <span
+                                            className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wide ${cfg.badge}`}
+                                            aria-label={`Estado: ${item.status}`}
+                                        >
+                                            {item.status}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <div className="flex justify-between text-[10px] font-bold text-muted-foreground">
+                                        <span>Tiempo transcurrido</span>
+                                        <span>{daysLabel}</span>
+                                    </div>
+                                    <meter
+                                        className={`analytics-meter h-2 w-full rounded-full transition-all duration-700 ${
+                                            item.days_remaining < 0
+                                                ? 'analytics-meter--red'
+                                                : item.days_remaining < 15
+                                                    ? 'analytics-meter--amber'
+                                                    : 'analytics-meter--green'
+                                        }`}
+                                        value={item.progress_pct}
+                                        min={0}
+                                        max={100}
+                                        aria-label={`Tiempo transcurrido en ${item.name}: ${item.progress_pct}%`}
+                                    />
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                <div className="flex flex-wrap gap-3 mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <span className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" aria-hidden="true" /> En Tiempo
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground">
+                        <span className="w-2 h-2 rounded-full bg-amber-500" aria-hidden="true" /> Proximo a Vencer (&lt;15 dias)
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground">
+                        <span className="w-2 h-2 rounded-full bg-red-500" aria-hidden="true" /> Retrasado
+                    </span>
+                </div>
+            </div>
+        </section>
+    );
+}
+
+// ---------------------------------------------------------------------------
 // Main Component
 // ---------------------------------------------------------------------------
 
 export function AnalyticsDashboard() {
-    const { activeEntityId } = useAuthStore();
+    const { activeEntityId, profile } = useAuthStore();
+    const isGerente = profile?.role?.name === 'Gerente';
     const [data, setData] = useState<AnalyticsDashboardData | null>(null);
     const [loading, setLoading] = useState(true);
     const [period, setPeriod] = useState<Period>('30d');
@@ -409,7 +718,7 @@ export function AnalyticsDashboard() {
         async function load() {
             setLoading(true);
             try {
-                const res = await analyticsService.getDashboardData(activeEntityId);
+                const res = await analyticsService.getDashboardData(activeEntityId, period);
                 if (!cancelled) setData(res);
             } catch (error) {
                 console.error('Failed to load analytics', error);
@@ -450,7 +759,8 @@ export function AnalyticsDashboard() {
                 assigned_to: e.project_name,
                 status: i < e.completed ? 'Completado' : 'Pendiente',
             }))
-        )
+        ),
+        data.user_names
     );
 
     const periodLabel = PERIOD_OPTIONS.find((p) => p.value === period)?.label ?? period;
@@ -505,7 +815,7 @@ export function AnalyticsDashboard() {
             {/* KPI Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
-                    href="/proyectos"
+                    href={isGerente ? '/analisis' : '/proyectos'}
                     title="Ejecución Presupuestal"
                     value={`${data.kpis.budget_execution_percentage.toFixed(1)}%`}
                     subtext={`Total: ${formatCurrency(data.kpis.total_budget)}`}
@@ -516,7 +826,7 @@ export function AnalyticsDashboard() {
                     bgClass="bg-emerald-500/10"
                 />
                 <StatCard
-                    href="/tareas"
+                    href={isGerente ? '/analisis' : '/tareas'}
                     title="Eficiencia Operativa"
                     value={`${data.kpis.avg_task_completion.toFixed(1)}%`}
                     subtext={`${data.kpis.total_tasks} Tareas Totales`}
@@ -527,7 +837,7 @@ export function AnalyticsDashboard() {
                     bgClass="bg-amber-500/10"
                 />
                 <StatCard
-                    href="/proyectos"
+                    href={isGerente ? '/analisis' : '/proyectos'}
                     title="Salud de Cartera"
                     value={data.kpis.active_projects_count}
                     subtext="Proyectos Activos"

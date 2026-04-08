@@ -10,6 +10,8 @@ interface ProjectRow {
     risk_level: string | null;
     status: string | null;
     created_at: string;
+    start_date: string | null;
+    end_date: string | null;
 }
 
 interface AssetRow {
@@ -48,13 +50,33 @@ interface FunnelBucket {
     value: number;
 }
 
+function getPeriodStartDate(period?: string): Date {
+    const now = new Date();
+    switch (period) {
+        case '30d':
+            return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
+        case '90d':
+            return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 90);
+        case 'quarter': {
+            const quarterMonth = Math.floor(now.getMonth() / 3) * 3;
+            return new Date(now.getFullYear(), quarterMonth, 1);
+        }
+        case 'year':
+        default:
+            return new Date(now.getFullYear(), 0, 1);
+    }
+}
+
 export const analyticsService = {
-    async getDashboardData(entityId: string | 'all'): Promise<AnalyticsDashboardData> {
+    async getDashboardData(entityId: string | 'all', period?: string): Promise<AnalyticsDashboardData> {
         const supabase = createClient();
+        const startDate = getPeriodStartDate(period);
+        const startDateIso = startDate.toISOString();
 
         // 1. Fetch Projects with financial data
-        let projectsQuery = supabase.from('projects').select('id, name, budget, actual_cost, risk_level, status, created_at');
+        let projectsQuery = supabase.from('projects').select('id, name, budget, actual_cost, risk_level, status, created_at, start_date, end_date');
         if (entityId !== 'all') projectsQuery = projectsQuery.eq('entity_id', entityId);
+        projectsQuery = projectsQuery.gte('created_at', startDateIso);
 
         // 2. Fetch Hiring Processes with Project info and Phases
         let hiringQuery = supabase.from('hiring_processes').select('id, title, estimated_amount, status, total_progress, updated_at, project:projects(name), phases:hiring_phases_tracking(*)');
@@ -79,11 +101,30 @@ export const analyticsService = {
         const assets = (assetsRes.data || []) as AssetRow[];
         const totalActiveUsers = usersCountRes.count ?? 0;
 
-        // Now fetch tasks for these projects
+        // Now fetch tasks for these projects (also filtered by period)
         let tasksData: TaskRow[] = [];
         if (projectIds.length > 0) {
-            const { data } = await supabase.from('tasks').select('id, status, end_date, project_id, assigned_to').in('project_id', projectIds.slice(0, 100)); // Limit to avoid URL overflow
+            const { data } = await supabase
+                .from('tasks')
+                .select('id, status, end_date, project_id, assigned_to')
+                .in('project_id', projectIds.slice(0, 100)) // Limit to avoid URL overflow
+                .gte('created_at', startDateIso);
             tasksData = (data || []) as TaskRow[];
+        }
+
+        // Resolve user names for assigned_to IDs
+        const assignedIds = [...new Set(tasksData.map((t) => t.assigned_to).filter(Boolean))] as string[];
+        let userNames: Record<string, string> = {};
+        if (assignedIds.length > 0) {
+            const { data: profilesData } = await supabase
+                .from('profiles')
+                .select('id, full_name')
+                .in('id', assignedIds);
+            if (profilesData) {
+                for (const profile of profilesData as { id: string; full_name: string | null }[]) {
+                    userNames[profile.id] = profile.full_name || `Usuario ${profile.id.slice(0, 8)}`;
+                }
+            }
         }
 
         const hiring = (hiringRes.data || []) as HiringRow[];
@@ -196,6 +237,43 @@ export const analyticsService = {
             });
         }
 
+        // --- Budget Variance per Project ---
+        const projectVariance = projects
+            .filter((p) => (p.budget ?? 0) > 0)
+            .map((p) => {
+                const budget = p.budget ?? 0;
+                const actual = p.actual_cost ?? 0;
+                const variance_pct = budget > 0 ? ((actual - budget) / budget) * 100 : 0;
+                return { name: p.name, budget, actual, variance_pct };
+            })
+            .sort((a, b) => b.variance_pct - a.variance_pct);
+
+        // --- Project Timeline Status ---
+        const todayMs = Date.now();
+        const MS_PER_DAY = 1000 * 60 * 60 * 24;
+        const projectTimeline = projects
+            .filter((p) => p.end_date !== null)
+            .map((p) => {
+                const endMs = new Date(p.end_date!).getTime();
+                const startMs = p.start_date ? new Date(p.start_date).getTime() : new Date(p.created_at).getTime();
+                const daysRemaining = Math.round((endMs - todayMs) / MS_PER_DAY);
+                const totalDuration = endMs - startMs;
+                const elapsed = todayMs - startMs;
+                const progress_pct = totalDuration > 0 ? Math.min(100, Math.max(0, Math.round((elapsed / totalDuration) * 100))) : 0;
+
+                let status: string;
+                if (daysRemaining < 0) {
+                    status = 'Retrasado';
+                } else if (daysRemaining < 15) {
+                    status = 'Proximo a Vencer';
+                } else {
+                    status = 'En Tiempo';
+                }
+
+                return { name: p.name, status, days_remaining: daysRemaining, progress_pct, end_date: p.end_date };
+            })
+            .sort((a, b) => a.days_remaining - b.days_remaining);
+
         return {
             kpis: {
                 total_budget: totalBudget,
@@ -219,6 +297,9 @@ export const analyticsService = {
             financial_trend: financialTrend,
             recent_hiring_processes: recentHiringProcesses,
             inventory_summary: inventorySummary,
+            user_names: userNames,
+            project_variance: projectVariance,
+            project_timeline: projectTimeline,
         };
     }
 };
