@@ -1,8 +1,27 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 import nodemailer from 'nodemailer';
 
 export async function POST(request: Request) {
     try {
+        // Verify caller is Admin
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+        }
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role:roles(name)')
+            .eq('id', user.id)
+            .single();
+
+        if ((profile?.role as any)?.name !== 'Admin') {
+            return NextResponse.json({ error: 'Acceso denegado: Se requieren permisos de Administrador' }, { status: 403 });
+        }
+
         const { email, password, to } = await request.json();
 
         if (!email || !password || !to) {

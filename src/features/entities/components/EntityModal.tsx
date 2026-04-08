@@ -19,6 +19,7 @@ import {
     GitPullRequest
 } from 'lucide-react';
 import { Entity, EntityFormData, EntityType } from '../types';
+import { useToast } from '@/shared/components/Toast';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 import { createClient } from '@/lib/supabase/client';
 
@@ -43,6 +44,7 @@ const initialFormData: EntityFormData = {
 };
 
 export function EntityModal({ isOpen, onClose, onSave, entity }: EntityModalProps) {
+    const { toast } = useToast();
     const { t } = useSettings();
     const [formData, setFormData] = useState<EntityFormData>(initialFormData);
     const [isSaving, setIsSaving] = useState(false);
@@ -92,7 +94,7 @@ export function EntityModal({ isOpen, onClose, onSave, entity }: EntityModalProp
             setFormData(prev => ({ ...prev, logo_url: publicUrl }));
         } catch (error) {
             console.error('Error uploading entity logo:', error);
-            alert('Error al subir el logo.');
+            toast('Error al subir el logo.', 'error');
         } finally {
             setUploading(false);
         }

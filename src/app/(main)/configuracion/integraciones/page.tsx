@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useToast } from '@/shared/components/Toast';
 import { integrationService } from '@/features/integrations/services/integrationService';
 import { Integration } from '@/features/integrations/types';
 import { GmailModal } from '@/features/integrations/components/GmailModal';
@@ -8,6 +9,7 @@ import { DriveModal } from '@/features/integrations/components/DriveModal';
 import { Loader2, Mail, CheckCircle2, XCircle, ChevronRight, Puzzle } from 'lucide-react';
 
 export default function IntegrationsPage() {
+    const { toast } = useToast();
     const [integrations, setIntegrations] = useState<Integration[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
@@ -61,7 +63,7 @@ export default function IntegrationsPage() {
             setIntegrations(prev => prev.map(i => i.id === integration.id ? { ...i, is_active: newState } : i));
         } catch (error) {
             console.error('Error toggling integration:', error);
-            alert('Error al actualizar estado');
+            toast('Error al actualizar estado', 'error');
         }
     };
 

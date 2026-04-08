@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Send, History, AlertTriangle, CheckCircle2, Calendar } from 'lucide-react';
+import { useToast } from '@/shared/components/Toast';
 import { TaskFollowup } from '../types';
 import { trackingService } from '../services/trackingService';
 import { useSettings } from '@/shared/contexts/SettingsContext';
@@ -11,6 +12,7 @@ interface TrackingSectionProps {
 }
 
 export function TrackingSection({ taskId }: TrackingSectionProps) {
+    const { toast } = useToast();
     const { t } = useSettings();
     const [followups, setFollowups] = useState<TaskFollowup[]>([]);
 
@@ -54,7 +56,7 @@ export function TrackingSection({ taskId }: TrackingSectionProps) {
             setIssues('');
         } catch (error) {
             console.error('Error adding followup:', error);
-            alert(`Error al guardar: ${(error as any).message || 'Error desconocido'}`);
+            toast(`Error al guardar: ${(error as any).message || 'Error desconocido'}`, 'error');
         } finally {
             setSending(false);
         }

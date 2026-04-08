@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useToast } from '@/shared/components/Toast';
 import { X, Save, Mail, Key, Eye, EyeOff, CheckCircle2, ShieldCheck, HelpCircle, Loader2 } from 'lucide-react';
 import { Integration } from '../types';
 import { integrationService } from '../services/integrationService';
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function GmailModal({ isOpen, onClose, integration, onSuccess }: Props) {
+    const { toast } = useToast();
     const [email, setEmail] = useState('');
     const [appPassword, setAppPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -43,7 +45,7 @@ export function GmailModal({ isOpen, onClose, integration, onSuccess }: Props) {
             onClose();
         } catch (error) {
             console.error('Error saving config:', error);
-            alert('Error al guardar la configuración');
+            toast('Error al guardar la configuración', 'error');
         } finally {
             setLoading(false);
         }
@@ -57,10 +59,10 @@ export function GmailModal({ isOpen, onClose, integration, onSuccess }: Props) {
                 appPassword,
                 to: testEmail
             });
-            alert('¡Conexión exitosa! Correo de prueba enviado.');
+            toast('¡Conexión exitosa! Correo de prueba enviado.', 'success');
         } catch (error: any) {
             console.error('Error testing connection:', error);
-            alert('Error en la conexión: ' + error.message);
+            toast('Error en la conexión: ' + error.message, 'error');
         } finally {
             setTesting(false);
         }

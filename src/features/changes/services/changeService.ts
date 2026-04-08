@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/client';
 import { ChangeRequest, ChangeRequestFormData, ChangeStatus, ChangeType } from '../types';
 import { notificationService } from '@/shared/services/notificationService';
+import { getLoginUrl } from '@/shared/utils/appUrl';
 
 export const changeService = {
     async getChangeRequests(projectId?: string): Promise<ChangeRequest[]> {
@@ -47,7 +48,7 @@ export const changeService = {
         // Flatten assets
         const flattened = {
             ...data,
-            assets: data.assets?.map((a: any) => a.asset)
+            assets: data.assets?.map((a: { asset: { id: string; name: string } }) => a.asset)
         };
 
         return flattened as unknown as ChangeRequest;
@@ -123,7 +124,7 @@ export const changeService = {
                             title: newCRFull.title,
                             project: newCRFull.project?.name || 'N/A',
                             code: newCRFull.code,
-                            link: `https://gespro.bc-security.com/login`
+                            link: getLoginUrl()
                         }
                     );
                 }
@@ -145,7 +146,7 @@ export const changeService = {
         // 1. Update CR Main Data
         if (Object.keys(crData).length > 0) {
             // Remove status from crData to avoid resetting it during update
-            const { status, ...finalData } = crData as any;
+            const { status: _status, ...finalData } = crData as Record<string, unknown>;
             const { error } = await supabase
                 .from('change_requests')
                 .update(finalData)
@@ -183,29 +184,31 @@ export const changeService = {
     },
 
     cleanFormData(data: ChangeRequestFormData): ChangeRequestFormData {
-        const clean: any = { ...data };
+        const clean: ChangeRequestFormData = { ...data };
 
         // 1. Handle dates: empty string to null
-        const dateFields = ['start_at', 'end_at', 'comm_date'];
+        const dateFields: Array<keyof ChangeRequestFormData> = ['start_at', 'end_at', 'comm_date'];
         dateFields.forEach(field => {
-            if (clean[field] === '') clean[field] = null;
+            if (clean[field] === '') (clean as Record<keyof ChangeRequestFormData, unknown>)[field] = null;
         });
 
         // 2. Filter children: remove items with missing required fields
         if (clean.plans) {
-            clean.plans = clean.plans.filter((p: any) => p.phase && p.activity);
-            clean.plans.forEach((p: any) => {
-                if (p.start_at === '') p.start_at = null;
-                if (p.end_at === '') p.end_at = null;
-            });
+            clean.plans = clean.plans
+                .filter((p) => p.phase && p.activity)
+                .map((p) => ({
+                    ...p,
+                    start_at: p.start_at === '' ? undefined : p.start_at,
+                    end_at: p.end_at === '' ? undefined : p.end_at,
+                }));
         }
 
         if (clean.risks) {
-            clean.risks = clean.risks.filter((r: any) => r.risk_description);
+            clean.risks = clean.risks.filter((r) => r.risk_description);
         }
 
         if (clean.rollbacks) {
-            clean.rollbacks = clean.rollbacks.filter((r: any) => r.event_trigger && r.activity);
+            clean.rollbacks = clean.rollbacks.filter((r) => r.event_trigger && r.activity);
         }
 
         return clean;
@@ -213,7 +216,7 @@ export const changeService = {
 
     async updateStatus(id: string, status: ChangeStatus, approverId?: string): Promise<void> {
         const supabase = createClient();
-        const updates: any = { status };
+        const updates: { status: ChangeStatus; approver_id?: string; approval_date?: string } = { status };
         if (status === 'approved' || status === 'rejected') {
             updates.approver_id = approverId;
             updates.approval_date = new Date().toISOString();
@@ -262,7 +265,7 @@ export const changeService = {
         const templateCode = templateMap[newStatus];
         if (!templateCode) return;
 
-        let attachments: any[] = [];
+        let attachments: { filename: string; content: string; encoding: string }[] = [];
 
         // Only generate PDF for Approved status
         if (newStatus === 'approved') {
@@ -287,7 +290,7 @@ export const changeService = {
                 code: cr.code,
                 title: cr.title,
                 project: cr.project?.name || 'N/A',
-                link: `https://gespro.bc-security.com/login`
+                link: getLoginUrl()
             },
             attachments
         );

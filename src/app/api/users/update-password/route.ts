@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
+import { getLoginUrl } from '@/shared/utils/appUrl';
 import nodemailer from 'nodemailer';
 
 export async function POST(request: Request) {
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
                         .single();
 
                     const appName = settings?.app_name || 'GestorPro';
-                    const appUrl = 'https://gespro.bc-security.com/login';
+                    const appUrl = getLoginUrl();
 
                     let subject = `${appName} - Tu contraseña ha sido actualizada`;
                     let html = '';

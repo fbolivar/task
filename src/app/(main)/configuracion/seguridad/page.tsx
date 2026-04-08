@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useToast } from '@/shared/components/Toast';
 import { createClient } from '@/lib/supabase/client';
 import { Shield, Lock, Globe, Key, AlertTriangle, Save, Loader2, Plus, Trash2, Copy, Eye, EyeOff, CheckCircle } from 'lucide-react';
 
@@ -44,6 +45,7 @@ const defaultSettings: SecuritySettings = {
 };
 
 export default function SecurityPage() {
+    const { toast } = useToast();
     const [settings, setSettings] = useState<SecuritySettings>(defaultSettings);
     const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
     const [loading, setLoading] = useState(true);
@@ -115,7 +117,7 @@ export default function SecurityPage() {
             setTimeout(() => setSaved(false), 2000);
         } else {
             console.error('Error saving settings:', error);
-            alert('Error guardando configuración');
+            toast('Error guardando configuración', 'error');
         }
         setSaving(false);
     };
@@ -168,7 +170,7 @@ export default function SecurityPage() {
             fetchData(); // Refresh list
         } else {
             console.error('Error creating key:', error);
-            alert('Error creando llave');
+            toast('Error creando llave', 'error');
         }
         setCreatingKey(false);
     };

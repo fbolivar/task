@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/client';
 import { Task, TaskFormData } from '../types';
 import { notificationService } from '@/shared/services/notificationService';
+import { getLoginUrl } from '@/shared/utils/appUrl';
 
 // Send email notification for task assignment
 async function sendAssignmentNotificationEmail(
@@ -32,7 +33,7 @@ async function sendAssignmentNotificationEmail(
                 name: userData.full_name || 'Usuario',
                 title: taskTitle,
                 assigner: assignerName,
-                link: `https://gespro.bc-security.com/login`
+                link: getLoginUrl()
             }
         );
     } catch (error) {

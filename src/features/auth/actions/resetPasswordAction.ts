@@ -2,6 +2,7 @@
 
 import { createAdminClient } from '@/lib/supabase/server';
 import { sendSystemEmail } from '@/lib/email/systemEmail';
+import { getLoginUrl } from '@/shared/utils/appUrl';
 
 export async function requestPasswordResetAction(email: string) {
     try {
@@ -11,9 +12,7 @@ export async function requestPasswordResetAction(email: string) {
         // Need to define the redirect URL. Usually the update password page.
         // If the user clicks the link, they are logged in and tokens are exchanged.
         // We set redirect to /dashboard or a settings page where they can change the password.
-        const getBaseUrl = () => 'https://gespro.bc-security.com';
-
-        const redirectTo = `${getBaseUrl()}/login`;
+        const redirectTo = getLoginUrl();
 
         // 0. Check if user exists in Profiles
         const { data: userProfile, error: profileError } = await supabase

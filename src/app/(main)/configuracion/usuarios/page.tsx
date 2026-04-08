@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useToast } from '@/shared/components/Toast';
 import { useUsers } from '@/features/users/hooks/useUsers';
 import { userService } from '@/features/users/services/userService';
 import { UserTable } from '@/features/users/components/UserTable';
@@ -10,6 +11,7 @@ import { UserProfile, UserFormData } from '@/features/users/types';
 import { Shield, Plus, Search, Loader2, Users } from 'lucide-react';
 
 export default function UsuariosPage() {
+    const { toast } = useToast();
     const {
         users,
         roles,
@@ -155,9 +157,9 @@ export default function UsuariosPage() {
                     if (passwordUser) {
                         const result = await userService.adminUpdatePassword(passwordUser.id, newPassword);
                         if (result.emailSent) {
-                            alert(`Contraseña actualizada correctamente para ${passwordUser.full_name}.\n\nSe envió un correo de notificación a ${passwordUser.email}.`);
+                            toast(`Contraseña actualizada correctamente para ${passwordUser.full_name}. Se envió un correo de notificación a ${passwordUser.email}.`, 'success');
                         } else {
-                            alert(`Contraseña actualizada correctamente para ${passwordUser.full_name}.\n\nNo se pudo enviar el correo: ${result.emailError || 'Error desconocido'}`);
+                            toast(`Contraseña actualizada correctamente para ${passwordUser.full_name}. No se pudo enviar el correo: ${result.emailError || 'Error desconocido'}`, 'warning');
                         }
                     }
                 }}

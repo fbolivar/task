@@ -20,6 +20,7 @@ import {
     TrendingDown
 } from 'lucide-react';
 import { Asset, AssetFormData, AssetCategory, AssetStatus } from '../types';
+import { useToast } from '@/shared/components/Toast';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useSettings } from '@/shared/contexts/SettingsContext';
@@ -70,6 +71,7 @@ const initialFormData: AssetFormData = {
 };
 
 export function AssetModal({ isOpen, onClose, onSave, asset }: AssetModalProps) {
+    const { toast } = useToast();
     const { t } = useSettings();
     const [formData, setFormData] = useState<AssetFormData>(initialFormData);
     const [entities, setEntities] = useState<{ id: string, name: string }[]>([]);
@@ -126,7 +128,7 @@ export function AssetModal({ isOpen, onClose, onSave, asset }: AssetModalProps) 
             onClose();
         } catch (error) {
             console.error('Error saving asset:', error);
-            alert('Error al guardar el activo');
+            toast('Error al guardar el activo', 'error');
         } finally {
             setIsSaving(false);
         }

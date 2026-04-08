@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useToast } from '@/shared/components/Toast';
 import { X, CheckCircle2, ShieldCheck, HelpCircle, Loader2, HardDrive, ArrowRight } from 'lucide-react';
 import { Integration } from '../types';
 import { integrationService } from '../services/integrationService';
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function DriveModal({ isOpen, onClose, integration, onSuccess }: Props) {
+    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [jsonKey, setJsonKey] = useState('');
     const [step, setStep] = useState<1 | 2>(1);
@@ -22,7 +24,7 @@ export function DriveModal({ isOpen, onClose, integration, onSuccess }: Props) {
 
     const handleConnect = async () => {
         if (!jsonKey.trim()) {
-            alert('Por favor, pega el JSON de tu Service Account.');
+            toast('Por favor, pega el JSON de tu Service Account.', 'warning');
             return;
         }
 
@@ -36,7 +38,7 @@ export function DriveModal({ isOpen, onClose, integration, onSuccess }: Props) {
                     throw new Error('El JSON no parece ser una llave de Service Account válida.');
                 }
             } catch (e) {
-                alert('El JSON es inválido.');
+                toast('El JSON es inválido.', 'error');
                 setLoading(false);
                 return;
             }
@@ -56,7 +58,7 @@ export function DriveModal({ isOpen, onClose, integration, onSuccess }: Props) {
             setTimeout(onClose, 2000);
         } catch (error) {
             console.error('Error connecting Drive:', error);
-            alert('Error al guardar la configuración: ' + (error as any).message);
+            toast('Error al guardar la configuración: ' + (error as any).message, 'error');
         } finally {
             setLoading(false);
         }

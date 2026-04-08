@@ -15,6 +15,7 @@ import {
     HardDrive
 } from 'lucide-react';
 import { Task, TaskFormData, TaskPriority, TaskStatus, TaskSubStatus } from '../types';
+import { useToast } from '@/shared/components/Toast';
 import { createClient } from '@/lib/supabase/client';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 import { TrackingSection } from './TrackingSection';
@@ -40,6 +41,7 @@ const initialFormData: TaskFormData = {
 };
 
 export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
+    const { toast } = useToast();
     const { t } = useSettings();
     const [formData, setFormData] = useState<TaskFormData>(initialFormData);
     const [projects, setProjects] = useState<{ id: string, name: string }[]>([]);
@@ -87,7 +89,7 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
         e.preventDefault();
 
         if (formData.is_change_control_required && !formData.project_id) {
-            alert('Debes seleccionar un proyecto para activar el Control de Cambios.');
+            toast('Debes seleccionar un proyecto para activar el Control de Cambios.', 'warning');
             return;
         }
 

@@ -1,5 +1,44 @@
 import { createClient } from '@/lib/supabase/client';
 import { AnalyticsDashboardData } from '../types';
+import { HiringPhaseTracking } from '@/features/hiring/types';
+
+interface ProjectRow {
+    id: string;
+    name: string;
+    budget: number | null;
+    actual_cost: number | null;
+    risk_level: string | null;
+    status: string | null;
+}
+
+interface HiringRow {
+    id: string;
+    title: string;
+    estimated_amount: number | null;
+    status: string | null;
+    total_progress: number | null;
+    updated_at: string;
+    project: { name: string } | null;
+    phases: HiringPhaseTracking[];
+}
+
+interface TaskRow {
+    id: string;
+    status: string | null;
+    end_date: string | null;
+    project_id: string | null;
+    assigned_to: string | null;
+}
+
+interface RiskBucket {
+    count: number;
+    total_budget: number;
+}
+
+interface FunnelBucket {
+    count: number;
+    value: number;
+}
 
 export const analyticsService = {
     async getDashboardData(entityId: string | 'all'): Promise<AnalyticsDashboardData> {
@@ -14,36 +53,36 @@ export const analyticsService = {
         if (entityId !== 'all') hiringQuery = hiringQuery.eq('entity_id', entityId);
 
         // 3. Fetch Tasks for Efficiency Analysis
-        // Note: In a large scale app, we would aggregate this via RPC or SQL View. 
+        // Note: In a large scale app, we would aggregate this via RPC or SQL View.
         // For now, fetching lightweight fields is acceptable for this scale.
         // let tasksQuery = supabase.from('tasks').select('id, status, end_date, project_id, assigned_to'); // unused directly
 
         const [projectsRes, hiringRes] = await Promise.all([projectsQuery, hiringQuery]);
-        const projects = projectsRes.data || [];
-        const projectIds = projects.map((p: any) => p.id);
+        const projects = (projectsRes.data || []) as ProjectRow[];
+        const projectIds = projects.map((p) => p.id);
 
         // Now fetch tasks for these projects
-        let tasksData: any[] = [];
+        let tasksData: TaskRow[] = [];
         if (projectIds.length > 0) {
             const { data } = await supabase.from('tasks').select('id, status, end_date, project_id, assigned_to').in('project_id', projectIds.slice(0, 100)); // Limit to avoid URL overflow
-            tasksData = data || [];
+            tasksData = (data || []) as TaskRow[];
         }
 
-        const hiring = hiringRes.data || [];
+        const hiring = (hiringRes.data || []) as HiringRow[];
 
         // --- KPI Calculation ---
-        const totalBudget = projects.reduce((sum: number, p: any) => sum + (p.budget || 0), 0);
-        const executedBudget = projects.reduce((sum: number, p: any) => sum + (p.actual_cost || 0), 0);
-        const activeProjects = projects.filter((p: any) => p.status === 'Activo').length;
-        const highRiskProjects = projects.filter((p: any) => p.risk_level === 'Alto' || p.risk_level === 'Crítico').length;
+        const totalBudget = projects.reduce((sum, p) => sum + (p.budget || 0), 0);
+        const executedBudget = projects.reduce((sum, p) => sum + (p.actual_cost || 0), 0);
+        const activeProjects = projects.filter((p) => p.status === 'Activo').length;
+        const highRiskProjects = projects.filter((p) => p.risk_level === 'Alto' || p.risk_level === 'Crítico').length;
 
         const totalTasks = tasksData.length;
-        const completedTasks = tasksData.filter((t: any) => t.status === 'Completado').length;
-        const overdueTasks = tasksData.filter((t: any) => t.end_date && new Date(t.end_date) < new Date() && t.status !== 'Completado').length;
+        const completedTasks = tasksData.filter((t) => t.status === 'Completado').length;
+        const overdueTasks = tasksData.filter((t) => t.end_date && new Date(t.end_date) < new Date() && t.status !== 'Completado').length;
 
         // --- Risk Matrix ---
-        const riskMap: Record<string, any> = {};
-        projects.forEach((p: any) => {
+        const riskMap: Record<string, RiskBucket> = {};
+        projects.forEach((p) => {
             const risk = p.risk_level || 'Bajo';
             if (!riskMap[risk]) riskMap[risk] = { count: 0, total_budget: 0 };
             riskMap[risk].count++;
@@ -51,8 +90,8 @@ export const analyticsService = {
         });
 
         // --- Hiring Funnel ---
-        const funnelMap: Record<string, any> = {};
-        hiring.forEach((h: any) => {
+        const funnelMap: Record<string, FunnelBucket> = {};
+        hiring.forEach((h) => {
             const status = h.status || 'Borrador';
             if (!funnelMap[status]) funnelMap[status] = { count: 0, value: 0 };
             funnelMap[status].count++;
@@ -61,22 +100,22 @@ export const analyticsService = {
 
         // --- Recent Hiring Processes ---
         const recentHiringProcesses = hiring
-            .filter((h: any) => h.status !== 'Cancelado' && h.status !== 'Finalizado')
-            .map((h: any) => ({
+            .filter((h) => h.status !== 'Cancelado' && h.status !== 'Finalizado')
+            .map((h) => ({
                 id: h.id,
                 title: h.title,
                 project_name: h.project?.name || 'Sin Proyecto',
-                status: h.status,
+                status: h.status ?? '',
                 progress: h.total_progress || 0,
                 updated_at: h.updated_at,
                 phases: h.phases || []
             }))
-            .sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+            .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
             .slice(0, 5);
 
         // --- Task Efficiency per Project ---
         const projectEfficiency: Record<string, { total: number, completed: number }> = {};
-        tasksData.forEach((t: any) => {
+        tasksData.forEach((t) => {
             if (!t.project_id) return;
             if (!projectEfficiency[t.project_id]) projectEfficiency[t.project_id] = { total: 0, completed: 0 };
             projectEfficiency[t.project_id].total++;
@@ -84,8 +123,8 @@ export const analyticsService = {
         });
 
         const taskEfficiencyStats = projects
-            .filter((p: any) => projectEfficiency[p.id])
-            .map((p: any) => {
+            .filter((p) => projectEfficiency[p.id])
+            .map((p) => {
                 const stats = projectEfficiency[p.id];
                 return {
                     project_name: p.name,
@@ -94,7 +133,7 @@ export const analyticsService = {
                     efficiency: (stats.completed / (stats.total || 1)) * 100
                 };
             })
-            .sort((a: any, b: any) => b.efficiency - a.efficiency)
+            .sort((a, b) => b.efficiency - a.efficiency)
             .slice(0, 5); // Top 5
 
         // --- Simulated Financial Trend (since we lack historical tables) ---
@@ -114,8 +153,8 @@ export const analyticsService = {
                 budget_execution_percentage: totalBudget > 0 ? (executedBudget / totalBudget) * 100 : 0,
                 active_projects_count: activeProjects,
                 high_risk_projects_count: highRiskProjects,
-                active_hiring_processes: hiring.filter((h: any) => h.status !== 'Finalizado' && h.status !== 'Cancelado').length,
-                hiring_volume_estimated: hiring.reduce((sum: number, h: any) => sum + (h.estimated_amount || 0), 0),
+                active_hiring_processes: hiring.filter((h) => h.status !== 'Finalizado' && h.status !== 'Cancelado').length,
+                hiring_volume_estimated: hiring.reduce((sum, h) => sum + (h.estimated_amount || 0), 0),
                 avg_task_completion: totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0,
                 total_tasks: totalTasks,
                 overdue_tasks: overdueTasks,

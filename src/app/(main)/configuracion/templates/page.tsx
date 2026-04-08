@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useToast } from '@/shared/components/Toast';
 import { createClient } from '@/lib/supabase/client';
 import { Mail, Bell, Save, CheckCircle2, AlertTriangle, FileText, Loader2, ToggleLeft, ToggleRight, Layout, Users, Zap } from 'lucide-react';
 
@@ -34,6 +35,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export default function TemplatesPage() {
+    const { toast } = useToast();
     const [templates, setTemplates] = useState<EmailTemplate[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -121,7 +123,7 @@ export default function TemplatesPage() {
             setSelectedTemplate(prev => prev ? { ...prev, subject: editSubject || null, body_html: editBody, is_active: editActive } : null);
         } else {
             console.error('Error saving template:', error);
-            alert('Error guardando cambios');
+            toast('Error guardando cambios', 'error');
         }
         setSaving(false);
     };

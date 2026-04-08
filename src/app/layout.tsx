@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter, Outfit } from 'next/font/google'
 import './globals.css'
 import { SettingsProvider } from '@/shared/contexts/SettingsContext';
+import { ToastProvider } from '@/shared/components/Toast';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -27,7 +28,9 @@ export default function RootLayout({
     <html lang="es" className={`${inter.variable} ${outfit.variable}`} style={{ scrollBehavior: 'smooth' }} data-scroll-behavior="smooth">
       <body className="antialiased font-sans bg-background text-foreground selection:bg-primary/20">
         <SettingsProvider>
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </SettingsProvider>
       </body>
     </html>

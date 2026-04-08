@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { useToast } from '@/shared/components/Toast';
 import { createClient } from '@/lib/supabase/client';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 import { Save, Upload, RefreshCw } from 'lucide-react';
 
 export default function GeneralSettingsPage() {
+    const { toast } = useToast();
     const {
         app_name = 'GestorPro',
         header_color = '#2563EB',
@@ -56,7 +58,7 @@ export default function GeneralSettingsPage() {
             setFormData(prev => ({ ...prev, logo_url: publicUrl }));
         } catch (error) {
             console.error('Error uploading logo:', error);
-            alert('Error al subir el logo. Verifica permisos de Storage.');
+            toast('Error al subir el logo. Verifica permisos de Storage.', 'error');
         } finally {
             setUploading(false);
         }
@@ -96,7 +98,7 @@ export default function GeneralSettingsPage() {
             window.location.reload();
         } catch (error) {
             console.error('Error saving settings:', error);
-            alert('Error guardando configuración. Verifica que has iniciado sesión.');
+            toast('Error guardando configuración. Verifica que has iniciado sesión.', 'error');
         } finally {
             setSaving(false);
         }

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { getLoginUrl } from '@/shared/utils/appUrl';
 import nodemailer from 'nodemailer';
 
 export async function POST(request: Request) {
@@ -173,7 +174,7 @@ export async function POST(request: Request) {
                 const { data: settings } = await supabaseAdmin.from('app_settings').select('app_name, header_color').single();
                 const appName = settings?.app_name || 'GestorPro';
 
-                const appUrl = 'https://gespro.bc-security.com/login';
+                const appUrl = getLoginUrl();
                 const entityListStr = entityNames.join(', ');
 
                 let subject = `Bienvenido a ${appName} - Tus credenciales de acceso`;

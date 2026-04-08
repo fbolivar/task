@@ -78,7 +78,7 @@ export const authService = {
                 .order('name');
 
             if (allEntities) {
-                data.profile_entities = allEntities.map((entity: any) => ({ entity }));
+                data.profile_entities = allEntities.map((entity: { id: string; name: string; is_change_management_enabled: boolean }) => ({ entity }));
             }
         }
 
@@ -149,7 +149,7 @@ export const authService = {
         // Redirect to a page that handles password updates (e.g. settings or dashboard)
         // Ideally, it should be a dedicated /update-password page for "Recovery Mode"
         const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `https://gespro.bc-security.com/login`,
+            redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://gespro.bc-security.com'}/login`,
         });
         if (error) throw error;
         return data;

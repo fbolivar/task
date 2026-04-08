@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useToast } from '@/shared/components/Toast';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 import { GitPullRequest, Search, Filter, Plus } from 'lucide-react';
 import { changeService } from '../services/changeService';
@@ -13,6 +14,7 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { useRouter } from 'next/navigation';
 
 export function ChangeDashboardPage() {
+    const { toast } = useToast();
     const { t } = useSettings();
     const [changeRequests, setChangeRequests] = useState<ChangeRequest[]>([]);
     const [loading, setLoading] = useState(true);
@@ -80,7 +82,7 @@ export function ChangeDashboardPage() {
             await fetchAllData();
         } catch (error) {
             console.error('Error saving change request:', error);
-            alert('Error al guardar. Revisa la consola.');
+            toast('Error al guardar. Revisa la consola.', 'error');
         }
     };
 
@@ -108,7 +110,7 @@ export function ChangeDashboardPage() {
             await fetchAllData();
         } catch (error) {
             console.error('Error deleting change request:', error);
-            alert('Error al eliminar. Revisa la consola.');
+            toast('Error al eliminar. Revisa la consola.', 'error');
         }
     };
 

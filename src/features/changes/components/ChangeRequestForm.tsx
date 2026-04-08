@@ -2,18 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import {
-    X, Save, Loader2, AlertTriangle, CheckCircle,
+    X, Save, Loader2,
     Calendar, FileText, Activity, ShieldAlert,
-    Database, RotateCcw, Send, Archive
+    Database, RotateCcw, CheckCircle
 } from 'lucide-react';
-import { useSettings } from '@/shared/contexts/SettingsContext';
+import { useToast } from '@/shared/components/Toast';
 import {
-    ChangeRequest, ChangeRequestFormData, ChangeType, ChangePriority,
-    RiskLevel, ImpactLevel, CommResponsible, ChangePlan, ChangeRisk,
-    ChangeRollback, ChangeFollowup
+    ChangeRequest, ChangeRequestFormData, ChangeStatus,
 } from '../types';
 import { Badge } from '@/shared/components/ui/Badge';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { ChangeFormGeneral } from './ChangeFormGeneral';
+import { ChangeFormMatrixComm } from './ChangeFormMatrixComm';
+import { ChangeFormPlanning } from './ChangeFormPlanning';
+import { ChangeFormRisks } from './ChangeFormRisks';
+import { ChangeFormAssets } from './ChangeFormAssets';
+import { ChangeFormRollback } from './ChangeFormRollback';
 
 interface ChangeRequestFormProps {
     initialData?: ChangeRequest;
@@ -21,7 +25,7 @@ interface ChangeRequestFormProps {
     assets: { id: string; name: string }[];
     users: { id: string; full_name: string }[];
     onSave: (data: ChangeRequestFormData) => Promise<void>;
-    onStatusChange?: (id: string, status: any) => Promise<void>;
+    onStatusChange?: (id: string, status: ChangeStatus) => Promise<void>;
     onClose: () => void;
 }
 
@@ -34,82 +38,41 @@ const TABS = [
     { id: 'rollback', label: 'Rollback', icon: RotateCcw },
 ];
 
-// Helper Components (Defined outside to avoid focus loss on re-render)
-const SectionTitle = ({ children }: { children: React.ReactNode }) => (
-    <h3 className="text-sm font-black uppercase tracking-wider text-muted-foreground mb-4 border-b border-slate-100 dark:border-slate-800 pb-2">
-        {children}
-    </h3>
-);
-
-const Label = ({ children }: { children: React.ReactNode }) => (
-    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 block">
-        {children}
-    </label>
-);
-
-const Input = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
-    <input
-        {...props}
-        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium"
-    />
-);
-
-const Select = (props: React.SelectHTMLAttributes<HTMLSelectElement>) => (
-    <div className="relative">
-        <select
-            {...props}
-            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium appearance-none"
-        />
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
-            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-        </div>
-    </div>
-);
-
-const Textarea = (props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => (
-    <textarea
-        {...props}
-        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium min-h-[100px]"
-    />
-);
+const EMPTY_FORM: ChangeRequestFormData = {
+    project_id: '',
+    title: '',
+    description: '',
+    justification: '',
+    priority: 'medium',
+    change_type: undefined,
+    scope: '',
+    start_at: '',
+    end_at: '',
+    matrix_impact: 'minor',
+    matrix_urgency: 'low',
+    matrix_prioritization: 'low',
+    comm_message: '',
+    comm_date: '',
+    comm_responsible: 'technology',
+    plans: [],
+    risks: [],
+    rollbacks: [],
+    asset_ids: [],
+    approver_id: '',
+};
 
 export function ChangeRequestForm({ initialData, projects, assets, users, onSave, onStatusChange, onClose }: ChangeRequestFormProps) {
-    const { t } = useSettings();
+    const { toast } = useToast();
     const { profile } = useAuth();
     const [activeTab, setActiveTab] = useState('general');
     const [isSaving, setIsSaving] = useState(false);
+    const [formData, setFormData] = useState<ChangeRequestFormData>(EMPTY_FORM);
 
     const currentUserId = profile?.id;
     const isApprover = initialData?.approver_id === currentUserId;
     const isRequester = initialData?.requester_id === currentUserId || !initialData;
     const isAdmin = profile?.role?.name === 'Admin';
     const canEdit = isRequester || isAdmin;
-
-    // Form State
-    const [formData, setFormData] = useState<ChangeRequestFormData>({
-        project_id: '',
-        title: '',
-        description: '',
-        justification: '',
-        priority: 'medium',
-        change_type: undefined,
-        scope: '',
-        start_at: '',
-        end_at: '',
-        matrix_impact: 'minor',
-        matrix_urgency: 'low',
-        matrix_prioritization: 'low',
-        comm_message: '',
-        comm_date: '',
-        comm_responsible: 'technology',
-        plans: [],
-        risks: [],
-        rollbacks: [],
-        asset_ids: [],
-        approver_id: ''
-    });
 
     useEffect(() => {
         if (initialData) {
@@ -134,22 +97,20 @@ export function ChangeRequestForm({ initialData, projects, assets, users, onSave
                 risks: initialData.risks || [],
                 rollbacks: initialData.rollbacks || [],
                 asset_ids: initialData.assets?.map(a => a.id) || [],
-                approver_id: initialData.approver_id || ''
+                approver_id: initialData.approver_id || '',
             });
         } else if (projects.length > 0 && !formData.project_id) {
             setFormData(prev => ({ ...prev, project_id: projects[0].id }));
         }
-    }, [initialData, projects, formData.project_id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initialData, projects]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        // Validation
         if (!formData.project_id || !formData.title.trim() || !formData.approver_id) {
-            alert('Debes seleccionar un proyecto, ingresar un título y asignar un autorizador');
+            toast('Debes seleccionar un proyecto, ingresar un título y asignar un autorizador', 'warning');
             return;
         }
-
         setIsSaving(true);
         try {
             await onSave(formData);
@@ -160,514 +121,6 @@ export function ChangeRequestForm({ initialData, projects, assets, users, onSave
             setIsSaving(false);
         }
     };
-
-    // Tab Content Renderers
-    const renderGeneral = () => (
-        <div className="space-y-6 animate-in fade-in duration-300">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                    <Label>{t('tasks.form.project')}</Label>
-                    <Select
-                        value={formData.project_id}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, project_id: e.target.value })}
-                        disabled={!!initialData}
-                    >
-                        {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </Select>
-                </div>
-                <div>
-                    <Label>Autorizador (Quien aprueba)</Label>
-                    <Select
-                        value={formData.approver_id || ''}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, approver_id: e.target.value })}
-                    >
-                        <option value="">Seleccionar...</option>
-                        {users.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
-                    </Select>
-                </div>
-                <div>
-                    <Label>Tipo de Cambio</Label>
-                    <Select
-                        value={formData.change_type || ''}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, change_type: e.target.value as ChangeType })}
-                    >
-                        <option value="">Seleccionar...</option>
-                        <option value="telecom">Telecomunicaciones</option>
-                        <option value="telephony">Telefonía</option>
-                        <option value="security">Seguridad</option>
-                        <option value="database">Base de Datos</option>
-                        <option value="apps">Aplicaciones</option>
-                        <option value="infra">Infraestructura</option>
-                    </Select>
-                </div>
-            </div>
-
-            <div>
-                <Label>Título del Cambio</Label>
-                <Input
-                    value={formData.title}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Resumen corto del cambio"
-                />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                    <Label>Fecha Inicio</Label>
-                    <Input
-                        type="datetime-local"
-                        value={formData.start_at}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, start_at: e.target.value })}
-                    />
-                </div>
-                <div>
-                    <Label>Fecha Fin</Label>
-                    <Input
-                        type="datetime-local"
-                        value={formData.end_at}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, end_at: e.target.value })}
-                    />
-                </div>
-            </div>
-
-            <div>
-                <Label>Alcance</Label>
-                <Textarea
-                    value={formData.scope}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, scope: e.target.value })}
-                    placeholder="Descripción detallada del alcance..."
-                />
-            </div>
-
-            <div>
-                <Label>Justificación</Label>
-                <Textarea
-                    value={formData.justification}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, justification: e.target.value })}
-                    placeholder="¿Por qué es necesario este cambio?"
-                />
-            </div>
-        </div>
-    );
-
-    const renderMatrix = () => (
-        <div className="space-y-6 animate-in fade-in duration-300">
-            <SectionTitle>Evaluación de Impacto y Riesgo</SectionTitle>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div>
-                    <Label>Impacto</Label>
-                    <Select
-                        value={formData.matrix_impact}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, matrix_impact: e.target.value as ImpactLevel })}
-                        className="bg-slate-50"
-                    >
-                        <option value="minor">Menor (Verde)</option>
-                        <option value="moderate">Moderado (Amarillo)</option>
-                        <option value="major">Mayor (Rojo)</option>
-                    </Select>
-                </div>
-                <div>
-                    <Label>Urgencia</Label>
-                    <Select
-                        value={formData.matrix_urgency}
-                        onChange={e => setFormData({ ...formData, matrix_urgency: e.target.value as RiskLevel })}
-                    >
-                        <option value="low">Baja (Verde)</option>
-                        <option value="medium">Media (Amarillo)</option>
-                        <option value="high">Alta (Rojo)</option>
-                    </Select>
-                </div>
-                <div>
-                    <Label>Priorización</Label>
-                    <Select
-                        value={formData.matrix_prioritization}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, matrix_prioritization: e.target.value as RiskLevel })}
-                    >
-                        <option value="low">Baja</option>
-                        <option value="medium">Media</option>
-                        <option value="high">Alta</option>
-                    </Select>
-                </div>
-            </div>
-
-            <SectionTitle>Comunicación</SectionTitle>
-            <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                        <Label>Responsable Envío</Label>
-                        <Select
-                            value={formData.comm_responsible}
-                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, comm_responsible: e.target.value as CommResponsible })}
-                        >
-                            <option value="technology">Tecnología</option>
-                            <option value="comms">Comunicaciones</option>
-                            <option value="others">Otros</option>
-                        </Select>
-                    </div>
-                    <div>
-                        <Label>Fecha Envío</Label>
-                        <Input
-                            type="datetime-local"
-                            value={formData.comm_date}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, comm_date: e.target.value })}
-                        />
-                    </div>
-                </div>
-                <div>
-                    <Label>Mensaje de Comunicación</Label>
-                    <Textarea
-                        value={formData.comm_message}
-                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, comm_message: e.target.value })}
-                        placeholder="Mensaje que se enviará a los interesados..."
-                    />
-                </div>
-            </div>
-        </div>
-    );
-
-    const renderPlanning = () => (
-        <div className="space-y-6 animate-in fade-in duration-300">
-            <div className="flex justify-between items-center">
-                <SectionTitle>Plan de Cambio (Fases y Actividades)</SectionTitle>
-                <button
-                    type="button"
-                    onClick={() => setFormData({
-                        ...formData,
-                        plans: [...(formData.plans || []), { phase: '', activity: '', responsible_id: users[0]?.id }]
-                    })}
-                    className="text-xs font-bold text-primary hover:underline hover:text-primary/80"
-                >
-                    + Agregar Actividad
-                </button>
-            </div>
-
-            <div className="space-y-4">
-                {formData.plans?.map((plan, idx) => (
-                    <div key={idx} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 relative group">
-                        <button
-                            type="button"
-                            onClick={() => setFormData({ ...formData, plans: formData.plans?.filter((_, i) => i !== idx) })}
-                            className="absolute top-2 right-2 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                            <div>
-                                <Label>Fase</Label>
-                                <Input
-                                    value={plan.phase}
-                                    onChange={e => {
-                                        const newPlans = [...(formData.plans || [])];
-                                        newPlans[idx].phase = e.target.value;
-                                        setFormData({ ...formData, plans: newPlans });
-                                    }}
-                                    placeholder="Ej: Preparación"
-                                />
-                            </div>
-                            <div>
-                                <Label>Actividad</Label>
-                                <Input
-                                    value={plan.activity}
-                                    onChange={e => {
-                                        const newPlans = [...(formData.plans || [])];
-                                        newPlans[idx].activity = e.target.value;
-                                        setFormData({ ...formData, plans: newPlans });
-                                    }}
-                                    placeholder="Descripción de la tarea"
-                                />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <div>
-                                <Label>Responsable</Label>
-                                <Select
-                                    value={plan.responsible_id || ''}
-                                    onChange={e => {
-                                        const newPlans = [...(formData.plans || [])];
-                                        newPlans[idx].responsible_id = e.target.value;
-                                        setFormData({ ...formData, plans: newPlans });
-                                    }}
-                                >
-                                    <option value="">Seleccionar...</option>
-                                    {users.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
-                                </Select>
-                            </div>
-                            <div>
-                                <Label>Recursos</Label>
-                                <Input
-                                    value={plan.resources_required || ''}
-                                    onChange={e => {
-                                        const newPlans = [...(formData.plans || [])];
-                                        newPlans[idx].resources_required = e.target.value;
-                                        setFormData({ ...formData, plans: newPlans });
-                                    }}
-                                    placeholder="Hardware, software, etc."
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                    <Label>Inicio</Label>
-                                    <Input
-                                        type="datetime-local"
-                                        tabIndex={-1}
-                                        value={plan.start_at ? new Date(plan.start_at).toISOString().slice(0, 16) : ''}
-                                        onChange={e => {
-                                            const newPlans = [...(formData.plans || [])];
-                                            newPlans[idx].start_at = e.target.value;
-                                            setFormData({ ...formData, plans: newPlans });
-                                        }}
-                                        className="text-xs px-2"
-                                    />
-                                </div>
-                                <div>
-                                    <Label>Fin</Label>
-                                    <Input
-                                        type="datetime-local"
-                                        tabIndex={-1}
-                                        value={plan.end_at ? new Date(plan.end_at).toISOString().slice(0, 16) : ''}
-                                        onChange={e => {
-                                            const newPlans = [...(formData.plans || [])];
-                                            newPlans[idx].end_at = e.target.value;
-                                            setFormData({ ...formData, plans: newPlans });
-                                        }}
-                                        className="text-xs px-2"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-
-    const renderRisks = () => (
-        <div className="space-y-6 animate-in fade-in duration-300">
-            <div className="flex justify-between items-center">
-                <SectionTitle>Matriz de Riesgos</SectionTitle>
-                <button
-                    type="button"
-                    onClick={() => setFormData({
-                        ...formData,
-                        risks: [...(formData.risks || []), {
-                            risk_description: '', probability: 'low', impact: 'minor', priority: 'low'
-                        }]
-                    })}
-                    className="text-xs font-bold text-primary hover:underline"
-                >
-                    + Agregar Riesgo
-                </button>
-            </div>
-
-            <div className="space-y-4">
-                {formData.risks?.map((risk, idx) => (
-                    <div key={idx} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 relative group">
-                        <button
-                            type="button"
-                            onClick={() => setFormData({ ...formData, risks: formData.risks?.filter((_, i) => i !== idx) })}
-                            className="absolute top-2 right-2 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-                        <div className="mb-3">
-                            <Label>Riesgo</Label>
-                            <Input
-                                value={risk.risk_description}
-                                onChange={e => {
-                                    const newRisks = [...(formData.risks || [])];
-                                    newRisks[idx].risk_description = e.target.value;
-                                    setFormData({ ...formData, risks: newRisks });
-                                }}
-                                placeholder="Descripción del riesgo potencial"
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                            <div>
-                                <Label>Probabilidad</Label>
-                                <Select
-                                    value={risk.probability}
-                                    onChange={e => {
-                                        const newRisks = [...(formData.risks || [])];
-                                        newRisks[idx].probability = e.target.value as RiskLevel;
-                                        setFormData({ ...formData, risks: newRisks });
-                                    }}
-                                >
-                                    <option value="low">Baja</option>
-                                    <option value="medium">Media</option>
-                                    <option value="high">Alta</option>
-                                </Select>
-                            </div>
-                            <div>
-                                <Label>Impacto</Label>
-                                <Select
-                                    value={risk.impact}
-                                    onChange={e => {
-                                        const newRisks = [...(formData.risks || [])];
-                                        newRisks[idx].impact = e.target.value as ImpactLevel;
-                                        setFormData({ ...formData, risks: newRisks });
-                                    }}
-                                >
-                                    <option value="minor">Menor</option>
-                                    <option value="moderate">Moderado</option>
-                                    <option value="major">Mayor</option>
-                                </Select>
-                            </div>
-                            <div>
-                                <Label>Prioridad</Label>
-                                <Select
-                                    value={risk.priority}
-                                    onChange={e => {
-                                        const newRisks = [...(formData.risks || [])];
-                                        newRisks[idx].priority = e.target.value as RiskLevel;
-                                        setFormData({ ...formData, risks: newRisks });
-                                    }}
-                                >
-                                    <option value="low">Baja</option>
-                                    <option value="medium">Media</option>
-                                    <option value="high">Alta</option>
-                                </Select>
-                            </div>
-                            <div>
-                                <Label>Responsable</Label>
-                                <Select
-                                    value={risk.responsible_id || ''}
-                                    onChange={e => {
-                                        const newRisks = [...(formData.risks || [])];
-                                        newRisks[idx].responsible_id = e.target.value;
-                                        setFormData({ ...formData, risks: newRisks });
-                                    }}
-                                >
-                                    <option value="">Seleccionar...</option>
-                                    {users.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
-                                </Select>
-                            </div>
-                        </div>
-                        <div>
-                            <Label>Acción de Mitigación</Label>
-                            <Input
-                                value={risk.mitigation_action || ''}
-                                onChange={e => {
-                                    const newRisks = [...(formData.risks || [])];
-                                    newRisks[idx].mitigation_action = e.target.value;
-                                    setFormData({ ...formData, risks: newRisks });
-                                }}
-                                placeholder="Estrategia para mitigar el riesgo"
-                            />
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-
-    const renderAssets = () => (
-        <div className="space-y-6 animate-in fade-in duration-300">
-            <SectionTitle>Activos Involucrados</SectionTitle>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto p-1">
-                {assets.map(asset => {
-                    const isSelected = formData.asset_ids?.includes(asset.id);
-                    return (
-                        <div
-                            key={asset.id}
-                            onClick={() => {
-                                const newAssets = isSelected
-                                    ? formData.asset_ids?.filter(id => id !== asset.id)
-                                    : [...(formData.asset_ids || []), asset.id];
-                                setFormData({ ...formData, asset_ids: newAssets });
-                            }}
-                            className={`
-                                cursor-pointer p-3 rounded-xl border transition-all flex items-center justify-between
-                                ${isSelected
-                                    ? 'bg-primary/5 border-primary text-primary'
-                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-primary/50'}
-                            `}
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-primary' : 'bg-slate-300'}`} />
-                                <span className="text-sm font-medium truncate">{asset.name}</span>
-                            </div>
-                            {isSelected && <CheckCircle className="w-4 h-4" />}
-                        </div>
-                    );
-                })}
-            </div>
-            {assets.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                    No hay activos registrados en el inventario.
-                </p>
-            )}
-        </div>
-    );
-
-    const renderRollback = () => (
-        <div className="space-y-6 animate-in fade-in duration-300">
-            <div className="flex justify-between items-center">
-                <SectionTitle>Plan de Retorno (Rollback)</SectionTitle>
-                <button
-                    type="button"
-                    onClick={() => setFormData({
-                        ...formData,
-                        rollbacks: [...(formData.rollbacks || []), { event_trigger: '', activity: '', alternative_strategy: '' }]
-                    })}
-                    className="text-xs font-bold text-primary hover:underline hover:text-primary/80"
-                >
-                    + Agregar Estrategia
-                </button>
-            </div>
-
-            <div className="space-y-4">
-                {formData.rollbacks?.map((rb, idx) => (
-                    <div key={idx} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 relative group">
-                        <button
-                            type="button"
-                            onClick={() => setFormData({ ...formData, rollbacks: formData.rollbacks?.filter((_, i) => i !== idx) })}
-                            className="absolute top-2 right-2 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                            <div>
-                                <Label>Evento Desencadenante</Label>
-                                <Input
-                                    value={rb.event_trigger}
-                                    onChange={e => {
-                                        const newRbs = [...(formData.rollbacks || [])];
-                                        newRbs[idx].event_trigger = e.target.value;
-                                        setFormData({ ...formData, rollbacks: newRbs });
-                                    }}
-                                    placeholder="¿Qué incidente activa el rollback?"
-                                />
-                            </div>
-                            <div>
-                                <Label>Actividad de Retorno</Label>
-                                <Input
-                                    value={rb.activity}
-                                    onChange={e => {
-                                        const newRbs = [...(formData.rollbacks || [])];
-                                        newRbs[idx].activity = e.target.value;
-                                        setFormData({ ...formData, rollbacks: newRbs });
-                                    }}
-                                    placeholder="Pasos técnicos para revertir"
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <Label>Estrategia Alternativa</Label>
-                            <Input
-                                value={rb.alternative_strategy || ''}
-                                onChange={e => {
-                                    const newRbs = [...(formData.rollbacks || [])];
-                                    newRbs[idx].alternative_strategy = e.target.value;
-                                    setFormData({ ...formData, rollbacks: newRbs });
-                                }}
-                                placeholder="Plan B si el rollback falla"
-                            />
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
@@ -688,8 +141,8 @@ export function ChangeRequestForm({ initialData, projects, assets, users, onSave
                             </div>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
-                        <X className="w-6 h-6 text-muted-foreground" />
+                    <button type="button" onClick={onClose} aria-label="Cerrar formulario" className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+                        <X className="w-6 h-6 text-muted-foreground" aria-hidden="true" />
                     </button>
                 </div>
 
@@ -702,6 +155,7 @@ export function ChangeRequestForm({ initialData, projects, assets, users, onSave
                             const isActive = activeTab === tab.id;
                             return (
                                 <button
+                                    type="button"
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
                                     className={`
@@ -721,12 +175,48 @@ export function ChangeRequestForm({ initialData, projects, assets, users, onSave
                     {/* Content Area */}
                     <div className="flex-1 overflow-y-auto p-8 bg-white dark:bg-slate-900">
                         <form onSubmit={handleSubmit} id="change-form" className={`max-w-3xl mx-auto pb-20 ${!canEdit ? 'pointer-events-none opacity-80' : ''}`}>
-                            {activeTab === 'general' && renderGeneral()}
-                            {activeTab === 'matrix' && renderMatrix()}
-                            {activeTab === 'planning' && renderPlanning()}
-                            {activeTab === 'risks' && renderRisks()}
-                            {activeTab === 'assets' && renderAssets()}
-                            {activeTab === 'rollback' && renderRollback()}
+                            {activeTab === 'general' && (
+                                <ChangeFormGeneral
+                                    formData={formData}
+                                    onChange={setFormData}
+                                    projects={projects}
+                                    users={users}
+                                    isEditMode={!!initialData}
+                                />
+                            )}
+                            {activeTab === 'matrix' && (
+                                <ChangeFormMatrixComm
+                                    formData={formData}
+                                    onChange={setFormData}
+                                />
+                            )}
+                            {activeTab === 'planning' && (
+                                <ChangeFormPlanning
+                                    formData={formData}
+                                    onChange={setFormData}
+                                    users={users}
+                                />
+                            )}
+                            {activeTab === 'risks' && (
+                                <ChangeFormRisks
+                                    formData={formData}
+                                    onChange={setFormData}
+                                    users={users}
+                                />
+                            )}
+                            {activeTab === 'assets' && (
+                                <ChangeFormAssets
+                                    formData={formData}
+                                    onChange={setFormData}
+                                    assets={assets}
+                                />
+                            )}
+                            {activeTab === 'rollback' && (
+                                <ChangeFormRollback
+                                    formData={formData}
+                                    onChange={setFormData}
+                                />
+                            )}
                         </form>
                     </div>
                 </div>

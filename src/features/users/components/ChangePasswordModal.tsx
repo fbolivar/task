@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { UserProfile } from '../types';
-import { X, Lock, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { X, Lock, CheckCircle, AlertCircle, Eye, EyeOff, Check } from 'lucide-react';
+import { validatePassword, getPasswordRequirements } from '@/shared/utils/passwordValidation';
 
 interface Props {
     isOpen: boolean;
@@ -24,8 +25,9 @@ export function ChangePasswordModal({ isOpen, onClose, onConfirm, user }: Props)
         e.preventDefault();
         setError(null);
 
-        if (password.length < 6) {
-            setError('La contraseña debe tener al menos 6 caracteres');
+        const validation = validatePassword(password);
+        if (!validation.valid) {
+            setError(validation.errors.join('. '));
             return;
         }
 
@@ -86,7 +88,7 @@ export function ChangePasswordModal({ isOpen, onClose, onConfirm, user }: Props)
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     className="w-full pl-4 pr-10 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-amber-500/50 transition-all outline-none text-sm font-medium"
-                                    placeholder="Mínimo 6 caracteres"
+                                    placeholder="Mínimo 8 caracteres"
                                     autoFocus
                                 />
                                 <button
@@ -98,6 +100,10 @@ export function ChangePasswordModal({ isOpen, onClose, onConfirm, user }: Props)
                                 </button>
                             </div>
                         </div>
+
+                        {password && (
+                            <PasswordRequirements password={password} />
+                        )}
 
                         <div className="space-y-2">
                             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Confirmar Contraseña</label>
@@ -141,6 +147,26 @@ export function ChangePasswordModal({ isOpen, onClose, onConfirm, user }: Props)
                     </div>
                 </form>
             </div>
+        </div>
+    );
+}
+
+function PasswordRequirements({ password }: { password: string }) {
+    const checks = [
+        { label: 'Minimo 8 caracteres', met: password.length >= 8 },
+        { label: 'Una letra mayuscula', met: /[A-Z]/.test(password) },
+        { label: 'Una letra minuscula', met: /[a-z]/.test(password) },
+        { label: 'Un numero', met: /[0-9]/.test(password) },
+    ];
+
+    return (
+        <div className="grid grid-cols-2 gap-1.5 pt-1">
+            {checks.map((c) => (
+                <div key={c.label} className={`flex items-center gap-1.5 text-[10px] font-semibold ${c.met ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                    <Check className={`w-3 h-3 ${c.met ? 'opacity-100' : 'opacity-30'}`} />
+                    {c.label}
+                </div>
+            ))}
         </div>
     );
 }

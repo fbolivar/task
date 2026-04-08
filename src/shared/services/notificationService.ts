@@ -1,7 +1,12 @@
 import { createClient } from '@/lib/supabase/client';
 
 export const notificationService = {
-    async notifyWithTemplate(to: string, templateCode: string, variables: Record<string, string>, attachments?: any[]) {
+    async notifyWithTemplate(
+        to: string,
+        templateCode: string,
+        variables: Record<string, string>,
+        attachments?: { filename: string; content: string; encoding: string }[]
+    ) {
         try {
             const supabase = createClient();
 

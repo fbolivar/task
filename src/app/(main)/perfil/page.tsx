@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { MFAEnrollment } from '@/features/auth/components/MFAEnrollment';
-import { User, Mail, Shield, Key, X, Eye, EyeOff, CheckCircle, AlertCircle, Lock } from 'lucide-react';
+import { User, Mail, Shield, Key, X, Eye, EyeOff, CheckCircle, AlertCircle, Lock, Check } from 'lucide-react';
+import { validatePassword } from '@/shared/utils/passwordValidation';
 
 export default function ProfilePage() {
     const { user, profile, updatePassword } = useAuth();
@@ -14,39 +15,39 @@ export default function ProfilePage() {
     return (
         <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
             <div>
-                <h1 className="text-2xl font-black text-slate-800">Mi Perfil</h1>
-                <p className="text-slate-500 font-medium">Gestiona tu información personal y seguridad.</p>
+                <h1 className="text-2xl font-black text-foreground">Mi Perfil</h1>
+                <p className="text-muted-foreground font-medium">Gestiona tu información personal y seguridad.</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
                 {/* User Info Card */}
                 <div className="md:col-span-1 space-y-6">
-                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm text-center">
                         <div className="w-24 h-24 mx-auto bg-[#166A2F]/10 rounded-full flex items-center justify-center text-[#166A2F] text-3xl font-bold mb-4">
                             {profile?.full_name?.charAt(0) || user.email?.charAt(0)}
                         </div>
-                        <h2 className="font-bold text-lg text-slate-900">{profile?.full_name || 'Usuario'}</h2>
-                        <p className="text-slate-500 text-sm">{user.email}</p>
-                        <div className="mt-4 inline-flex items-center px-3 py-1 bg-slate-100 rounded-full text-xs font-semibold text-slate-600">
+                        <h2 className="font-bold text-lg text-foreground">{profile?.full_name || 'Usuario'}</h2>
+                        <p className="text-muted-foreground text-sm">{user.email}</p>
+                        <div className="mt-4 inline-flex items-center px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-semibold text-muted-foreground">
                             {profile?.role?.name || 'Usuario'}
                         </div>
                     </div>
 
-                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                        <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                        <h3 className="font-bold text-foreground flex items-center gap-2">
                             <Shield className="w-4 h-4 text-[#166A2F]" />
                             Detalles de Cuenta
                         </h3>
                         <div className="space-y-3">
                             <div>
-                                <label className="text-xs font-bold text-slate-400 uppercase">ID de Usuario</label>
-                                <p className="text-xs font-mono text-slate-600 bg-slate-50 p-2 rounded border border-slate-100 truncate">
+                                <label className="text-xs font-bold text-muted-foreground uppercase">ID de Usuario</label>
+                                <p className="text-xs font-mono text-muted-foreground bg-slate-50 dark:bg-slate-950 p-2 rounded border border-slate-100 dark:border-slate-800 truncate">
                                     {user.id}
                                 </p>
                             </div>
                             <div>
-                                <label className="text-xs font-bold text-slate-400 uppercase">Último Acceso</label>
-                                <p className="text-sm text-slate-700">
+                                <label className="text-xs font-bold text-muted-foreground uppercase">Último Acceso</label>
+                                <p className="text-sm text-foreground">
                                     {new Date(user.last_sign_in_at || '').toLocaleDateString()}
                                 </p>
                             </div>
@@ -56,16 +57,16 @@ export default function ProfilePage() {
 
                 {/* Security Settings */}
                 <div className="md:col-span-2 space-y-6">
-                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                        <h3 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <h3 className="font-bold text-lg text-foreground mb-4 flex items-center gap-2">
                             <Key className="w-5 h-5 text-[#166A2F]" />
                             Seguridad
                         </h3>
 
                         <div className="space-y-6">
-                            <div className="pb-6 border-b border-slate-100">
-                                <h4 className="font-semibold text-slate-800 mb-1">Contraseña</h4>
-                                <p className="text-sm text-slate-500 mb-4">
+                            <div className="pb-6 border-b border-slate-100 dark:border-slate-800">
+                                <h4 className="font-semibold text-foreground mb-1">Contraseña</h4>
+                                <p className="text-sm text-muted-foreground mb-4">
                                     Se recomienda cambiar tu contraseña periódicamente.
                                 </p>
                                 <button
@@ -105,8 +106,9 @@ function PasswordChangeModal({ onClose, onSubmit }: { onClose: () => void; onSub
         e.preventDefault();
         setError(null);
 
-        if (password.length < 6) {
-            setError('La contraseña debe tener al menos 6 caracteres');
+        const validation = validatePassword(password);
+        if (!validation.valid) {
+            setError(validation.errors.join('. '));
             return;
         }
 
@@ -164,7 +166,7 @@ function PasswordChangeModal({ onClose, onSubmit }: { onClose: () => void; onSub
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         className="w-full pl-4 pr-10 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500/50 transition-all outline-none text-sm font-medium"
-                                        placeholder="Mínimo 6 caracteres"
+                                        placeholder="Mínimo 8 caracteres"
                                         autoFocus
                                     />
                                     <button
@@ -176,6 +178,8 @@ function PasswordChangeModal({ onClose, onSubmit }: { onClose: () => void; onSub
                                     </button>
                                 </div>
                             </div>
+
+                            {password && <PasswordChecks password={password} />}
 
                             <div className="space-y-2">
                                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Confirmar Contraseña</label>
@@ -220,6 +224,25 @@ function PasswordChangeModal({ onClose, onSubmit }: { onClose: () => void; onSub
                     </form>
                 )}
             </div>
+        </div>
+    );
+}
+
+function PasswordChecks({ password }: { password: string }) {
+    const checks = [
+        { label: 'Minimo 8 caracteres', met: password.length >= 8 },
+        { label: 'Una mayuscula', met: /[A-Z]/.test(password) },
+        { label: 'Una minuscula', met: /[a-z]/.test(password) },
+        { label: 'Un numero', met: /[0-9]/.test(password) },
+    ];
+    return (
+        <div className="grid grid-cols-2 gap-1.5 pt-1">
+            {checks.map((c) => (
+                <div key={c.label} className={`flex items-center gap-1.5 text-[10px] font-semibold ${c.met ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                    <Check className={`w-3 h-3 ${c.met ? 'opacity-100' : 'opacity-30'}`} />
+                    {c.label}
+                </div>
+            ))}
         </div>
     );
 }
