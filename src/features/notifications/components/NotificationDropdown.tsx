@@ -132,8 +132,11 @@ export function NotificationDropdown() {
 
                     {/* Footer */}
                     <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-center">
-                        <button className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors">
-                            Ver Historial Completo
+                        <button
+                            onClick={() => { markAllRead(); setIsOpen(false); }}
+                            className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
+                        >
+                            Marcar Todo como Leído
                         </button>
                     </div>
                 </div>

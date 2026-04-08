@@ -7,8 +7,9 @@ import { TaskCard } from '@/features/tasks/components/TaskCard';
 import { TaskModal } from '@/features/tasks/components/TaskModal';
 import { BulkActionBar } from '@/features/tasks/components/BulkActionBar';
 import { KanbanBoard } from '@/features/tasks/components/KanbanBoard';
+import { CalendarView } from '@/features/tasks/components/CalendarView';
 import { Task, TaskFormData } from '@/features/tasks/types';
-import { Loader2, CheckSquare, Plus, Sparkles, LayoutGrid, Columns } from 'lucide-react';
+import { Loader2, CheckSquare, Plus, Sparkles, LayoutGrid, Columns, Calendar } from 'lucide-react';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 
 export default function TareasPage() {
@@ -20,7 +21,7 @@ export default function TareasPage() {
     const [sortAsc, setSortAsc] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
-    const [viewMode, setViewMode] = useState<'grid' | 'kanban'>('grid');
+    const [viewMode, setViewMode] = useState<'grid' | 'kanban' | 'calendar'>('grid');
     const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
 
     const filteredTasks = useMemo(() => {
@@ -162,7 +163,7 @@ export default function TareasPage() {
                     type="button"
                     onClick={() => setViewMode('kanban')}
                     aria-label="Vista kanban"
-                    aria-pressed={viewMode === 'kanban' ? true : false}
+                    aria-pressed={viewMode === 'kanban'}
                     className={`p-2 rounded-xl border transition-all duration-200 ${
                         viewMode === 'kanban'
                             ? 'bg-primary text-white border-primary shadow-sm shadow-primary/30'
@@ -171,9 +172,27 @@ export default function TareasPage() {
                 >
                     <Columns className="w-4 h-4" aria-hidden="true" />
                 </button>
+                <button
+                    type="button"
+                    onClick={() => setViewMode('calendar')}
+                    aria-label="Vista calendario"
+                    aria-pressed={viewMode === 'calendar'}
+                    className={`p-2 rounded-xl border transition-all duration-200 ${
+                        viewMode === 'calendar'
+                            ? 'bg-primary text-white border-primary shadow-sm shadow-primary/30'
+                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 text-muted-foreground hover:border-primary/50 hover:text-primary'
+                    }`}
+                >
+                    <Calendar className="w-4 h-4" aria-hidden="true" />
+                </button>
             </div>
 
-            {viewMode === 'kanban' ? (
+            {viewMode === 'calendar' ? (
+                <CalendarView
+                    tasks={filteredTasks}
+                    onEdit={handleOpenEditModal}
+                />
+            ) : viewMode === 'kanban' ? (
                 <KanbanBoard
                     tasks={filteredTasks}
                     onStatusChange={handleStatusChange}

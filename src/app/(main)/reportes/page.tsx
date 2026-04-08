@@ -6,6 +6,7 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useReports } from '@/features/reports/hooks/useReports';
 import { ReportHeader } from '@/features/reports/components/ReportHeader';
 import { ReportBuilder, ReportType } from '@/features/reports/components/ReportBuilder';
+import { OperativoReport } from '@/features/reports/components/OperativoReport';
 
 import { useSettings } from '@/shared/contexts/SettingsContext';
 
@@ -26,11 +27,15 @@ export default function ReportesPage() {
         generateStats
     } = useReports();
 
-    // Protect Route
+    const role = profile?.role?.name;
+    const isOperativo = role === 'Operativo';
+    const isAdminOrGerente = role === 'Admin' || role === 'Gerente';
+
+    // Protect Route — allow Operativo as well
     useEffect(() => {
         if (!authLoading && profile) {
-            const role = profile.role?.name;
-            if (role !== 'Admin' && role !== 'Gerente') {
+            const userRole = profile.role?.name;
+            if (userRole !== 'Admin' && userRole !== 'Gerente' && userRole !== 'Operativo') {
                 router.replace('/dashboard');
             }
         }
@@ -38,6 +43,16 @@ export default function ReportesPage() {
 
     if (authLoading) return null;
 
+    // Operativo users see their own self-service metrics
+    if (isOperativo) {
+        return (
+            <div className="max-w-5xl mx-auto space-y-8 pb-16">
+                <OperativoReport />
+            </div>
+        );
+    }
+
+    // Admin / Gerente see the full report builder
     return (
         <div className="max-w-7xl mx-auto space-y-8 pb-16">
             <ReportHeader />

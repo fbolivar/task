@@ -59,6 +59,9 @@ export interface Task {
     created_at: string;
     created_by?: string;
     archived?: boolean;
+    is_recurring?: boolean;
+    recurrence_pattern?: 'daily' | 'weekly' | 'biweekly' | 'monthly' | null;
+    recurrence_end_date?: string | null;
     project?: ProjectShort;
     assignee?: Assignee;
 }
@@ -77,4 +80,7 @@ export interface TaskFormData {
     actual_hours?: number;
     is_change_control_required?: boolean;
     created_by?: string;
+    is_recurring?: boolean;
+    recurrence_pattern?: 'daily' | 'weekly' | 'biweekly' | 'monthly' | null;
+    recurrence_end_date?: string | null;
 }

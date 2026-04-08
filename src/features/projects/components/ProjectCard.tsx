@@ -7,20 +7,23 @@ import {
     Trash2,
     Building2,
     Target,
-    Activity,
     Star,
-    Layers
+    Layers,
+    Eye,
+    Copy
 } from 'lucide-react';
 import { Project } from '../types';
 import { useState } from 'react';
+import Link from 'next/link';
 
 interface ProjectCardProps {
     project: Project;
     onEdit: (project: Project) => void;
     onDelete: (id: string) => void;
+    onClone?: (project: Project) => void;
 }
 
-export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
+export function ProjectCard({ project, onEdit, onDelete, onClone }: ProjectCardProps) {
     const [showMenu, setShowMenu] = useState(false);
 
     const getPriorityStyles = (priority: string) => {
@@ -41,10 +44,17 @@ export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
         }
     };
 
-    // Calculate progress based on sub-projects or default to a random/mock value for demo if empty
-    const progress = project.sub_projects && project.sub_projects.length > 0
+    const progressPct = project.sub_projects && project.sub_projects.length > 0
         ? Math.round((project.sub_projects.filter(sp => sp.status === 'Completado').length / project.sub_projects.length) * 100)
         : project.status === 'Completado' ? 100 : 0;
+
+    // Map to nearest 10-step Tailwind class to avoid inline styles
+    const progressStep = (Math.round(Math.min(progressPct, 100) / 10) * 10) as
+        0 | 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100;
+    const progressWidthClass: Record<typeof progressStep, string> = {
+        0: 'w-0', 10: 'w-[10%]', 20: 'w-[20%]', 30: 'w-[30%]', 40: 'w-[40%]',
+        50: 'w-[50%]', 60: 'w-[60%]', 70: 'w-[70%]', 80: 'w-[80%]', 90: 'w-[90%]', 100: 'w-full',
+    };
 
     return (
         <div className="card-premium group relative">
@@ -63,9 +73,11 @@ export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
                             </div>
                         </div>
                         <div className="min-w-0 flex-1">
-                            <h3 className="text-xl font-black text-foreground group-hover:text-primary transition-all tracking-tight truncate leading-none mb-2" title={project.name}>
-                                {project.name}
-                            </h3>
+                            <Link href={`/proyectos/${project.id}`}>
+                                <h3 className="text-xl font-black text-foreground group-hover:text-primary transition-all tracking-tight truncate leading-none mb-2 hover:text-primary cursor-pointer" title={project.name}>
+                                    {project.name}
+                                </h3>
+                            </Link>
                             <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-widest">
                                 <Building2 className="w-3 h-3 text-primary" />
                                 <span className="truncate max-w-[150px]">{project.entity?.name || 'Corporativo'}</span>
@@ -75,6 +87,8 @@ export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
 
                     <div className="relative">
                         <button
+                            type="button"
+                            title="Opciones del proyecto"
                             onClick={() => setShowMenu(!showMenu)}
                             className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-all hover:scale-110"
                         >
@@ -82,14 +96,32 @@ export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
                         </button>
 
                         {showMenu && (
-                            <div className="absolute right-0 mt-3 w-44 glass-card shadow-2xl z-20 p-1.5 border border-white/20 animate-in fade-in zoom-in-95">
+                            <div className="absolute right-0 mt-3 w-52 glass-card shadow-2xl z-20 p-1.5 border border-white/20 animate-in fade-in zoom-in-95">
+                                <Link
+                                    href={`/proyectos/${project.id}`}
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
+                                    onClick={() => setShowMenu(false)}
+                                >
+                                    <Eye className="w-4 h-4" /> Ver Detalle
+                                </Link>
                                 <button
+                                    type="button"
                                     onClick={() => { onEdit(project); setShowMenu(false); }}
                                     className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
                                 >
                                     <Edit2 className="w-4 h-4" /> Modificar
                                 </button>
+                                {onClone && (
+                                    <button
+                                        type="button"
+                                        onClick={() => { onClone(project); setShowMenu(false); }}
+                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-indigo-500/10 hover:text-indigo-500 rounded-xl transition-all"
+                                    >
+                                        <Copy className="w-4 h-4" /> Usar como Plantilla
+                                    </button>
+                                )}
                                 <button
+                                    type="button"
                                     onClick={() => { onDelete(project.id); setShowMenu(false); }}
                                     className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-red-500/10 text-red-500 rounded-xl transition-all"
                                 >
@@ -108,13 +140,10 @@ export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
                 <div className="space-y-3 mb-8">
                     <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em]">
                         <span className="text-muted-foreground/60">Estado de Ejecución</span>
-                        <span className="text-primary">{progress}%</span>
+                        <span className="text-primary">{progressPct}%</span>
                     </div>
                     <div className="h-2.5 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden shadow-inner">
-                        <div
-                            className="h-full bg-gradient-to-r from-primary to-indigo-400 rounded-full transition-all duration-1000 ease-spring"
-                            style={{ width: `${progress}%` }}
-                        />
+                        <div className={`h-full bg-gradient-to-r from-primary to-indigo-400 rounded-full transition-all duration-1000 ${progressWidthClass[progressStep]}`} />
                     </div>
                 </div>
 
@@ -141,7 +170,7 @@ export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
                     </div>
                 </div>
 
-                {/* Date & Support Info */}
+                {/* Date & Status */}
                 <div className="mt-8 flex items-center justify-between">
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100/50 dark:bg-white/5 text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">
                         <Calendar className="w-3.5 h-3.5 text-primary" />

@@ -5,6 +5,7 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { MFAEnrollment } from '@/features/auth/components/MFAEnrollment';
 import { User, Mail, Shield, Key, X, Eye, EyeOff, CheckCircle, AlertCircle, Lock, Check } from 'lucide-react';
 import { validatePassword } from '@/shared/utils/passwordValidation';
+import { NotificationPreferences } from '@/features/notifications/components/NotificationPreferences';
 
 export default function ProfilePage() {
     const { user, profile, updatePassword } = useAuth();
@@ -80,6 +81,8 @@ export default function ProfilePage() {
                             <MFAEnrollment />
                         </div>
                     </div>
+
+                    <NotificationPreferences userId={user.id} />
                 </div>
             </div>
 

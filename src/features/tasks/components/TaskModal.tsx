@@ -13,7 +13,8 @@ import {
     Flag,
     AlertCircle,
     HardDrive,
-    Clock
+    Clock,
+    Repeat
 } from 'lucide-react';
 import { Task, TaskFormData, TaskPriority, TaskStatus, TaskSubStatus } from '../types';
 import { useToast } from '@/shared/components/Toast';
@@ -78,6 +79,9 @@ const initialFormData: TaskFormData = {
     estimated_hours: 0,
     actual_hours: 0,
     is_change_control_required: false,
+    is_recurring: false,
+    recurrence_pattern: null,
+    recurrence_end_date: null,
 };
 
 export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
@@ -106,6 +110,9 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                 estimated_hours: task.estimated_hours ?? 0,
                 actual_hours: task.actual_hours ?? 0,
                 is_change_control_required: task.is_change_control_required || false,
+                is_recurring: task.is_recurring || false,
+                recurrence_pattern: task.recurrence_pattern ?? null,
+                recurrence_end_date: task.recurrence_end_date ?? null,
             });
         } else {
             setFormData(initialFormData);
@@ -292,6 +299,69 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                         </div>
                     </div>
 
+                    {/* Recurrence Toggle */}
+                    <div className="space-y-3 p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                            <div className="relative flex items-center">
+                                <input
+                                    type="checkbox"
+                                    checked={formData.is_recurring || false}
+                                    onChange={(e) => setFormData({
+                                        ...formData,
+                                        is_recurring: e.target.checked,
+                                        recurrence_pattern: e.target.checked ? (formData.recurrence_pattern ?? 'weekly') : null,
+                                        recurrence_end_date: e.target.checked ? formData.recurrence_end_date : null,
+                                    })}
+                                    className="peer sr-only"
+                                />
+                                <div className="w-10 h-6 bg-slate-200 dark:bg-slate-800 rounded-full peer peer-checked:bg-indigo-500 transition-all duration-300" />
+                                <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all peer-checked:translate-x-4 shadow-sm" />
+                            </div>
+                            <div className="flex items-center gap-2 flex-1">
+                                <Repeat className="w-4 h-4 text-indigo-500" />
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-bold text-foreground group-hover:text-indigo-600 transition-colors">Tarea Recurrente</span>
+                                    <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Programa la repetición automática de esta tarea</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        {formData.is_recurring && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-indigo-500/10">
+                                <div className="space-y-1.5">
+                                    <label htmlFor="recurrence-pattern" className="text-xs font-black uppercase tracking-wider text-muted-foreground">Frecuencia</label>
+                                    <select
+                                        id="recurrence-pattern"
+                                        title="Frecuencia de recurrencia"
+                                        value={formData.recurrence_pattern ?? 'weekly'}
+                                        onChange={(e) => setFormData({ ...formData, recurrence_pattern: e.target.value as 'daily' | 'weekly' | 'biweekly' | 'monthly' })}
+                                        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:border-indigo-500 transition-all text-sm font-medium"
+                                    >
+                                        <option value="daily">Diario</option>
+                                        <option value="weekly">Semanal</option>
+                                        <option value="biweekly">Quincenal</option>
+                                        <option value="monthly">Mensual</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label htmlFor="recurrence-end-date" className="text-xs font-black uppercase tracking-wider text-muted-foreground">Fecha Fin de Recurrencia</label>
+                                    <div className="relative">
+                                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                        <input
+                                            id="recurrence-end-date"
+                                            type="date"
+                                            title="Fecha fin de recurrencia"
+                                            value={formData.recurrence_end_date || ''}
+                                            onChange={(e) => setFormData({ ...formData, recurrence_end_date: e.target.value || null })}
+                                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:border-indigo-500 transition-all text-sm font-medium"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Change Control Toggle */}
                     <div className="space-y-1.5 p-4 rounded-xl bg-amber-500/5 border border-amber-500/10">
                         <label className="flex items-center gap-3 cursor-pointer group">
                             <div className="relative flex items-center">

@@ -9,10 +9,11 @@ import {
     Edit3,
     Trash2,
     Flag,
-    Zap
+    Zap,
+    ChevronDown
 } from 'lucide-react';
 import { Task } from '../types';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface TaskCardProps {
     task: Task;
@@ -23,8 +24,29 @@ interface TaskCardProps {
     onToggleSelect?: (id: string) => void;
 }
 
+const STATUS_OPTIONS = ['Pendiente', 'En Progreso', 'Revisión', 'Completado'] as const;
+
+const STATUS_STYLES: Record<string, string> = {
+    'Completado': 'bg-emerald-500/10 text-emerald-500',
+    'En Progreso': 'bg-blue-500/10 text-blue-500',
+    'Revisión': 'bg-amber-500/10 text-amber-600',
+    'Pendiente': 'bg-slate-500/10 text-muted-foreground',
+};
+
 export function TaskCard({ task, onEdit, onArchive, onStatusChange, isSelected = false, onToggleSelect }: TaskCardProps) {
     const [showMenu, setShowMenu] = useState(false);
+    const [showStatusMenu, setShowStatusMenu] = useState(false);
+    const statusRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(e: MouseEvent) {
+            if (statusRef.current && !statusRef.current.contains(e.target as Node)) {
+                setShowStatusMenu(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const getPriorityColor = (priority: string) => {
         switch (priority) {
@@ -176,11 +198,48 @@ export function TaskCard({ task, onEdit, onArchive, onStatusChange, isSelected =
                             </div>
                         </div>
 
-                        <div className={`text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-xl shadow-sm transition-all group-hover:translate-x-[-4px] ${task.status === 'Completado' ? 'bg-emerald-500/10 text-emerald-500' :
-                            task.status === 'En Progreso' ? 'bg-blue-500/10 text-blue-500' :
-                                'bg-slate-500/10 text-muted-foreground'
-                            }`}>
-                            {task.status}
+                        <div className="relative" ref={statusRef}>
+                            <button
+                                type="button"
+                                onClick={() => setShowStatusMenu(!showStatusMenu)}
+                                className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 ${STATUS_STYLES[task.status] ?? 'bg-slate-500/10 text-muted-foreground'}`}
+                                aria-haspopup="listbox"
+                                aria-expanded={showStatusMenu ? 'true' : 'false'}
+                            >
+                                {task.status}
+                                <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${showStatusMenu ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {showStatusMenu && (
+                                <div
+                                    role="listbox"
+                                    aria-label="Cambiar estado"
+                                    className="absolute right-0 bottom-full mb-2 w-40 glass-card shadow-2xl z-30 p-1.5 border border-white/20 animate-in fade-in zoom-in-95 duration-150"
+                                >
+                                    {STATUS_OPTIONS.map((status) => (
+                                        <button
+                                            key={status}
+                                            type="button"
+                                            role="option"
+                                            aria-selected={task.status === status ? 'true' : 'false'}
+                                            onClick={() => { onStatusChange(task, status); setShowStatusMenu(false); }}
+                                            className={`w-full flex items-center gap-2 px-3 py-2 text-[10px] font-black uppercase tracking-wider rounded-xl transition-all ${
+                                                task.status === status
+                                                    ? `${STATUS_STYLES[status]} ring-1 ring-current/30`
+                                                    : 'hover:bg-slate-100 dark:hover:bg-white/5 text-muted-foreground hover:text-foreground'
+                                            }`}
+                                        >
+                                            {task.status === status && (
+                                                <CheckCircle2 className="w-3 h-3 shrink-0" />
+                                            )}
+                                            {task.status !== status && (
+                                                <span className="w-3 h-3 shrink-0" />
+                                            )}
+                                            {status}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
 

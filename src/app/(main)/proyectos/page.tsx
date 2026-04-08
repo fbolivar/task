@@ -63,6 +63,28 @@ export default function ProyectosPage() {
         }
     };
 
+    const handleClone = async (project: Project) => {
+        const cloneData: ProjectFormData = {
+            name: `[COPIA] ${project.name}`,
+            entity_id: project.entity_id,
+            description: project.description,
+            status: 'Activo',
+            priority: project.priority,
+            start_date: null,
+            end_date: null,
+            contract_active: project.contract_active,
+            has_support: project.has_support,
+            has_budget: project.has_budget,
+            budget: project.budget ?? 0,
+            expenses: (project.expenses ?? []).map(({ description, amount, frequency }) => ({
+                description,
+                amount,
+                frequency,
+            })),
+        };
+        await createProject(cloneData);
+    };
+
     if (loading && projects.length === 0) {
         return (
             <div className="flex-1 flex flex-col items-center justify-center p-20 animate-reveal">
@@ -95,6 +117,7 @@ export default function ProyectosPage() {
                             project={project}
                             onEdit={handleOpenEditModal}
                             onDelete={handleDelete}
+                            onClone={handleClone}
                         />
                     ))}
                 </div>
@@ -123,6 +146,7 @@ export default function ProyectosPage() {
                     </p>
 
                     <button
+                        type="button"
                         onClick={handleOpenCreateModal}
                         className="btn-primary group/btn"
                     >

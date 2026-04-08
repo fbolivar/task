@@ -30,6 +30,7 @@ import { es } from 'date-fns/locale';
 import { createClient } from '@/lib/supabase/client';
 import { ActivityTimeline } from '@/shared/components/ActivityTimeline';
 import { MilestonesSection } from '@/features/projects/components/MilestonesSection';
+import { GanttChart } from '@/features/projects/components/GanttChart';
 import type { Project, SubProject, RecurrentExpense } from '@/features/projects/types';
 import type { Task } from '@/features/tasks/types';
 
@@ -649,6 +650,18 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                 <SectionHeader icon={ListChecks} title="Tareas del proyecto" count={totalTasks} />
                 <TasksSection tasks={tasks} />
             </section>
+
+            {/* ── Gantt / Timeline Section ── */}
+            {totalTasks > 0 && (
+                <section aria-labelledby="gantt-heading">
+                    <SectionHeader icon={Calendar} title="Timeline / Gantt" count={totalTasks} />
+                    <GanttChart
+                        tasks={tasks}
+                        projectStartDate={project.start_date ?? undefined}
+                        projectEndDate={project.end_date ?? undefined}
+                    />
+                </section>
+            )}
 
             {/* ── Milestones Section ── */}
             <section aria-labelledby="milestones-heading">
