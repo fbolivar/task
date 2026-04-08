@@ -21,6 +21,7 @@ import { Task, TaskStatus, TaskSubStatus, TaskPriority } from '@/features/tasks/
 import { TrackingSection } from '@/features/tasks/components/TrackingSection';
 import { CommentsSection } from '@/features/tasks/components/CommentsSection';
 import { DependenciesSection } from '@/features/tasks/components/DependenciesSection';
+import { ScheduleMeeting } from '@/shared/components/ScheduleMeeting';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -331,6 +332,15 @@ export default function TaskDetailPage({ params }: { params: Promise<PageParams>
                     {/* Dependencies */}
                     <section aria-label="Dependencias">
                         <DependenciesSection taskId={task.id} projectId={task.project_id} />
+                    </section>
+
+                    {/* Meeting Scheduler */}
+                    <section aria-label="Reuniones de seguimiento">
+                        <ScheduleMeeting
+                            entityType="task"
+                            entityId={id}
+                            entityTitle={task.title}
+                        />
                     </section>
                 </div>
 

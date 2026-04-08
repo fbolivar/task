@@ -30,6 +30,7 @@ import { es } from 'date-fns/locale';
 import { createClient } from '@/lib/supabase/client';
 import { ActivityTimeline } from '@/shared/components/ActivityTimeline';
 import { MilestonesSection } from '@/features/projects/components/MilestonesSection';
+import { ScheduleMeeting } from '@/shared/components/ScheduleMeeting';
 import { GanttChart, type GanttMilestone } from '@/features/projects/components/GanttChart';
 import { ProjectModal } from '@/features/projects/components/ProjectModal';
 import { SubProjectsSection } from '@/features/projects/components/SubProjectsSection';
@@ -698,6 +699,15 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
             <section aria-labelledby="milestones-heading">
                 <SectionHeader icon={Flag} title="Hitos del proyecto" />
                 <MilestonesSection projectId={id} editable={true} />
+            </section>
+
+            {/* ── Meeting Scheduler ── */}
+            <section aria-labelledby="meetings-heading">
+                <ScheduleMeeting
+                    entityType="project"
+                    entityId={id}
+                    entityTitle={project.name}
+                />
             </section>
 
             {/* ── Project Notes ── */}

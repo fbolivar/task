@@ -24,6 +24,7 @@ import { TrackingSection } from './TrackingSection';
 import { CommentsSection } from './CommentsSection';
 import { DependenciesSection } from './DependenciesSection';
 import { SubtasksSection } from './SubtasksSection';
+import { ScheduleMeeting } from '@/shared/components/ScheduleMeeting';
 
 interface HoursProgressBarProps {
     actual: number;
@@ -452,6 +453,17 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                     {task && (
                         <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
                             <DependenciesSection taskId={task.id} projectId={task.project_id} />
+                        </div>
+                    )}
+
+                    {/* Meeting Scheduler - Only on Edit Mode */}
+                    {task && (
+                        <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+                            <ScheduleMeeting
+                                entityType="task"
+                                entityId={task.id}
+                                entityTitle={task.title}
+                            />
                         </div>
                     )}
 
