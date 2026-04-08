@@ -1,13 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { ThemeToggle } from './ThemeToggle';
 import { UserMenu } from './UserMenu';
 import { GlobalSearch } from './GlobalSearch';
+import { WelcomeModal } from './WelcomeModal';
+import { SessionWarning } from './SessionWarning';
 import { NotificationDropdown } from '@/features/notifications/components/NotificationDropdown';
+import { QuickAddTask } from './QuickAddTask';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useRiskMonitor } from '@/shared/hooks/useRiskMonitor';
 import { useIdleTimeout } from '@/shared/hooks/useIdleTimeout';
@@ -37,6 +40,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     const router = useRouter();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [expiryMinutes, setExpiryMinutes] = useState(0);
+    const [showSessionWarning, setShowSessionWarning] = useState(false);
 
     // Fetch session expiry setting
     useEffect(() => {
@@ -57,11 +61,26 @@ export function AppLayout({ children }: AppLayoutProps) {
         }
     }, [profile]);
 
+    const handleIdleWarning = useCallback(() => {
+        setShowSessionWarning(true);
+    }, []);
+
+    const handleContinueSession = useCallback(() => {
+        setShowSessionWarning(false);
+        // Touching the DOM resets the activity timer via the existing event listeners
+        window.dispatchEvent(new MouseEvent('mousemove'));
+    }, []);
+
     // Handle Idle Timeout
-    useIdleTimeout(expiryMinutes, () => {
-        alert('Tu sesión ha expirado debido a inactividad.');
-        signOut();
-    });
+    useIdleTimeout(
+        expiryMinutes,
+        () => {
+            setShowSessionWarning(false);
+            alert('Tu sesión ha expirado debido a inactividad.');
+            signOut();
+        },
+        handleIdleWarning,
+    );
 
     const roleName = profile?.role?.name || '';
 
@@ -95,6 +114,17 @@ export function AppLayout({ children }: AppLayoutProps) {
 
     return (
         <div className="flex min-h-screen mesh-gradient text-foreground">
+            {/* First-login welcome modal */}
+            {profile?.id && <WelcomeModal userId={profile.id} />}
+
+            {/* Session expiry warning banner */}
+            {showSessionWarning && (
+                <SessionWarning
+                    onContinue={handleContinueSession}
+                    onDismiss={() => setShowSessionWarning(false)}
+                />
+            )}
+
             {/* Dark icon sidebar */}
             <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
@@ -129,7 +159,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                         <GlobalSearch />
 
                         <div className="flex items-center gap-2">
-                            {roleName !== 'Gerente' && <NotificationDropdown />}
+                            <NotificationDropdown />
                             <ThemeToggle />
                             <UserMenu />
                         </div>
@@ -143,6 +173,9 @@ export function AppLayout({ children }: AppLayoutProps) {
                     </div>
                 </main>
             </div>
+
+            {/* Global floating quick-add button (all pages) */}
+            <QuickAddTask />
         </div>
     );
 }

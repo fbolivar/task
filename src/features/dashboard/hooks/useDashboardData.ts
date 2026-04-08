@@ -273,11 +273,10 @@ export const useDashboardData = () => {
                     weeklyVelocity: weeklyData
                 });
 
-                // 5. Upcoming Tasks
+                // 5. Upcoming Tasks — no slice cap so OperativoDashboard hero section gets all relevant tasks
                 const upcoming = tasks
                     .filter(t => t.status !== 'Completado' && t.status !== 'Archivado' && t.end_date)
-                    .sort((a, b) => new Date(a.end_date).getTime() - new Date(b.end_date).getTime())
-                    .slice(0, 5);
+                    .sort((a, b) => new Date(a.end_date).getTime() - new Date(b.end_date).getTime());
                 setUpcomingTasks(upcoming);
 
 

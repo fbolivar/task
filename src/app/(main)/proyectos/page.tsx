@@ -205,13 +205,13 @@ export default function ProyectosPage() {
                     </div>
 
                     <h3 className="text-3xl font-black text-foreground tracking-tight mb-3 transition-colors group-hover:text-primary">
-                        {searchQuery || statusFilter !== 'all' ? 'Sin resultados estratégicos' : t('projects.empty')}
+                        {searchQuery || statusFilter !== 'all' ? 'Sin resultados estratégicos' : 'Sin proyectos aun'}
                     </h3>
 
                     <p className="text-muted-foreground font-medium text-center max-w-sm mb-10 leading-relaxed">
                         {searchQuery || statusFilter !== 'all'
                             ? t('projects.emptyDesc')
-                            : t('projects.createFirst')}
+                            : 'Los proyectos te ayudan a agrupar tareas y trackear presupuesto. Empieza creando uno.'}
                     </p>
 
                     <button
@@ -220,7 +220,9 @@ export default function ProyectosPage() {
                         className="btn-primary group/btn"
                     >
                         <Plus className="w-5 h-5 group-hover/btn:rotate-90 transition-transform" />
-                        <span className="font-bold tracking-wide">{t('projects.createFirst')}</span>
+                        <span className="font-bold tracking-wide">
+                            {searchQuery || statusFilter !== 'all' ? t('projects.createFirst') : 'Crear mi primer proyecto'}
+                        </span>
                     </button>
                 </div>
             )}

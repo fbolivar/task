@@ -10,13 +10,196 @@ import { KanbanBoard } from '@/features/tasks/components/KanbanBoard';
 import { CalendarView } from '@/features/tasks/components/CalendarView';
 import { Task, TaskFormData } from '@/features/tasks/types';
 import { useToast } from '@/shared/components/Toast';
-import { Loader2, CheckSquare, Plus, Sparkles, LayoutGrid, Columns, Calendar } from 'lucide-react';
+import { Loader2, CheckSquare, Plus, Sparkles, LayoutGrid, Columns, Calendar, List, ChevronUp, ChevronDown } from 'lucide-react';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 import { createClient } from '@/lib/supabase/client';
 
 interface ProjectOption {
     id: string;
     name: string;
+}
+
+// ---------------------------------------------------------------------------
+// Compact table view helpers
+// ---------------------------------------------------------------------------
+
+const STATUS_DOT: Record<string, string> = {
+    'Pendiente':    'bg-slate-400',
+    'En Progreso':  'bg-blue-500',
+    'Revisión':     'bg-amber-500',
+    'Completado':   'bg-emerald-500',
+};
+
+const STATUS_LABEL: Record<string, string> = {
+    'Pendiente':   'text-muted-foreground',
+    'En Progreso': 'text-blue-600 dark:text-blue-400',
+    'Revisión':    'text-amber-600 dark:text-amber-400',
+    'Completado':  'text-emerald-600 dark:text-emerald-400',
+};
+
+const PRIORITY_DOT: Record<string, string> = {
+    'Alta':  'bg-orange-500',
+    'Media': 'bg-blue-500',
+    'Baja':  'bg-slate-300',
+};
+
+const PRIORITY_LABEL: Record<string, string> = {
+    'Alta':  'text-orange-600 dark:text-orange-400',
+    'Media': 'text-blue-600 dark:text-blue-400',
+    'Baja':  'text-muted-foreground',
+};
+
+interface TableViewProps {
+    tasks: Task[];
+    sortCol: string;
+    sortAsc: boolean;
+    onSort: (col: string) => void;
+    onEdit: (task: Task) => void;
+}
+
+function SortIcon({ col, sortCol, sortAsc }: { col: string; sortCol: string; sortAsc: boolean }) {
+    if (sortCol !== col) {
+        return <ChevronUp className="w-3 h-3 opacity-20" aria-hidden="true" />;
+    }
+    return sortAsc
+        ? <ChevronUp className="w-3 h-3 text-primary" aria-hidden="true" />
+        : <ChevronDown className="w-3 h-3 text-primary" aria-hidden="true" />;
+}
+
+function TableView({ tasks, sortCol, sortAsc, onSort, onEdit }: TableViewProps) {
+    const columns: { key: string; label: string; className?: string }[] = [
+        { key: 'title',           label: 'Titulo',       className: 'min-w-[180px]' },
+        { key: 'project',         label: 'Proyecto',     className: 'min-w-[120px]' },
+        { key: 'status',          label: 'Estado',       className: 'w-32' },
+        { key: 'priority',        label: 'Prioridad',    className: 'w-28' },
+        { key: 'assignee',        label: 'Responsable',  className: 'min-w-[120px]' },
+        { key: 'end_date',        label: 'Fecha limite', className: 'w-32' },
+        { key: 'estimated_hours', label: 'Horas',        className: 'w-20 text-right' },
+    ];
+
+    if (tasks.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground text-sm">
+                No hay tareas para mostrar.
+            </div>
+        );
+    }
+
+    return (
+        <div className="rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-sm animate-reveal">
+            <div className="overflow-x-auto">
+                <table className="w-full text-sm" role="grid" aria-label="Tabla de tareas">
+                    <thead>
+                        <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-white/10">
+                            {columns.map((col) => (
+                                <th
+                                    key={col.key}
+                                    scope="col"
+                                    className={`px-4 py-3 text-left font-semibold text-xs uppercase tracking-wider text-muted-foreground select-none ${col.className ?? ''}`}
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={() => onSort(col.key)}
+                                        className="flex items-center gap-1 hover:text-foreground transition-colors"
+                                        aria-label={`Ordenar por ${col.label}`}
+                                    >
+                                        {col.label}
+                                        <SortIcon col={col.key} sortCol={sortCol} sortAsc={sortAsc} />
+                                    </button>
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {tasks.map((task, idx) => {
+                            const isOverdue = task.end_date && new Date(task.end_date) < new Date() && task.status !== 'Completado';
+                            return (
+                                <tr
+                                    key={task.id}
+                                    onClick={() => onEdit(task)}
+                                    tabIndex={0}
+                                    role="row"
+                                    aria-label={`Editar tarea: ${task.title}`}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onEdit(task); }}
+                                    className={`border-b border-slate-100 dark:border-white/5 cursor-pointer transition-colors duration-100
+                                        hover:bg-primary/5 focus:outline-none focus:bg-primary/5
+                                        ${idx % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-slate-50/50 dark:bg-slate-800/20'}`}
+                                >
+                                    {/* Title */}
+                                    <td className="px-4 py-2 max-w-xs">
+                                        <span
+                                            className={`font-medium line-clamp-1 ${task.status === 'Completado' ? 'line-through text-muted-foreground/60' : 'text-foreground'}`}
+                                            title={task.title}
+                                        >
+                                            {task.title}
+                                        </span>
+                                    </td>
+
+                                    {/* Project */}
+                                    <td className="px-4 py-2">
+                                        <span className="text-muted-foreground truncate block max-w-[140px]" title={task.project?.name}>
+                                            {task.project?.name ?? <span className="opacity-30">—</span>}
+                                        </span>
+                                    </td>
+
+                                    {/* Status */}
+                                    <td className="px-4 py-2">
+                                        <span className={`flex items-center gap-1.5 font-medium ${STATUS_LABEL[task.status] ?? 'text-muted-foreground'}`}>
+                                            <span className={`w-2 h-2 rounded-full shrink-0 ${STATUS_DOT[task.status] ?? 'bg-slate-300'}`} aria-hidden="true" />
+                                            {task.status}
+                                        </span>
+                                    </td>
+
+                                    {/* Priority */}
+                                    <td className="px-4 py-2">
+                                        <span className={`flex items-center gap-1.5 font-medium ${PRIORITY_LABEL[task.priority] ?? 'text-muted-foreground'}`}>
+                                            <span className={`w-2 h-2 rounded-full shrink-0 ${PRIORITY_DOT[task.priority] ?? 'bg-slate-300'}`} aria-hidden="true" />
+                                            {task.priority}
+                                        </span>
+                                    </td>
+
+                                    {/* Assignee */}
+                                    <td className="px-4 py-2">
+                                        <span className="text-muted-foreground truncate block max-w-[140px]" title={task.assignee?.full_name}>
+                                            {task.assignee?.full_name ?? <span className="opacity-30">—</span>}
+                                        </span>
+                                    </td>
+
+                                    {/* Due date */}
+                                    <td className="px-4 py-2">
+                                        {task.end_date ? (
+                                            <span className={`font-mono text-xs ${isOverdue ? 'text-red-500 font-bold' : 'text-muted-foreground'}`}>
+                                                {new Date(task.end_date + 'T00:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                            </span>
+                                        ) : (
+                                            <span className="text-muted-foreground/30">—</span>
+                                        )}
+                                    </td>
+
+                                    {/* Hours */}
+                                    <td className="px-4 py-2 text-right">
+                                        <span className="text-muted-foreground font-mono text-xs">
+                                            {task.estimated_hours > 0 ? `${task.estimated_hours}h` : <span className="opacity-30">—</span>}
+                                        </span>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Row count footer */}
+            <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-200 dark:border-white/10 flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                    {tasks.length} tarea{tasks.length !== 1 ? 's' : ''}
+                </p>
+                <p className="text-xs text-muted-foreground italic">
+                    Clic en una fila para editar
+                </p>
+            </div>
+        </div>
+    );
 }
 
 export default function TareasPage() {
@@ -32,7 +215,8 @@ export default function TareasPage() {
     const [sortAsc, setSortAsc] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
-    const [viewMode, setViewMode] = useState<'grid' | 'kanban' | 'calendar'>('grid');
+    const [viewMode, setViewMode] = useState<'grid' | 'kanban' | 'calendar' | 'table'>('grid');
+    const [tableSort, setTableSort] = useState<{ col: string; asc: boolean }>({ col: 'end_date', asc: true });
     const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
     const [projects, setProjects] = useState<ProjectOption[]>([]);
     const [usersList, setUsersList] = useState<{ id: string; full_name: string }[]>([]);
@@ -185,6 +369,59 @@ export default function TareasPage() {
         setSelectedTasks(new Set());
     }, [selectedTasks, updateTask]);
 
+    const handleTableSort = useCallback((col: string) => {
+        setTableSort(prev => prev.col === col ? { col, asc: !prev.asc } : { col, asc: true });
+    }, []);
+
+    const tableSortedTasks = useMemo(() => {
+        if (viewMode !== 'table') return filteredTasks;
+        return [...filteredTasks].sort((a, b) => {
+            let valA: string | number | null = null;
+            let valB: string | number | null = null;
+
+            switch (tableSort.col) {
+                case 'title':
+                    valA = a.title.toLowerCase();
+                    valB = b.title.toLowerCase();
+                    break;
+                case 'project':
+                    valA = (a.project?.name ?? '').toLowerCase();
+                    valB = (b.project?.name ?? '').toLowerCase();
+                    break;
+                case 'status':
+                    valA = a.status;
+                    valB = b.status;
+                    break;
+                case 'priority': {
+                    const order = { Alta: 0, Media: 1, Baja: 2 } as const;
+                    valA = order[a.priority as keyof typeof order] ?? 99;
+                    valB = order[b.priority as keyof typeof order] ?? 99;
+                    break;
+                }
+                case 'assignee':
+                    valA = (a.assignee?.full_name ?? '').toLowerCase();
+                    valB = (b.assignee?.full_name ?? '').toLowerCase();
+                    break;
+                case 'end_date':
+                    valA = a.end_date ?? '';
+                    valB = b.end_date ?? '';
+                    break;
+                case 'estimated_hours':
+                    valA = a.estimated_hours ?? 0;
+                    valB = b.estimated_hours ?? 0;
+                    break;
+                default:
+                    return 0;
+            }
+
+            if (valA === null || valA === '') return 1;
+            if (valB === null || valB === '') return -1;
+            if (valA < valB) return tableSort.asc ? -1 : 1;
+            if (valA > valB) return tableSort.asc ? 1 : -1;
+            return 0;
+        });
+    }, [filteredTasks, tableSort, viewMode]);
+
     const handleExport = useCallback(() => {
         const headers = ['Título', 'Proyecto', 'Estado', 'Prioridad', 'Sub-estado', 'Responsable', 'Fecha límite', 'Horas estimadas', 'Horas reales'];
 
@@ -249,7 +486,7 @@ export default function TareasPage() {
                     type="button"
                     onClick={() => setViewMode('grid')}
                     aria-label="Vista cuadrícula"
-                    aria-pressed={viewMode === 'grid'}
+                    aria-pressed={viewMode === 'grid' ? true : false}
                     className={`p-2 rounded-xl border transition-all duration-200 ${
                         viewMode === 'grid'
                             ? 'bg-primary text-white border-primary shadow-sm shadow-primary/30'
@@ -262,7 +499,7 @@ export default function TareasPage() {
                     type="button"
                     onClick={() => setViewMode('kanban')}
                     aria-label="Vista kanban"
-                    aria-pressed={viewMode === 'kanban'}
+                    aria-pressed={viewMode === 'kanban' ? true : false}
                     className={`p-2 rounded-xl border transition-all duration-200 ${
                         viewMode === 'kanban'
                             ? 'bg-primary text-white border-primary shadow-sm shadow-primary/30'
@@ -275,7 +512,7 @@ export default function TareasPage() {
                     type="button"
                     onClick={() => setViewMode('calendar')}
                     aria-label="Vista calendario"
-                    aria-pressed={viewMode === 'calendar'}
+                    aria-pressed={viewMode === 'calendar' ? true : false}
                     className={`p-2 rounded-xl border transition-all duration-200 ${
                         viewMode === 'calendar'
                             ? 'bg-primary text-white border-primary shadow-sm shadow-primary/30'
@@ -284,9 +521,30 @@ export default function TareasPage() {
                 >
                     <Calendar className="w-4 h-4" aria-hidden="true" />
                 </button>
+                <button
+                    type="button"
+                    onClick={() => setViewMode('table')}
+                    aria-label="Vista tabla"
+                    aria-pressed={viewMode === 'table' ? true : false}
+                    className={`p-2 rounded-xl border transition-all duration-200 ${
+                        viewMode === 'table'
+                            ? 'bg-primary text-white border-primary shadow-sm shadow-primary/30'
+                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 text-muted-foreground hover:border-primary/50 hover:text-primary'
+                    }`}
+                >
+                    <List className="w-4 h-4" aria-hidden="true" />
+                </button>
             </div>
 
-            {viewMode === 'calendar' ? (
+            {viewMode === 'table' ? (
+                <TableView
+                    tasks={tableSortedTasks}
+                    sortCol={tableSort.col}
+                    sortAsc={tableSort.asc}
+                    onSort={handleTableSort}
+                    onEdit={handleOpenEditModal}
+                />
+            ) : viewMode === 'calendar' ? (
                 <CalendarView
                     tasks={filteredTasks}
                     onEdit={handleOpenEditModal}
@@ -327,13 +585,13 @@ export default function TareasPage() {
                     </div>
 
                     <h3 className="text-3xl font-black text-foreground tracking-tight mb-3 transition-colors group-hover:text-primary">
-                        {searchQuery || statusFilter !== 'all' ? 'Sin tareas detectadas' : t('tasks.empty')}
+                        {searchQuery || statusFilter !== 'all' ? 'Sin tareas detectadas' : 'Tu tablero esta vacio'}
                     </h3>
 
                     <p className="text-muted-foreground font-medium text-center max-w-sm mb-10 leading-relaxed">
                         {searchQuery || statusFilter !== 'all'
                             ? t('tasks.emptyDesc')
-                            : t('tasks.emptyDesc')}
+                            : 'Crea tu primera tarea para empezar a organizar tu trabajo. Prueba con algo simple como "Revisar correos del dia".'}
                     </p>
 
                     <button
@@ -342,7 +600,9 @@ export default function TareasPage() {
                         className="btn-primary group/btn"
                     >
                         <Plus className="w-5 h-5 group-hover/btn:rotate-90 transition-transform" />
-                        <span className="font-bold tracking-wide">{t('tasks.createFirst')}</span>
+                        <span className="font-bold tracking-wide">
+                            {searchQuery || statusFilter !== 'all' ? t('tasks.createFirst') : 'Crear mi primera tarea'}
+                        </span>
                     </button>
                 </div>
             )}
