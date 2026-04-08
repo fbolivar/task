@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { ThemeToggle } from './ThemeToggle';
 import { UserMenu } from './UserMenu';
 import { GlobalSearch } from './GlobalSearch';
-import { WelcomeModal } from './WelcomeModal';
-import { SessionWarning } from './SessionWarning';
+
+const WelcomeModal = lazy(() => import('./WelcomeModal').then(m => ({ default: m.WelcomeModal })));
+const SessionWarning = lazy(() => import('./SessionWarning').then(m => ({ default: m.SessionWarning })));
 import { NotificationDropdown } from '@/features/notifications/components/NotificationDropdown';
-import { QuickAddTask } from './QuickAddTask';
+const QuickAddTask = lazy(() => import('./QuickAddTask').then(m => ({ default: m.QuickAddTask })));
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useRiskMonitor } from '@/shared/hooks/useRiskMonitor';
 import { useIdleTimeout } from '@/shared/hooks/useIdleTimeout';
@@ -132,14 +133,16 @@ export function AppLayout({ children }: AppLayoutProps) {
     return (
         <div className="flex min-h-screen mesh-gradient text-foreground">
             {/* First-login welcome modal */}
-            {profile?.id && <WelcomeModal userId={profile.id} />}
+            {profile?.id && <Suspense fallback={null}><WelcomeModal userId={profile.id} /></Suspense>}
 
             {/* Session expiry warning banner */}
             {showSessionWarning && (
-                <SessionWarning
-                    onContinue={handleContinueSession}
-                    onDismiss={() => setShowSessionWarning(false)}
-                />
+                <Suspense fallback={null}>
+                    <SessionWarning
+                        onContinue={handleContinueSession}
+                        onDismiss={() => setShowSessionWarning(false)}
+                    />
+                </Suspense>
             )}
 
             {/* Dark icon sidebar */}
@@ -196,7 +199,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             </div>
 
             {/* Global floating quick-add button (all pages) */}
-            <QuickAddTask />
+            <Suspense fallback={null}><QuickAddTask /></Suspense>
         </div>
     );
 }
