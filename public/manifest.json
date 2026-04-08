@@ -1,0 +1,18 @@
+{
+  "name": "GestorPro - ERP Empresarial",
+  "short_name": "GestorPro",
+  "description": "Plataforma Inteligente de Gestion Empresarial",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#166A2F",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

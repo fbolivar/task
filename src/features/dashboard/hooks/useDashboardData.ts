@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/features/auth/store/authStore';
 
@@ -58,10 +58,13 @@ export const useDashboardData = () => {
 
     const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
-    const supabase = createClient();
+    // Stable client reference — createClient() must not be called on every render
+    // because a new object reference would cause all dependency arrays to re-fire.
+    const supabaseRef = useRef(createClient());
+    const supabase = supabaseRef.current;
+    const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    useEffect(() => {
-        const fetchDashboardData = async () => {
+    const fetchDashboardData = useCallback(async () => {
             if (!profile) return;
             setLoading(true);
             try {
@@ -197,19 +200,48 @@ export const useDashboardData = () => {
             } finally {
                 setLoading(false);
             }
-        };
+    }, [activeEntityId, profile, supabase]);
 
+    // Debounced refresh triggered by Realtime events.
+    // Waits 2 seconds after the last change before calling fetchDashboardData,
+    // so a burst of rapid inserts/updates only produces one fetch.
+    const scheduleFetch = useCallback(() => {
+        if (debounceTimerRef.current !== null) {
+            clearTimeout(debounceTimerRef.current);
+        }
+        debounceTimerRef.current = setTimeout(() => {
+            fetchDashboardData();
+        }, 2000);
+    }, [fetchDashboardData]);
+
+    // Initial fetch whenever the entity or profile changes.
+    useEffect(() => {
         fetchDashboardData();
-    }, [activeEntityId, profile]);
+    }, [fetchDashboardData]);
 
-    // Calculate upcoming tasks from the already fetched (and potentially stored) tasks?
-    // Since tasks are scoped inside useEffect, we need to store them in state if we want to return them.
-    // However, currently we only store 'stats'. We should probably add 'upcomingTasks' to the state or return it separately.
-    // To minimize refactoring, I'll add a new state for upcomingTasks.
+    // Realtime subscriptions for tasks and projects.
+    useEffect(() => {
+        const channel = supabase
+            .channel('dashboard-changes')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'tasks' },
+                () => { scheduleFetch(); }
+            )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'projects' },
+                () => { scheduleFetch(); }
+            )
+            .subscribe();
 
-    // WAIT: I cannot access 'tasks' here because it's inside useEffect. 
-    // I need to change how state is managed or add 'upcomingTasks' to the state definition.
-    // Let's modify the return type and add a state.
+        return () => {
+            if (debounceTimerRef.current !== null) {
+                clearTimeout(debounceTimerRef.current);
+            }
+            supabase.removeChannel(channel);
+        };
+    }, [supabase, scheduleFetch]);
 
     return { stats, chartsData, loading, upcomingTasks };
 };

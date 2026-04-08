@@ -6,6 +6,7 @@ import { Menu } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { ThemeToggle } from './ThemeToggle';
 import { UserMenu } from './UserMenu';
+import { GlobalSearch } from './GlobalSearch';
 import { NotificationDropdown } from '@/features/notifications/components/NotificationDropdown';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useRiskMonitor } from '@/shared/hooks/useRiskMonitor';
@@ -103,6 +104,8 @@ export function AppLayout({ children }: AppLayoutProps) {
                         <div className="flex items-center gap-6 overflow-hidden">
                             {/* Mobile Menu Button */}
                             <button
+                                type="button"
+                                aria-label="Abrir menú de navegación"
                                 onClick={() => setSidebarOpen(true)}
                                 className="p-3 bg-white/50 dark:bg-slate-900/50 rounded-xl hover:bg-white dark:hover:bg-slate-800 md:hidden shadow-sm transition-all"
                             >
@@ -122,12 +125,16 @@ export function AppLayout({ children }: AppLayoutProps) {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-4 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/40 dark:border-white/5 transition-all duration-300">
-                            {roleName !== 'Gerente' && <NotificationDropdown />}
-                            <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block" />
-                            <UserMenu />
-                            <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block" />
-                            <ThemeToggle />
+                        <div className="flex items-center gap-3">
+                            <GlobalSearch />
+
+                            <div className="flex items-center gap-4 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/40 dark:border-white/5 transition-all duration-300">
+                                {roleName !== 'Gerente' && <NotificationDropdown />}
+                                <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block" />
+                                <UserMenu />
+                                <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block" />
+                                <ThemeToggle />
+                            </div>
                         </div>
                     </div>
                 </header>
