@@ -2,21 +2,19 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
 import { Menu } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { ThemeToggle } from './ThemeToggle';
 import { UserMenu } from './UserMenu';
 import { GlobalSearch } from './GlobalSearch';
+import { WelcomeModal } from './WelcomeModal';
+import { SessionWarning } from './SessionWarning';
+import { QuickAddTask } from './QuickAddTask';
 import { NotificationDropdown } from '@/features/notifications/components/NotificationDropdown';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useRiskMonitor } from '@/shared/hooks/useRiskMonitor';
 import { useIdleTimeout } from '@/shared/hooks/useIdleTimeout';
 import { createClient } from '@/lib/supabase/client';
-
-const WelcomeModal = dynamic(() => import('./WelcomeModal').then(m => ({ default: m.WelcomeModal })), { ssr: false });
-const SessionWarning = dynamic(() => import('./SessionWarning').then(m => ({ default: m.SessionWarning })), { ssr: false });
-const QuickAddTask = dynamic(() => import('./QuickAddTask').then(m => ({ default: m.QuickAddTask })), { ssr: false });
 
 interface AppLayoutProps {
     children: React.ReactNode;
