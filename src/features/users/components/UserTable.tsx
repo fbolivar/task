@@ -102,7 +102,7 @@ export function UserTable({ users, onEdit, onDelete, onToggleStatus, onChangePas
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 text-right">
-                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="flex justify-end gap-2">
                                         <button
                                             onClick={() => onToggleStatus(user.id, user.is_active)}
                                             className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-muted-foreground hover:text-primary transition-colors tooltip"
