@@ -68,10 +68,10 @@ export function QuickAddTask() {
                 priority: 'Media',
                 sub_status: 'En Tiempo',
                 created_by: user.id,
+                assigned_to: user.id,
                 project_id: null,
                 notes: null,
                 end_date: null,
-                assigned_to: null,
                 evidence_link: null,
                 estimated_hours: 0,
                 actual_hours: 0,
@@ -110,8 +110,8 @@ export function QuickAddTask() {
                     className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl p-4 w-80 animate-in slide-in-from-bottom-4 fade-in duration-200"
                 >
                     <div className="flex items-center justify-between mb-3">
-                        <p className="text-xs font-black uppercase tracking-widest text-orange-500">
-                            Tarea Rapida
+                        <p className="text-xs font-semibold text-primary">
+                            Nueva tarea
                         </p>
                         <button
                             type="button"
@@ -133,14 +133,14 @@ export function QuickAddTask() {
                             placeholder="Nombre de la tarea..."
                             maxLength={200}
                             aria-label="Titulo de la tarea"
-                            className="flex-1 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all"
+                            className="flex-1 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                         />
                         <button
                             type="button"
                             onClick={handleSave}
                             disabled={saving || !title.trim()}
                             aria-label="Crear tarea"
-                            className="shrink-0 px-3 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors flex items-center gap-1.5"
+                            className="shrink-0 px-3 py-2 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors flex items-center gap-1.5"
                         >
                             {saving ? (
                                 <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
@@ -162,10 +162,10 @@ export function QuickAddTask() {
                 aria-label={isOpen ? 'Cerrar formulario de tarea rapida' : 'Agregar tarea rapida'}
                 aria-expanded={isOpen}
                 onClick={() => setIsOpen((prev) => !prev)}
-                className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-orange-400/50 ${
+                className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-primary/50 ${
                     isOpen
-                        ? 'bg-slate-700 hover:bg-slate-600 rotate-45'
-                        : 'bg-orange-500 hover:bg-orange-600 hover:scale-110'
+                        ? 'bg-slate-700 hover:bg-slate-600 rotate-45 scale-100'
+                        : 'bg-primary hover:bg-primary/90 hover:scale-110'
                 }`}
             >
                 <Plus className="w-7 h-7 text-white transition-transform duration-200" aria-hidden="true" />
