@@ -1,21 +1,22 @@
 'use client';
 
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { Menu } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { ThemeToggle } from './ThemeToggle';
 import { UserMenu } from './UserMenu';
 import { GlobalSearch } from './GlobalSearch';
-
-const WelcomeModal = lazy(() => import('./WelcomeModal').then(m => ({ default: m.WelcomeModal })));
-const SessionWarning = lazy(() => import('./SessionWarning').then(m => ({ default: m.SessionWarning })));
 import { NotificationDropdown } from '@/features/notifications/components/NotificationDropdown';
-const QuickAddTask = lazy(() => import('./QuickAddTask').then(m => ({ default: m.QuickAddTask })));
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useRiskMonitor } from '@/shared/hooks/useRiskMonitor';
 import { useIdleTimeout } from '@/shared/hooks/useIdleTimeout';
 import { createClient } from '@/lib/supabase/client';
+
+const WelcomeModal = dynamic(() => import('./WelcomeModal').then(m => ({ default: m.WelcomeModal })), { ssr: false });
+const SessionWarning = dynamic(() => import('./SessionWarning').then(m => ({ default: m.SessionWarning })), { ssr: false });
+const QuickAddTask = dynamic(() => import('./QuickAddTask').then(m => ({ default: m.QuickAddTask })), { ssr: false });
 
 interface AppLayoutProps {
     children: React.ReactNode;
@@ -133,16 +134,14 @@ export function AppLayout({ children }: AppLayoutProps) {
     return (
         <div className="flex min-h-screen mesh-gradient text-foreground">
             {/* First-login welcome modal */}
-            {profile?.id && <Suspense fallback={null}><WelcomeModal userId={profile.id} /></Suspense>}
+            {profile?.id && <WelcomeModal userId={profile.id} />}
 
             {/* Session expiry warning banner */}
             {showSessionWarning && (
-                <Suspense fallback={null}>
-                    <SessionWarning
-                        onContinue={handleContinueSession}
-                        onDismiss={() => setShowSessionWarning(false)}
-                    />
-                </Suspense>
+                <SessionWarning
+                    onContinue={handleContinueSession}
+                    onDismiss={() => setShowSessionWarning(false)}
+                />
             )}
 
             {/* Dark icon sidebar */}
@@ -199,7 +198,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             </div>
 
             {/* Global floating quick-add button (all pages) */}
-            <Suspense fallback={null}><QuickAddTask /></Suspense>
+            <QuickAddTask />
         </div>
     );
 }
