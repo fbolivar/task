@@ -204,17 +204,9 @@ export function HiringModal({ isOpen, onClose, onSave, onUpdatePhase, process, e
 
                             <div className="space-y-1">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Estado General</label>
-                                <select
-                                    value={formData.status}
-                                    onChange={(e) => setFormData({ ...formData, status: e.target.value as HiringStatus })}
-                                    disabled={readOnly}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:border-primary transition-all text-xs font-bold appearance-none disabled:opacity-60"
-                                >
-                                    <option value="En Proceso">En Proceso</option>
-                                    <option value="Adjudicado">Adjudicado</option>
-                                    <option value="Legalizado">Legalizado</option>
-                                    <option value="Cancelado">Cancelado</option>
-                                </select>
+                                <div className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-xs font-bold text-muted-foreground">
+                                    {formData.status || 'En Proceso'} <span className="text-[9px] opacity-60">(auto-calculado por fases)</span>
+                                </div>
                             </div>
                         </div>
 

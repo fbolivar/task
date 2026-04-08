@@ -5,21 +5,54 @@ import { useHiring } from '@/features/hiring/hooks/useHiring';
 import { HiringBoard } from '@/features/hiring/components/HiringBoard';
 import { HiringModal } from '@/features/hiring/components/HiringModal';
 import { HiringProcess, HiringProcessFormData } from '@/features/hiring/types';
-import { FileText, Plus, Search, Loader2, Target, TrendingUp, ShieldCheck } from 'lucide-react';
+import { FileText, Plus, Search, Loader2, Target, TrendingUp, ShieldCheck, Download } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { HiringMetrics } from '@/features/hiring/components/HiringMetrics';
+
+const STATUS_FILTERS: { value: string; label: string; color: string }[] = [
+    { value: 'all', label: 'Todos', color: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700' },
+    { value: 'En Proceso', label: 'En Proceso', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' },
+    { value: 'Adjudicado', label: 'Adjudicado', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
+    { value: 'Legalizado', label: 'Legalizado', color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
+    { value: 'Cancelado', label: 'Cancelado', color: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20' },
+];
 
 export default function ContratacionPage() {
     const { processes, loading, createProcess, updateProcess, updatePhase, deleteProcess } = useHiring();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProcess, setEditingProcess] = useState<HiringProcess | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
     const { user, profile, activeEntityId } = useAuthStore();
     const isReadOnly = profile?.role?.name === 'Gerente';
 
-    const filteredProcesses = processes.filter(p =>
-        p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.project?.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredProcesses = processes.filter(p => {
+        const matchesSearch =
+            p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.project?.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        return matchesSearch && matchesStatus;
+    });
+
+    const handleExportCSV = () => {
+        const header = ['Título', 'Proyecto', 'Estado', 'Avance (%)', 'Valor Estimado', 'Responsable'];
+        const rows = filteredProcesses.map(p => [
+            `"${p.title}"`,
+            `"${p.project?.name ?? 'Operación Directa'}"`,
+            `"${p.status}"`,
+            p.total_progress,
+            p.estimated_amount,
+            `"${p.assignee?.full_name ?? 'Sin Asignar'}"`,
+        ]);
+        const csv = [header.join(','), ...rows.map(r => r.join(','))].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `contratacion_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+    };
 
     const handleOpenCreate = () => {
         setEditingProcess(null);
@@ -74,15 +107,28 @@ export default function ContratacionPage() {
                     </div>
                 </div>
 
-                {!isReadOnly && (
+                <div className="flex items-center gap-3">
                     <button
-                        onClick={handleOpenCreate}
-                        className="group bg-slate-900 dark:bg-primary hover:bg-black dark:hover:bg-primary/80 text-white px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-[13px] shadow-2xl flex items-center gap-4 transition-all hover:translate-y-[-4px] active:translate-y-[0px] active:scale-95"
+                        type="button"
+                        onClick={handleExportCSV}
+                        title="Exportar CSV"
+                        className="group bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 px-6 py-5 rounded-2xl font-black uppercase tracking-widest text-[13px] border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-3 transition-all hover:translate-y-[-4px] active:translate-y-[0px] active:scale-95"
                     >
-                        <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-                        Iniciar Nuevo Proceso
+                        <Download className="w-5 h-5" />
+                        CSV
                     </button>
-                )}
+
+                    {!isReadOnly && (
+                        <button
+                            type="button"
+                            onClick={handleOpenCreate}
+                            className="group bg-slate-900 dark:bg-primary hover:bg-black dark:hover:bg-primary/80 text-white px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-[13px] shadow-2xl flex items-center gap-4 transition-all hover:translate-y-[-4px] active:translate-y-[0px] active:scale-95"
+                        >
+                            <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+                            Iniciar Nuevo Proceso
+                        </button>
+                    )}
+                </div>
 
                 {isReadOnly && (
                     <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 px-6 py-4 rounded-2xl font-bold text-xs uppercase tracking-wider flex items-center gap-3">
@@ -114,6 +160,32 @@ export default function ContratacionPage() {
                 </div>
             </div>
 
+            {/* Status Filter Pills */}
+            <div className="flex items-center gap-2 flex-wrap">
+                {STATUS_FILTERS.map((filter) => (
+                    <button
+                        key={filter.value}
+                        type="button"
+                        onClick={() => setStatusFilter(filter.value)}
+                        className={`px-5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest border transition-all ${
+                            statusFilter === filter.value
+                                ? filter.color + ' ring-2 ring-offset-2 ring-offset-background ring-current/30 scale-105'
+                                : filter.color + ' opacity-50 hover:opacity-100'
+                        }`}
+                    >
+                        {filter.label}
+                        {filter.value !== 'all' && (
+                            <span className="ml-2 opacity-70">
+                                ({processes.filter(p => p.status === filter.value).length})
+                            </span>
+                        )}
+                    </button>
+                ))}
+            </div>
+
+            {/* Phase Benchmarking Metrics */}
+            <HiringMetrics />
+
             {/* Main Content Area */}
             {
                 filteredProcesses.length > 0 ? (
@@ -136,6 +208,7 @@ export default function ContratacionPage() {
                             No se han detectado procesos de contratación activos bajo estos criterios de filtrado.
                         </p>
                         <button
+                            type="button"
                             onClick={handleOpenCreate}
                             className="mt-10 btn-primary px-8"
                         >

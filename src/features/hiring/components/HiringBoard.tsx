@@ -1,16 +1,16 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import {
-    MoreVertical,
     Trash2,
     Edit,
-    Target,
     Briefcase,
     User as UserIcon,
     DollarSign,
     ArrowRight,
-    TrendingUp
+    TrendingUp,
+    Eye
 } from 'lucide-react';
 import { HiringProcess } from '../types';
 
@@ -52,12 +52,15 @@ export function HiringBoard({ processes, onEdit, onDelete, readOnly = false }: H
                     <div className="p-10 space-y-8 flex-1 flex flex-col">
                         {/* Header: Status & Advance */}
                         <div className="flex items-center gap-6">
-                            <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${process.status === 'Legalizado'
-                                ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
-                                : process.status === 'Adjudicado'
-                                    ? 'bg-blue-500/10 text-blue-600 border-blue-500/20'
-                                    : 'bg-primary/5 text-primary border-primary/10'
-                                }`}>
+                            <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                                process.status === 'Legalizado'
+                                    ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                                    : process.status === 'Adjudicado'
+                                        ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                                        : process.status === 'Cancelado'
+                                            ? 'bg-red-500/10 text-red-600 border-red-500/20'
+                                            : 'bg-primary/5 text-primary border-primary/10'
+                            }`}>
                                 {process.status}
                             </span>
                             <div className="flex items-center gap-2 text-[11px] font-black text-muted-foreground uppercase tracking-wider">
@@ -68,13 +71,24 @@ export function HiringBoard({ processes, onEdit, onDelete, readOnly = false }: H
 
                         {/* Title & Rapid Actions */}
                         <div className="space-y-6">
-                            <h4 className="text-3xl font-black text-foreground tracking-tighter leading-tight group-hover:text-primary transition-colors pr-10">
+                            <Link
+                                href={`/contratacion/${process.id}`}
+                                className="block text-3xl font-black text-foreground tracking-tighter leading-tight group-hover:text-primary transition-colors pr-10 hover:underline underline-offset-4 decoration-primary/30"
+                            >
                                 {process.title}
-                            </h4>
+                            </Link>
 
                             {!readOnly && (
                                 <div className="flex gap-3">
+                                    <Link
+                                        href={`/contratacion/${process.id}`}
+                                        title="Ver Detalle"
+                                        className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 border border-slate-100 dark:border-white/5 transition-all"
+                                    >
+                                        <Eye className="w-5 h-5" />
+                                    </Link>
                                     <button
+                                        type="button"
                                         onClick={() => onEdit(process)}
                                         className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 border border-slate-100 dark:border-white/5 transition-all"
                                         title="Editar"
@@ -82,6 +96,7 @@ export function HiringBoard({ processes, onEdit, onDelete, readOnly = false }: H
                                         <Edit className="w-5 h-5" />
                                     </button>
                                     <button
+                                        type="button"
                                         onClick={() => onDelete(process.id)}
                                         className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-500/10 border border-slate-100 dark:border-white/5 transition-all"
                                         title="Eliminar"
@@ -135,6 +150,7 @@ export function HiringBoard({ processes, onEdit, onDelete, readOnly = false }: H
                         </div>
 
                         <button
+                            type="button"
                             onClick={() => onEdit(process)}
                             className="group/btn flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] text-primary hover:text-black dark:hover:text-white transition-all"
                         >
