@@ -109,16 +109,22 @@ export const userService = {
         if (error) throw error;
     },
 
-    async adminUpdatePassword(userId: string, newPassword: string): Promise<void> {
+    async adminUpdatePassword(userId: string, newPassword: string): Promise<{ emailSent: boolean; emailError?: string }> {
         const response = await fetch('/api/users/update-password', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId, newPassword })
         });
 
+        const data = await response.json().catch(() => ({}));
+
         if (!response.ok) {
-            const data = await response.json().catch(() => ({}));
             throw new Error(data.error || 'Error actualizando contraseña');
         }
+
+        return {
+            emailSent: data.emailSent ?? false,
+            emailError: data.emailError
+        };
     }
 };

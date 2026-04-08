@@ -153,8 +153,12 @@ export default function UsuariosPage() {
                 user={passwordUser}
                 onConfirm={async (newPassword) => {
                     if (passwordUser) {
-                        await userService.adminUpdatePassword(passwordUser.id, newPassword);
-                        alert('Contraseña actualizada correctamente para ' + passwordUser.full_name);
+                        const result = await userService.adminUpdatePassword(passwordUser.id, newPassword);
+                        if (result.emailSent) {
+                            alert(`Contraseña actualizada correctamente para ${passwordUser.full_name}.\n\nSe envió un correo de notificación a ${passwordUser.email}.`);
+                        } else {
+                            alert(`Contraseña actualizada correctamente para ${passwordUser.full_name}.\n\nNo se pudo enviar el correo: ${result.emailError || 'Error desconocido'}`);
+                        }
                     }
                 }}
             />
