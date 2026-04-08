@@ -78,23 +78,19 @@ export const entityService = {
         const supabase = createClient();
         const payload = mapFormDataToPayload(entity);
 
-        // Remove .single() and use .select() to see result
         const { data, error } = await supabase
             .from('entities')
             .update(payload)
             .eq('id', id)
-            .select();
+            .select()
+            .single();
 
         if (error) {
             console.error('Service: Error updating entity', error);
             throw error;
         }
 
-        if (!data || data.length === 0) {
-            throw new Error(`No se encontró la entidad con ID ${id} para actualizar. Verifique permisos RLS.`);
-        }
-
-        return data[0];
+        return data;
     },
 
     async deleteEntity(id: string): Promise<void> {

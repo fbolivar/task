@@ -25,7 +25,6 @@ async function sendAssignmentNotificationEmail(
             return;
         }
 
-        console.log(`Triggering notification for updated task to ${userData.email}`);
         await notificationService.notifyWithTemplate(
             userData.email,
             'task_assigned',

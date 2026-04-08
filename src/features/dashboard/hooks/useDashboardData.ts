@@ -66,10 +66,23 @@ export const useDashboardData = () => {
 
     const fetchDashboardData = useCallback(async () => {
             if (!profile) return;
+
+            let isMounted = true;
             setLoading(true);
             try {
                 const isOperativo = profile.role?.name === 'Operativo';
                 const userId = profile.id;
+
+                // When filtering by entity, pre-fetch project IDs for that entity first
+                // so the tasks query can use them without a nested await inside the query chain.
+                let entityProjectIds: string[] | null = null;
+                if (activeEntityId !== 'all') {
+                    const { data: entityProjects } = await supabase
+                        .from('projects')
+                        .select('id')
+                        .eq('entity_id', activeEntityId);
+                    entityProjectIds = (entityProjects || []).map((p: { id: string }) => p.id);
+                }
 
                 // Base queries
                 let projectsQuery = supabase.from('projects').select('*');
@@ -77,10 +90,12 @@ export const useDashboardData = () => {
                 let assetsQuery = supabase.from('assets').select('*');
                 let activityQuery = supabase.from('activity_logs').select('*, profiles(full_name)').order('created_at', { ascending: false }).limit(10);
 
-                // Apply Entity Filters (Global, unless Operativo might be restricted further, but activeEntityId handles it)
+                // Apply Entity Filters using the pre-fetched IDs — no nested awaits
                 if (activeEntityId !== 'all') {
                     projectsQuery = projectsQuery.eq('entity_id', activeEntityId);
-                    tasksQuery = tasksQuery.in('project_id', (await supabase.from('projects').select('id').eq('entity_id', activeEntityId)).data?.map((p: any) => p.id) || []); // Simplified for now, better to filter tasks by project_ids fetched
+                    tasksQuery = entityProjectIds && entityProjectIds.length > 0
+                        ? tasksQuery.in('project_id', entityProjectIds)
+                        : tasksQuery.in('project_id', ['']);   // empty set → no results
                     assetsQuery = assetsQuery.eq('entity_id', activeEntityId);
                     activityQuery = activityQuery.eq('entity_id', activeEntityId);
                 }
@@ -95,13 +110,15 @@ export const useDashboardData = () => {
                     // Actually, let's filter tasks strictly.
                 }
 
-                // Execute parallel
+                // Execute remaining queries in parallel
                 const [projRes, taskRes, assetRes, actRes] = await Promise.all([
                     projectsQuery,
                     tasksQuery,
                     assetsQuery,
                     activityQuery
                 ]);
+
+                if (!isMounted) return;
 
                 const projects = (projRes.data || []) as Project[];
                 const tasks = (taskRes.data || []) as Task[];
@@ -196,10 +213,16 @@ export const useDashboardData = () => {
 
 
             } catch (error) {
-                console.error('Error fetching dashboard data:', error);
+                if (isMounted) {
+                    console.error('Error fetching dashboard data:', error);
+                }
             } finally {
-                setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
+
+            return () => { isMounted = false; };
     }, [activeEntityId, profile, supabase]);
 
     // Debounced refresh triggered by Realtime events.

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 
 /**
  * Hook to detect user inactivity.
@@ -6,52 +6,38 @@ import { useEffect, useRef, useState } from 'react';
  * @param onIdle Callback function to execute when timeout is reached.
  */
 export function useIdleTimeout(timeoutMinutes: number, onIdle: () => void) {
-    const [isIdle, setIsIdle] = useState(false);
     const lastActivityRef = useRef<number>(Date.now());
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const firedRef = useRef(false);
+    const onIdleRef = useRef(onIdle);
+    onIdleRef.current = onIdle;
+
+    const handleActivity = useCallback(() => {
+        lastActivityRef.current = Date.now();
+        firedRef.current = false;
+    }, []);
 
     useEffect(() => {
-        // If 0 or negative, disable timeout
         if (timeoutMinutes <= 0) return;
 
         const timeoutMs = timeoutMinutes * 60 * 1000;
 
-        const handleActivity = () => {
-            lastActivityRef.current = Date.now();
-            if (isIdle) setIsIdle(false);
-        };
-
         const checkActivity = () => {
-            const now = Date.now();
-            const timeSinceLastActivity = now - lastActivityRef.current;
-
-            if (timeSinceLastActivity >= timeoutMs) {
-                if (!isIdle) {
-                    setIsIdle(true);
-                    onIdle();
-                }
+            if (firedRef.current) return;
+            const elapsed = Date.now() - lastActivityRef.current;
+            if (elapsed >= timeoutMs) {
+                firedRef.current = true;
+                onIdleRef.current();
             }
         };
 
-        // Events to track
-        const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+        const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'] as const;
+        events.forEach(event => window.addEventListener(event, handleActivity, { passive: true }));
 
-        // Attach listeners
-        events.forEach(event => {
-            window.addEventListener(event, handleActivity);
-        });
-
-        // Check every minute if we exceeded the limit
-        // (Checking more frequently is fine too, but 1s is enough precision for session timeout)
-        timerRef.current = setInterval(checkActivity, 1000);
+        const interval = setInterval(checkActivity, 5000);
 
         return () => {
-            events.forEach(event => {
-                window.removeEventListener(event, handleActivity);
-            });
-            if (timerRef.current) clearInterval(timerRef.current);
+            events.forEach(event => window.removeEventListener(event, handleActivity));
+            clearInterval(interval);
         };
-    }, [timeoutMinutes, onIdle, isIdle]);
-
-    return isIdle;
+    }, [timeoutMinutes, handleActivity]);
 }

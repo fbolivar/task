@@ -70,5 +70,6 @@ export function useRiskMonitor(enabled: boolean = true) {
         // Delay check to ensure data is loaded and avoid notification spam
         const timer = setTimeout(checkRisks, 5000);
         return () => clearTimeout(timer);
-    }, [user, activeEntityId, getExhaustionEstimate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- getExhaustionEstimate changes identity every render; only re-run on user/entity change
+    }, [user, activeEntityId, enabled]);
 }
