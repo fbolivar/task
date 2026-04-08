@@ -53,7 +53,6 @@ export function TrackingSection({ taskId }: TrackingSectionProps) {
             // Reset form (keep date)
             setProgress('');
             setIssues('');
-            setIssues('');
         } catch (error) {
             console.error('Error adding followup:', error);
             toast(`Error al guardar: ${(error as any).message || 'Error desconocido'}`, 'error');
@@ -82,6 +81,8 @@ export function TrackingSection({ taskId }: TrackingSectionProps) {
                             type="date"
                             value={reportDate}
                             onChange={(e) => setReportDate(e.target.value)}
+                            title="Fecha del reporte"
+                            aria-label="Fecha del reporte"
                             className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:outline-none focus:border-primary text-sm font-bold"
                         />
                     </div>
@@ -115,6 +116,7 @@ export function TrackingSection({ taskId }: TrackingSectionProps) {
 
                 <div className="flex justify-end">
                     <button
+                        type="button"
                         onClick={handleSend}
                         disabled={sending || !progress.trim()}
                         className="btn-primary py-2 px-6 text-sm font-bold flex items-center gap-2"

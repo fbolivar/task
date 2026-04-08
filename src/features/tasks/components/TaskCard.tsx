@@ -10,7 +10,8 @@ import {
     Trash2,
     Flag,
     Zap,
-    ChevronDown
+    ChevronDown,
+    Copy
 } from 'lucide-react';
 import { Task } from '../types';
 import { useState, useRef, useEffect } from 'react';
@@ -20,6 +21,7 @@ interface TaskCardProps {
     onEdit: (task: Task) => void;
     onArchive: (id: string) => void;
     onStatusChange: (task: Task, newStatus: string) => void;
+    onClone?: (task: Task) => void;
     isSelected?: boolean;
     onToggleSelect?: (id: string) => void;
 }
@@ -33,7 +35,7 @@ const STATUS_STYLES: Record<string, string> = {
     'Pendiente': 'bg-slate-500/10 text-muted-foreground',
 };
 
-export function TaskCard({ task, onEdit, onArchive, onStatusChange, isSelected = false, onToggleSelect }: TaskCardProps) {
+export function TaskCard({ task, onEdit, onArchive, onStatusChange, onClone, isSelected = false, onToggleSelect }: TaskCardProps) {
     const [showMenu, setShowMenu] = useState(false);
     const [showStatusMenu, setShowStatusMenu] = useState(false);
     const statusRef = useRef<HTMLDivElement>(null);
@@ -91,7 +93,7 @@ export function TaskCard({ task, onEdit, onArchive, onStatusChange, isSelected =
                                 : 'border-slate-200 dark:border-white/10 hover:border-primary hover:scale-110'
                         }`}
                         aria-label={isSelected ? 'Deseleccionar tarea' : 'Seleccionar tarea'}
-                        aria-pressed={isSelected ? 'true' : 'false'}
+                        aria-pressed={isSelected}
                     >
                         {isSelected && (
                             <div className="w-2 h-2 rounded-full bg-white" aria-hidden="true" />
@@ -100,7 +102,9 @@ export function TaskCard({ task, onEdit, onArchive, onStatusChange, isSelected =
                 )}
 
                 <button
+                    type="button"
                     onClick={() => onStatusChange(task, task.status === 'Completado' ? 'Pendiente' : 'Completado')}
+                    aria-label={task.status === 'Completado' ? 'Marcar como pendiente' : 'Marcar como completado'}
                     className={`mt-1 w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all duration-300 ${task.status === 'Completado'
                         ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/30'
                         : 'border-slate-200 dark:border-white/10 hover:border-primary hover:scale-110'
@@ -126,21 +130,40 @@ export function TaskCard({ task, onEdit, onArchive, onStatusChange, isSelected =
 
                         <div className="relative shrink-0">
                             <button
+                                type="button"
                                 onClick={() => setShowMenu(!showMenu)}
+                                title="Opciones de tarea"
+                                aria-label="Opciones de tarea"
+                                aria-haspopup="menu"
+                                aria-expanded={showMenu ? 'true' : 'false'}
                                 className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-all"
                             >
                                 <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
                             </button>
 
                             {showMenu && (
-                                <div className="absolute right-0 mt-2 w-40 glass-card shadow-2xl z-20 p-1.5 border border-white/20 animate-in fade-in zoom-in-95">
+                                <div role="menu" className="absolute right-0 mt-2 w-44 glass-card shadow-2xl z-20 p-1.5 border border-white/20 animate-in fade-in zoom-in-95">
                                     <button
+                                        type="button"
+                                        role="menuitem"
                                         onClick={() => { onEdit(task); setShowMenu(false); }}
                                         className="w-full flex items-center gap-3 px-3 py-2.5 text-[10px] font-black uppercase tracking-wider hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
                                     >
                                         <Edit3 className="w-4 h-4" /> Modificar
                                     </button>
+                                    {onClone && (
+                                        <button
+                                            type="button"
+                                            role="menuitem"
+                                            onClick={() => { onClone(task); setShowMenu(false); }}
+                                            className="w-full flex items-center gap-3 px-3 py-2.5 text-[10px] font-black uppercase tracking-wider hover:bg-blue-500/10 hover:text-blue-600 rounded-xl transition-all"
+                                        >
+                                            <Copy className="w-4 h-4" /> Duplicar
+                                        </button>
+                                    )}
                                     <button
+                                        type="button"
+                                        role="menuitem"
                                         onClick={() => { onArchive(task.id); setShowMenu(false); }}
                                         className="w-full flex items-center gap-3 px-3 py-2.5 text-[10px] font-black uppercase tracking-wider hover:bg-amber-500/10 text-amber-600 rounded-xl transition-all"
                                     >

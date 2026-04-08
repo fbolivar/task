@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { X, ChevronDown, Archive, CheckCircle2, Flag } from 'lucide-react';
+import { X, ChevronDown, Archive, CheckCircle2, Flag, User } from 'lucide-react';
 
 interface BulkActionBarProps {
     selectedCount: number;
@@ -9,12 +9,14 @@ interface BulkActionBarProps {
     onChangePriority: (priority: string) => void;
     onArchive: () => void;
     onClearSelection: () => void;
+    onAssign?: (userId: string) => void;
+    users?: { id: string; full_name: string }[];
 }
 
 const STATUS_OPTIONS = ['Pendiente', 'En Progreso', 'Revisión', 'Completado'] as const;
 const PRIORITY_OPTIONS = ['Alta', 'Media', 'Baja'] as const;
 
-type DropdownType = 'status' | 'priority' | null;
+type DropdownType = 'status' | 'priority' | 'assign' | null;
 
 export function BulkActionBar({
     selectedCount,
@@ -22,6 +24,8 @@ export function BulkActionBar({
     onChangePriority,
     onArchive,
     onClearSelection,
+    onAssign,
+    users = [],
 }: BulkActionBarProps) {
     const [openDropdown, setOpenDropdown] = useState<DropdownType>(null);
     const barRef = useRef<HTMLDivElement>(null);
@@ -44,6 +48,11 @@ export function BulkActionBar({
 
     const handlePrioritySelect = (priority: string) => {
         onChangePriority(priority);
+        setOpenDropdown(null);
+    };
+
+    const handleAssignSelect = (userId: string) => {
+        onAssign?.(userId);
         setOpenDropdown(null);
     };
 
@@ -152,6 +161,46 @@ export function BulkActionBar({
                         </div>
                     )}
                 </div>
+
+                {/* Assign dropdown — only shown when users list is provided */}
+                {users.length > 0 && onAssign && (
+                    <div className="relative">
+                        <button
+                            type="button"
+                            onClick={() => setOpenDropdown(openDropdown === 'assign' ? null : 'assign')}
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/70 hover:text-white hover:bg-white/10 transition-all"
+                            aria-haspopup="listbox"
+                            aria-expanded={openDropdown === 'assign' ? true : false}
+                        >
+                            <User className="w-3.5 h-3.5 text-sky-400" />
+                            Asignar
+                            <ChevronDown className={`w-3 h-3 transition-transform ${openDropdown === 'assign' ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {openDropdown === 'assign' && (
+                            <div
+                                className="absolute bottom-full mb-2 left-0 w-48 bg-slate-900 border border-white/10 rounded-xl shadow-2xl p-1 animate-in fade-in zoom-in-95 max-h-56 overflow-y-auto"
+                                role="listbox"
+                                aria-label="Asignar responsable"
+                            >
+                                {users.map((user) => (
+                                    <button
+                                        type="button"
+                                        key={user.id}
+                                        onClick={() => handleAssignSelect(user.id)}
+                                        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest text-sky-300 hover:bg-white/10 transition-all"
+                                        role="option"
+                                    >
+                                        <span className="w-5 h-5 rounded-full bg-sky-500/20 flex items-center justify-center text-sky-400 font-black text-[9px] shrink-0">
+                                            {user.full_name.charAt(0).toUpperCase()}
+                                        </span>
+                                        <span className="truncate normal-case font-bold">{user.full_name}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Divider */}
                 <div className="w-px h-6 bg-white/10" aria-hidden="true" />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useTasks } from '@/features/tasks/hooks/useTasks';
 import { TaskHeader } from '@/features/tasks/components/TaskHeader';
 import { TaskCard } from '@/features/tasks/components/TaskCard';
@@ -9,20 +9,54 @@ import { BulkActionBar } from '@/features/tasks/components/BulkActionBar';
 import { KanbanBoard } from '@/features/tasks/components/KanbanBoard';
 import { CalendarView } from '@/features/tasks/components/CalendarView';
 import { Task, TaskFormData } from '@/features/tasks/types';
+import { useToast } from '@/shared/components/Toast';
 import { Loader2, CheckSquare, Plus, Sparkles, LayoutGrid, Columns, Calendar } from 'lucide-react';
 import { useSettings } from '@/shared/contexts/SettingsContext';
+import { createClient } from '@/lib/supabase/client';
+
+interface ProjectOption {
+    id: string;
+    name: string;
+}
 
 export default function TareasPage() {
     const { t } = useSettings();
+    const { toast } = useToast();
     const { tasks, loading, createTask, updateTask, archiveTask } = useTasks();
+
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [priorityFilter, setPriorityFilter] = useState('all');
+    const [projectFilter, setProjectFilter] = useState('all');
+    const [subStatusFilter, setSubStatusFilter] = useState('all');
     const [sortAsc, setSortAsc] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     const [viewMode, setViewMode] = useState<'grid' | 'kanban' | 'calendar'>('grid');
     const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
+    const [projects, setProjects] = useState<ProjectOption[]>([]);
+    const [usersList, setUsersList] = useState<{ id: string; full_name: string }[]>([]);
+
+    useEffect(() => {
+        const supabase = createClient();
+
+        supabase
+            .from('projects')
+            .select('id, name')
+            .order('name')
+            .then(({ data }: { data: ProjectOption[] | null }) => {
+                if (data) setProjects(data);
+            });
+
+        supabase
+            .from('profiles')
+            .select('id, full_name')
+            .eq('is_active', true)
+            .order('full_name')
+            .then(({ data }: { data: { id: string; full_name: string }[] | null }) => {
+                if (data) setUsersList(data);
+            });
+    }, []);
 
     const filteredTasks = useMemo(() => {
         const filtered = tasks
@@ -36,8 +70,10 @@ export default function TareasPage() {
 
                 const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
                 const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
+                const matchesProject = projectFilter === 'all' || task.project_id === projectFilter;
+                const matchesSubStatus = subStatusFilter === 'all' || task.sub_status === subStatusFilter;
 
-                return matchesSearch && matchesStatus && matchesPriority;
+                return matchesSearch && matchesStatus && matchesPriority && matchesProject && matchesSubStatus;
             });
 
         return filtered.sort((a, b) => {
@@ -50,7 +86,7 @@ export default function TareasPage() {
 
             return sortAsc ? aDate - bDate : bDate - aDate;
         });
-    }, [tasks, searchQuery, statusFilter, priorityFilter, sortAsc]);
+    }, [tasks, searchQuery, statusFilter, priorityFilter, projectFilter, subStatusFilter, sortAsc]);
 
     const handleOpenCreateModal = () => {
         setEditingTask(null);
@@ -80,6 +116,24 @@ export default function TareasPage() {
         await updateTask(task.id, { status: newStatus as any });
     };
 
+    const handleCloneTask = useCallback(async (task: Task) => {
+        const cloneData: TaskFormData = {
+            project_id: task.project_id,
+            title: `[COPIA] ${task.title}`,
+            notes: task.notes,
+            status: 'Pendiente',
+            sub_status: task.sub_status,
+            priority: task.priority,
+            end_date: task.end_date,
+            assigned_to: task.assigned_to,
+            evidence_link: task.evidence_link,
+            estimated_hours: task.estimated_hours,
+            actual_hours: 0,
+        };
+        await createTask(cloneData);
+        toast(`Tarea duplicada: "${cloneData.title}"`, 'success');
+    }, [createTask, toast]);
+
     const handleToggleSelect = useCallback((id: string) => {
         setSelectedTasks(prev => {
             const next = new Set(prev);
@@ -97,26 +151,65 @@ export default function TareasPage() {
     }, []);
 
     const handleBulkStatusChange = useCallback(async (status: string) => {
+        const count = selectedTasks.size;
         await Promise.all(
             Array.from(selectedTasks).map(id => updateTask(id, { status: status as any }))
         );
         setSelectedTasks(new Set());
-    }, [selectedTasks, updateTask]);
+        toast(`Estado actualizado en ${count} tarea${count !== 1 ? 's' : ''}`, 'success');
+    }, [selectedTasks, updateTask, toast]);
 
     const handleBulkPriorityChange = useCallback(async (priority: string) => {
+        const count = selectedTasks.size;
         await Promise.all(
             Array.from(selectedTasks).map(id => updateTask(id, { priority: priority as any }))
         );
         setSelectedTasks(new Set());
-    }, [selectedTasks, updateTask]);
+        toast(`Prioridad actualizada en ${count} tarea${count !== 1 ? 's' : ''}`, 'success');
+    }, [selectedTasks, updateTask, toast]);
 
     const handleBulkArchive = useCallback(async () => {
-        if (!window.confirm(`¿Estás seguro de que deseas archivar ${selectedTasks.size} tarea${selectedTasks.size !== 1 ? 's' : ''}?`)) return;
+        const count = selectedTasks.size;
+        if (!window.confirm(`¿Estás seguro de que deseas archivar ${count} tarea${count !== 1 ? 's' : ''}?`)) return;
         await Promise.all(
             Array.from(selectedTasks).map(id => archiveTask(id))
         );
         setSelectedTasks(new Set());
-    }, [selectedTasks, archiveTask]);
+        toast(`${count} tarea${count !== 1 ? 's archivadas' : ' archivada'}`, 'success');
+    }, [selectedTasks, archiveTask, toast]);
+
+    const handleBulkAssign = useCallback(async (userId: string) => {
+        await Promise.all(
+            Array.from(selectedTasks).map(id => updateTask(id, { assigned_to: userId }))
+        );
+        setSelectedTasks(new Set());
+    }, [selectedTasks, updateTask]);
+
+    const handleExport = useCallback(() => {
+        const headers = ['Título', 'Proyecto', 'Estado', 'Prioridad', 'Sub-estado', 'Responsable', 'Fecha límite', 'Horas estimadas', 'Horas reales'];
+
+        const rows = filteredTasks.map(task => [
+            `"${(task.title ?? '').replace(/"/g, '""')}"`,
+            `"${(task.project?.name ?? '').replace(/"/g, '""')}"`,
+            task.status,
+            task.priority,
+            task.sub_status,
+            `"${(task.assignee?.full_name ?? '').replace(/"/g, '""')}"`,
+            task.end_date ?? '',
+            String(task.estimated_hours ?? 0),
+            String(task.actual_hours ?? 0),
+        ]);
+
+        const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `tareas-${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+        toast(`${filteredTasks.length} tarea${filteredTasks.length !== 1 ? 's exportadas' : ' exportada'} a CSV`, 'success');
+    }, [filteredTasks, toast]);
 
     if (loading && tasks.length === 0) {
         return (
@@ -142,6 +235,12 @@ export default function TareasPage() {
                 totalTasks={tasks.length}
                 currentStatus={statusFilter}
                 currentPriority={priorityFilter}
+                projects={projects}
+                onProjectFilter={setProjectFilter}
+                onSubStatusFilter={setSubStatusFilter}
+                currentProject={projectFilter}
+                currentSubStatus={subStatusFilter}
+                onExport={handleExport}
             />
 
             {/* View mode toggle */}
@@ -150,7 +249,7 @@ export default function TareasPage() {
                     type="button"
                     onClick={() => setViewMode('grid')}
                     aria-label="Vista cuadrícula"
-                    aria-pressed={viewMode === 'grid' ? true : false}
+                    aria-pressed={viewMode === 'grid'}
                     className={`p-2 rounded-xl border transition-all duration-200 ${
                         viewMode === 'grid'
                             ? 'bg-primary text-white border-primary shadow-sm shadow-primary/30'
@@ -207,6 +306,7 @@ export default function TareasPage() {
                             onEdit={handleOpenEditModal}
                             onArchive={handleArchive}
                             onStatusChange={handleStatusChange}
+                            onClone={handleCloneTask}
                             isSelected={selectedTasks.has(task.id)}
                             onToggleSelect={handleToggleSelect}
                         />
@@ -260,6 +360,8 @@ export default function TareasPage() {
                 onChangePriority={handleBulkPriorityChange}
                 onArchive={handleBulkArchive}
                 onClearSelection={handleClearSelection}
+                onAssign={handleBulkAssign}
+                users={usersList}
             />
         </div>
     );

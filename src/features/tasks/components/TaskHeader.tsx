@@ -1,13 +1,19 @@
 'use client';
 
+import { useState } from 'react';
 import {
     Search,
     Plus,
-    Filter,
-    CheckSquare,
-    SortAsc
+    SortAsc,
+    Briefcase,
+    ChevronDown,
+    Download,
+    Filter
 } from 'lucide-react';
 import { useSettings } from '@/shared/contexts/SettingsContext';
+
+const SUB_STATUS_OPTIONS = ['all', 'En Tiempo', 'En Riesgo', 'Demorado', 'Bloqueado'] as const;
+type SubStatusOption = typeof SUB_STATUS_OPTIONS[number];
 
 interface TaskHeaderProps {
     onSearch: (query: string) => void;
@@ -18,10 +24,43 @@ interface TaskHeaderProps {
     totalTasks: number;
     currentStatus?: string;
     currentPriority?: string;
+    projects?: { id: string; name: string }[];
+    onProjectFilter?: (id: string) => void;
+    onSubStatusFilter?: (s: string) => void;
+    currentProject?: string;
+    currentSubStatus?: string;
+    onExport?: () => void;
 }
 
-export function TaskHeader({ onSearch, onNewTask, onStatusFilter, onSort, onPriorityFilter, totalTasks, currentStatus = 'all', currentPriority = 'all' }: TaskHeaderProps) {
+const SUB_STATUS_STYLES: Record<SubStatusOption, string> = {
+    all: 'bg-primary text-white shadow-primary/30',
+    'En Tiempo': 'bg-emerald-500 text-white shadow-emerald-500/30',
+    'En Riesgo': 'bg-amber-500 text-white shadow-amber-500/30',
+    Demorado: 'bg-orange-500 text-white shadow-orange-500/30',
+    Bloqueado: 'bg-red-500 text-white shadow-red-500/30',
+};
+
+export function TaskHeader({
+    onSearch,
+    onNewTask,
+    onStatusFilter,
+    onSort,
+    onPriorityFilter,
+    totalTasks,
+    currentStatus = 'all',
+    currentPriority = 'all',
+    projects = [],
+    onProjectFilter,
+    onSubStatusFilter,
+    currentProject = 'all',
+    currentSubStatus = 'all',
+    onExport,
+}: TaskHeaderProps) {
     const { t } = useSettings();
+    const [showAdvanced, setShowAdvanced] = useState(false);
+
+    const hasActiveAdvanced =
+        currentProject !== 'all' || currentSubStatus !== 'all';
 
     return (
         <div className="flex flex-col gap-8 mb-10 animate-reveal">
@@ -37,6 +76,17 @@ export function TaskHeader({ onSearch, onNewTask, onStatusFilter, onSort, onPrio
                 </div>
 
                 <div className="flex items-center gap-3">
+                    {onExport && (
+                        <button
+                            type="button"
+                            onClick={onExport}
+                            title="Exportar CSV"
+                            aria-label="Exportar tareas a CSV"
+                            className="p-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 text-muted-foreground hover:text-primary hover:border-primary/50 transition-all duration-200"
+                        >
+                            <Download className="w-5 h-5" />
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={onNewTask}
@@ -83,6 +133,7 @@ export function TaskHeader({ onSearch, onNewTask, onStatusFilter, onSort, onPrio
                         onClick={onSort}
                         className="p-2.5 rounded-xl bg-white dark:bg-slate-800 text-muted-foreground hover:text-primary transition-all shadow-sm"
                         title="Ordenar por fecha"
+                        aria-label="Ordenar por fecha"
                     >
                         <SortAsc className="w-5 h-5" />
                     </button>
@@ -111,7 +162,85 @@ export function TaskHeader({ onSearch, onNewTask, onStatusFilter, onSort, onPrio
                         );
                     })}
                 </div>
+
+                {/* Advanced filters toggle */}
+                {(onProjectFilter || onSubStatusFilter) && (
+                    <div className="md:col-span-8 flex justify-end">
+                        <button
+                            type="button"
+                            onClick={() => setShowAdvanced(!showAdvanced)}
+                            aria-expanded={showAdvanced ? ('true' as const) : ('false' as const)}
+                            aria-controls="advanced-filters"
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 border ${
+                                showAdvanced || hasActiveAdvanced
+                                    ? 'bg-primary/10 text-primary border-primary/30'
+                                    : 'bg-white dark:bg-slate-900 text-muted-foreground border-slate-200 dark:border-white/10 hover:border-primary/40 hover:text-primary'
+                            }`}
+                        >
+                            <Filter className="w-3.5 h-3.5" />
+                            Filtros Avanzados
+                            {hasActiveAdvanced && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary" aria-hidden="true" />
+                            )}
+                            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showAdvanced ? 'rotate-180' : ''}`} />
+                        </button>
+                    </div>
+                )}
             </div>
+
+            {/* Advanced filters row */}
+            {showAdvanced && (onProjectFilter || onSubStatusFilter) && (
+                <div
+                    id="advanced-filters"
+                    className="flex flex-wrap items-center gap-4 px-4 py-3 bg-slate-50 dark:bg-white/[0.03] rounded-2xl border border-slate-200 dark:border-white/5 animate-in fade-in slide-in-from-top-2 duration-200"
+                >
+                    {/* Project dropdown */}
+                    {onProjectFilter && projects.length > 0 && (
+                        <div className="flex items-center gap-2">
+                            <Briefcase className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                            <label htmlFor="project-filter" className="text-[10px] font-black uppercase tracking-wider text-muted-foreground shrink-0">
+                                Proyecto
+                            </label>
+                            <select
+                                id="project-filter"
+                                value={currentProject}
+                                onChange={(e) => onProjectFilter(e.target.value)}
+                                className="text-[10px] font-black uppercase tracking-wider bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-1.5 text-foreground focus:outline-none focus:border-primary transition-all"
+                            >
+                                <option value="all">Todos</option>
+                                {projects.map((p) => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Sub-status pills */}
+                    {onSubStatusFilter && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground shrink-0">
+                                Sub-estado
+                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                {SUB_STATUS_OPTIONS.map((s) => (
+                                    <button
+                                        type="button"
+                                        key={s}
+                                        onClick={() => onSubStatusFilter(s)}
+                                        className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all duration-200 shadow-sm ${
+                                            currentSubStatus === s
+                                                ? SUB_STATUS_STYLES[s]
+                                                : 'bg-white dark:bg-slate-900 text-muted-foreground border border-slate-200 dark:border-white/10 hover:border-primary/40 hover:text-primary'
+                                        }`}
+                                    >
+                                        {s === 'all' ? 'Todos' : s}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

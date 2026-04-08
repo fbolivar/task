@@ -23,6 +23,7 @@ import { useSettings } from '@/shared/contexts/SettingsContext';
 import { TrackingSection } from './TrackingSection';
 import { CommentsSection } from './CommentsSection';
 import { DependenciesSection } from './DependenciesSection';
+import { SubtasksSection } from './SubtasksSection';
 
 interface HoursProgressBarProps {
     actual: number;
@@ -425,6 +426,13 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                             placeholder="Instrucciones o detalles de la tarea..."
                         />
                     </div>
+
+                    {/* Subtasks Section - Only on Edit Mode */}
+                    {task && (
+                        <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+                            <SubtasksSection taskId={task.id} />
+                        </div>
+                    )}
 
                     {/* Tracking Section - Only on Edit Mode */}
                     {task && (
