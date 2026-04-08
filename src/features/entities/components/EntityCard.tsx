@@ -12,18 +12,28 @@ import {
     Calendar,
     DollarSign,
     Sparkles,
-    Zap
+    Zap,
+    Eye,
+    Briefcase,
+    CheckSquare,
+    Package
 } from 'lucide-react';
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { Entity } from '../types';
 
 interface EntityCardProps {
     entity: Entity;
     onEdit: (entity: Entity) => void;
     onDelete: (id: string) => void;
+    projectCount?: number;
+    taskCount?: number;
+    assetCount?: number;
+    isSelected?: boolean;
+    onToggleSelect?: (id: string) => void;
 }
 
-export function EntityCard({ entity, onEdit, onDelete }: EntityCardProps) {
+export function EntityCard({ entity, onEdit, onDelete, projectCount = 0, taskCount = 0, assetCount = 0, isSelected = false, onToggleSelect }: EntityCardProps) {
     const [showMenu, setShowMenu] = useState(false);
 
     const typeColors = {
@@ -39,14 +49,35 @@ export function EntityCard({ entity, onEdit, onDelete }: EntityCardProps) {
     };
 
     return (
-        <div className="card-premium group relative flex flex-col h-full hover:translate-y-[-8px] transition-all duration-500">
+        <div className={`card-premium group relative flex flex-col h-full hover:translate-y-[-8px] transition-all duration-500 ${isSelected ? 'ring-2 ring-primary ring-offset-2 dark:ring-offset-slate-950' : ''}`}>
             {/* Top Bar Accent */}
             <div className={`absolute top-0 left-0 h-1.5 w-full bg-gradient-to-r ${typeColors[entity.type]} z-20`} />
 
             <div className="p-8 flex-1 relative z-10">
                 <div className="flex justify-between items-start mb-8">
-                    <div className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] border shadow-sm transition-all duration-500 group-hover:scale-105 ${typeBadges[entity.type]}`}>
-                        {entity.type}
+                    <div className="flex items-center gap-3">
+                        {onToggleSelect && (
+                            <button
+                                type="button"
+                                onClick={() => onToggleSelect(entity.id)}
+                                aria-pressed={isSelected ? 'true' : 'false'}
+                                aria-label={isSelected ? `Deseleccionar ${entity.name}` : `Seleccionar ${entity.name} para comparar`}
+                                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+                                    isSelected
+                                        ? 'bg-primary border-primary text-white'
+                                        : 'border-slate-300 dark:border-slate-600 hover:border-primary'
+                                }`}
+                            >
+                                {isSelected && (
+                                    <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none">
+                                        <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                )}
+                            </button>
+                        )}
+                        <div className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] border shadow-sm transition-all duration-500 group-hover:scale-105 ${typeBadges[entity.type]}`}>
+                            {entity.type}
+                        </div>
                     </div>
 
                     <div className="relative">
@@ -58,7 +89,14 @@ export function EntityCard({ entity, onEdit, onDelete }: EntityCardProps) {
                         </button>
 
                         {showMenu && (
-                            <div className="absolute right-0 mt-3 w-40 glass-card shadow-2xl z-20 p-1.5 border border-white/20 animate-in fade-in zoom-in-95">
+                            <div className="absolute right-0 mt-3 w-44 glass-card shadow-2xl z-20 p-1.5 border border-white/20 animate-in fade-in zoom-in-95">
+                                <Link
+                                    href={`/entidades/${entity.id}`}
+                                    onClick={() => setShowMenu(false)}
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-[10px] font-black uppercase tracking-wider hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
+                                >
+                                    <Eye className="w-4 h-4" /> Ver Detalle
+                                </Link>
                                 <button
                                     onClick={() => { onEdit(entity); setShowMenu(false); }}
                                     className="w-full flex items-center gap-3 px-3 py-2.5 text-[10px] font-black uppercase tracking-wider hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
@@ -88,9 +126,11 @@ export function EntityCard({ entity, onEdit, onDelete }: EntityCardProps) {
                         </div>
                     </div>
                     <div className="min-w-0 flex-1">
-                        <h3 className="font-black text-xl text-foreground tracking-tight truncate group-hover:text-primary transition-all leading-tight mb-2">
-                            {entity.name}
-                        </h3>
+                        <Link href={`/entidades/${entity.id}`}>
+                            <h3 className="font-black text-xl text-foreground tracking-tight truncate hover:text-primary group-hover:text-primary transition-all leading-tight mb-2 cursor-pointer">
+                                {entity.name}
+                            </h3>
+                        </Link>
                         <div className="flex items-center gap-2 text-[10px] text-muted-foreground/70 font-black uppercase tracking-widest">
                             <MapPin className="w-3.5 h-3.5 text-primary" />
                             <span className="truncate">{entity.address || 'Global Operations'}</span>
@@ -119,6 +159,28 @@ export function EntityCard({ entity, onEdit, onDelete }: EntityCardProps) {
 
             {/* Footer with Stakeholder info */}
             <div className="px-8 py-5 bg-slate-50/30 dark:bg-white/5 border-t border-slate-100 dark:border-white/5 mt-auto rounded-b-[2rem]">
+                {(projectCount > 0 || taskCount > 0 || assetCount > 0) && (
+                    <div className="flex items-center gap-2 mb-4">
+                        {projectCount > 0 && (
+                            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[9px] font-black uppercase tracking-widest text-blue-600">
+                                <Briefcase className="w-3 h-3" />
+                                {projectCount} Proyectos
+                            </span>
+                        )}
+                        {taskCount > 0 && (
+                            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black uppercase tracking-widest text-emerald-600">
+                                <CheckSquare className="w-3 h-3" />
+                                {taskCount} Tareas
+                            </span>
+                        )}
+                        {assetCount > 0 && (
+                            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[9px] font-black uppercase tracking-widest text-amber-600">
+                                <Package className="w-3 h-3" />
+                                {assetCount} Activos
+                            </span>
+                        )}
+                    </div>
+                )}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 group/user">
                         <div className="relative">

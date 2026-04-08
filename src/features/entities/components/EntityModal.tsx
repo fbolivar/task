@@ -102,12 +102,30 @@ export function EntityModal({ isOpen, onClose, onSave, entity }: EntityModalProp
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Email validation
+        if (formData.email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(formData.email)) {
+                toast('El correo corporativo no tiene un formato válido.', 'error');
+                return;
+            }
+        }
+
+        // Phone validation
+        if (formData.phone && formData.phone.replace(/\D/g, '').length < 7) {
+            toast('El teléfono debe tener al menos 7 dígitos.', 'warning');
+            return;
+        }
+
         try {
             setIsSaving(true);
             await onSave(formData);
+            toast('Entidad guardada exitosamente', 'success');
             onClose();
         } catch (error) {
             console.error('Error in modal saving:', error);
+            toast('Error al guardar la entidad.', 'error');
         } finally {
             setIsSaving(false);
         }

@@ -1,6 +1,6 @@
 'use client';
 
-import { Building2, Plus, Search, Sparkles } from 'lucide-react';
+import { Building2, Plus, Search, Sparkles, Download } from 'lucide-react';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 
 interface EntityHeaderProps {
@@ -8,9 +8,10 @@ interface EntityHeaderProps {
     onNewEntity: () => void;
     filterType: string;
     onFilterChange: (type: any) => void;
+    onExport: () => void;
 }
 
-export function EntityHeader({ onSearch, onNewEntity, filterType, onFilterChange }: EntityHeaderProps) {
+export function EntityHeader({ onSearch, onNewEntity, filterType, onFilterChange, onExport }: EntityHeaderProps) {
     const { t } = useSettings();
 
     return (
@@ -32,13 +33,25 @@ export function EntityHeader({ onSearch, onNewEntity, filterType, onFilterChange
                         <p className="text-muted-foreground font-medium text-sm mt-2">{t('entities.desc')}</p>
                     </div>
                 </div>
-                <button
-                    onClick={onNewEntity}
-                    className="btn-primary flex items-center gap-3 overflow-hidden"
-                >
-                    <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-                    <span className="font-bold tracking-wide">{t('entities.new')}</span>
-                </button>
+                <div className="flex items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={onExport}
+                        className="flex items-center gap-2 px-4 py-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground transition-all"
+                        title="Exportar CSV"
+                    >
+                        <Download className="w-4 h-4" />
+                        <span>Exportar CSV</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onNewEntity}
+                        className="btn-primary flex items-center gap-3 overflow-hidden"
+                    >
+                        <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+                        <span className="font-bold tracking-wide">{t('entities.new')}</span>
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
