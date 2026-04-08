@@ -136,19 +136,6 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                     </div>
                 </div>
 
-                {/* User */}
-                <div className="px-5 py-4 border-b border-white/10">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                            {profile?.full_name?.charAt(0) || '?'}
-                        </div>
-                        <div className="min-w-0">
-                            <p className="text-white text-sm font-semibold truncate">{profile?.full_name || 'Usuario'}</p>
-                            <p className="text-white/50 text-xs truncate">{profile?.role?.name || 'Rol'}</p>
-                        </div>
-                    </div>
-                </div>
-
                 {/* Navigation */}
                 <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
                     {visibleItems.map(item => {
