@@ -21,14 +21,14 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     const { t } = settings;
 
     const navItems = [
-        { href: '/dashboard',    label: t('nav.dashboard'),  icon: Home },
-        { href: '/entidades',    label: t('nav.entities'),   icon: Building2 },
-        { href: '/proyectos',    label: t('nav.projects'),   icon: Briefcase },
-        { href: '/tareas',       label: t('nav.tasks'),      icon: CheckSquare },
-        { href: '/inventario',   label: t('nav.inventory'),  icon: Package },
-        { href: '/analisis',     label: 'Analisis',          icon: PieChart },
-        { href: '/contratacion', label: t('nav.hiring'),     icon: Target },
-        { href: '/reportes',     label: t('nav.reports'),    icon: BarChart3 },
+        { href: '/dashboard',    label: 'Inicio',        icon: Home },
+        { href: '/entidades',    label: 'Empresas',      icon: Building2 },
+        { href: '/proyectos',    label: 'Proyectos',     icon: Briefcase },
+        { href: '/tareas',       label: 'Tareas',        icon: CheckSquare },
+        { href: '/inventario',   label: 'Activos',       icon: Package },
+        { href: '/analisis',     label: 'Análisis',      icon: PieChart },
+        { href: '/contratacion', label: 'Contratación',  icon: Target },
+        { href: '/reportes',     label: 'Reportes',      icon: BarChart3 },
     ];
 
     const roleName = profile?.role?.name || '';
@@ -113,7 +113,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                                 }`}
                             >
                                 <Settings className="w-4.5 h-4.5 flex-shrink-0" />
-                                <span>{t('nav.config')}</span>
+                                <span>Ajustes</span>
                             </Link>
                         </>
                     )}
@@ -168,7 +168,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                             }`}
                         >
                             <Settings className={`w-[18px] h-[18px] flex-shrink-0 transition-transform ${isSettingsActive ? 'rotate-90' : ''}`} />
-                            <span>{t('nav.config')}</span>
+                            <span>Ajustes</span>
                         </Link>
                     </div>
                 )}

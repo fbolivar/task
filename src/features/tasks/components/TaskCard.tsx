@@ -122,7 +122,7 @@ export function TaskCard({ task, onEdit, onArchive, onStatusChange, onClone, isS
                             </h4>
                             <div className="flex items-center gap-2 mt-1.5">
                                 <Zap className="w-3 h-3 text-primary animate-pulse" />
-                                <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest truncate">
+                                <span className="text-xs font-medium text-muted-foreground truncate">
                                     {task.project?.name || 'Operación Directa'}
                                 </span>
                             </div>
@@ -147,7 +147,7 @@ export function TaskCard({ task, onEdit, onArchive, onStatusChange, onClone, isS
                                         type="button"
                                         role="menuitem"
                                         onClick={() => { onEdit(task); setShowMenu(false); }}
-                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-[10px] font-black uppercase tracking-wider hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
+                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-medium hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
                                     >
                                         <Edit3 className="w-4 h-4" /> Modificar
                                     </button>
@@ -156,7 +156,7 @@ export function TaskCard({ task, onEdit, onArchive, onStatusChange, onClone, isS
                                             type="button"
                                             role="menuitem"
                                             onClick={() => { onClone(task); setShowMenu(false); }}
-                                            className="w-full flex items-center gap-3 px-3 py-2.5 text-[10px] font-black uppercase tracking-wider hover:bg-blue-500/10 hover:text-blue-600 rounded-xl transition-all"
+                                            className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-medium hover:bg-blue-500/10 hover:text-blue-600 rounded-xl transition-all"
                                         >
                                             <Copy className="w-4 h-4" /> Duplicar
                                         </button>
@@ -165,7 +165,7 @@ export function TaskCard({ task, onEdit, onArchive, onStatusChange, onClone, isS
                                         type="button"
                                         role="menuitem"
                                         onClick={() => { onArchive(task.id); setShowMenu(false); }}
-                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-[10px] font-black uppercase tracking-wider hover:bg-amber-500/10 text-amber-600 rounded-xl transition-all"
+                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-medium hover:bg-amber-500/10 text-amber-600 rounded-xl transition-all"
                                     >
                                         <Trash2 className="w-4 h-4" /> Archivar
                                     </button>
@@ -176,7 +176,7 @@ export function TaskCard({ task, onEdit, onArchive, onStatusChange, onClone, isS
 
                     <div className="flex flex-wrap items-center gap-3 mt-6">
                         {/* Due Date */}
-                        <div className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl transition-all ${isOverdue ? 'bg-red-500/10 text-red-500 shadow-sm shadow-red-500/10' : 'bg-slate-100/50 dark:bg-white/5 text-muted-foreground'
+                        <div className={`flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-xl transition-all ${isOverdue ? 'bg-red-500/10 text-red-500 shadow-sm shadow-red-500/10' : 'bg-slate-100/50 dark:bg-white/5 text-muted-foreground'
                             }`}>
                             <Clock className="w-3.5 h-3.5" />
                             {task.end_date ? new Date(task.end_date).toLocaleDateString('es-CO', { month: 'short', day: 'numeric' }) : 'Flexible'}
@@ -184,7 +184,7 @@ export function TaskCard({ task, onEdit, onArchive, onStatusChange, onClone, isS
 
                         {/* Hours indicator */}
                         {task.estimated_hours > 0 && (
-                            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl bg-slate-100/50 dark:bg-white/5 text-muted-foreground min-w-[72px]">
+                            <div className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl bg-slate-100/50 dark:bg-white/5 text-muted-foreground min-w-[72px]">
                                 <Clock className="w-3.5 h-3.5 shrink-0" />
                                 <div className="flex flex-col gap-0.5 min-w-0">
                                     <span>{task.actual_hours}/{task.estimated_hours}h</span>
@@ -196,13 +196,13 @@ export function TaskCard({ task, onEdit, onArchive, onStatusChange, onClone, isS
                         )}
 
                         {/* Priority */}
-                        <div className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl ${getPriorityColor(task.priority)} shadow-sm`}>
+                        <div className={`flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-xl ${getPriorityColor(task.priority)} shadow-sm`}>
                             <Flag className="w-3.5 h-3.5 fill-current" />
                             {task.priority}
                         </div>
 
                         {/* Sub Status Badge */}
-                        <div className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] border transition-all hover:scale-105 ${getSubStatusStyles(task.sub_status)}`}>
+                        <div className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${getSubStatusStyles(task.sub_status)}`}>
                             {task.sub_status}
                         </div>
                     </div>
@@ -214,8 +214,8 @@ export function TaskCard({ task, onEdit, onArchive, onStatusChange, onClone, isS
                                 <UserIcon className="w-4 h-4 text-muted-foreground" />
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-[9px] font-black text-muted-foreground/50 uppercase tracking-tighter">Responsable</span>
-                                <span className="text-[11px] font-black text-foreground uppercase tracking-tight truncate w-24">
+                                <span className="text-xs font-medium text-muted-foreground">Responsable</span>
+                                <span className="text-sm font-semibold text-foreground truncate w-24">
                                     {task.assignee?.full_name?.split(' ')[0] || 'Unassigned'}
                                 </span>
                             </div>
@@ -225,7 +225,7 @@ export function TaskCard({ task, onEdit, onArchive, onStatusChange, onClone, isS
                             <button
                                 type="button"
                                 onClick={() => setShowStatusMenu(!showStatusMenu)}
-                                className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 ${STATUS_STYLES[task.status] ?? 'bg-slate-500/10 text-muted-foreground'}`}
+                                className={`flex items-center gap-1.5 text-xs font-medium px-4 py-1.5 rounded-xl shadow-sm transition-all active:scale-95 ${STATUS_STYLES[task.status] ?? 'bg-slate-500/10 text-muted-foreground'}`}
                                 aria-haspopup="listbox"
                                 aria-expanded={showStatusMenu ? 'true' : 'false'}
                             >
@@ -246,7 +246,7 @@ export function TaskCard({ task, onEdit, onArchive, onStatusChange, onClone, isS
                                             role="option"
                                             aria-selected={task.status === status ? 'true' : 'false'}
                                             onClick={() => { onStatusChange(task, status); setShowStatusMenu(false); }}
-                                            className={`w-full flex items-center gap-2 px-3 py-2 text-[10px] font-black uppercase tracking-wider rounded-xl transition-all ${
+                                            className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-xl transition-all ${
                                                 task.status === status
                                                     ? `${STATUS_STYLES[status]} ring-1 ring-current/30`
                                                     : 'hover:bg-slate-100 dark:hover:bg-white/5 text-muted-foreground hover:text-foreground'

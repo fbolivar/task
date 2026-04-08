@@ -113,11 +113,11 @@
 
     .glass-card {
         @apply bg-white dark:bg-[#1e1e1e] rounded-[20px];
-        box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.06), 0 4px 16px 0 rgba(0, 0, 0, 0.04);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     }
 
     .dark .glass-card {
-        box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.4);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
 
     /* Teal sidebar */
@@ -127,7 +127,7 @@
     }
 
     .btn-primary {
-        @apply relative inline-flex items-center justify-center rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:bg-primary/90 hover:-translate-y-0.5 active:scale-95 disabled:opacity-50;
+        @apply relative inline-flex items-center justify-center rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:bg-primary/90 active:scale-95 disabled:opacity-50;
         box-shadow: 0 4px 14px 0 rgba(45, 106, 90, 0.35);
     }
 
@@ -136,7 +136,7 @@
     }
 
     .btn-secondary {
-        @apply inline-flex items-center justify-center rounded-xl bg-white dark:bg-[#1e1e1e] px-6 py-2.5 text-sm font-semibold text-slate-900 dark:text-white border border-[hsl(var(--border))] shadow-sm transition-all duration-200 hover:bg-[hsl(var(--muted))] hover:-translate-y-0.5 active:scale-95 disabled:opacity-50;
+        @apply inline-flex items-center justify-center rounded-xl bg-white dark:bg-[#1e1e1e] px-6 py-2.5 text-sm font-semibold text-slate-900 dark:text-white border border-[hsl(var(--border))] shadow-sm transition-all duration-200 hover:bg-[hsl(var(--muted))] active:scale-95 disabled:opacity-50;
     }
 
     .btn-ghost {
@@ -153,22 +153,22 @@
 
     /* Clean card — larger radius, flat, subtle shadow only */
     .card-premium {
-        @apply rounded-[20px] bg-white dark:bg-[#1e1e1e] p-6 transition-all duration-200 hover:-translate-y-0.5 overflow-hidden;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 8px 24px 0 rgba(0, 0, 0, 0.05);
+        @apply rounded-[20px] bg-white dark:bg-[#1e1e1e] p-6 transition-all duration-200 hover:-translate-y-px overflow-hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     }
 
     .card-premium:hover {
-        box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.06), 0 16px 32px 0 rgba(0, 0, 0, 0.06);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     }
 
     .dark .card-premium {
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
 
     /* Clean stat card — no glass, no pseudo gradients */
     .stat-card {
         @apply bg-white dark:bg-[#1e1e1e] rounded-[20px] p-6 overflow-hidden relative;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 8px 24px 0 rgba(0, 0, 0, 0.05);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     }
 
     /* Hours progress bar — discrete width steps used by HoursProgressBar component.
@@ -230,32 +230,14 @@
     .analytics-meter--blue::-moz-meter-bar   { @apply bg-blue-500 rounded-full; }
 
     /* Animations */
-    .animate-float {
-        animation: float 6s ease-in-out infinite;
-    }
-
-    @keyframes float {
-        0% {
-            transform: translateY(0px);
-        }
-
-        50% {
-            transform: translateY(-10px);
-        }
-
-        100% {
-            transform: translateY(0px);
-        }
-    }
-
     .animate-reveal {
-        animation: reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation: reveal 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     @keyframes reveal {
         from {
             opacity: 0;
-            transform: translateY(16px);
+            transform: translateY(8px);
         }
 
         to {

@@ -1,6 +1,6 @@
 'use client';
 
-import { Building2, Plus, Search, Sparkles, Download } from 'lucide-react';
+import { Building2, Plus, Search, Download } from 'lucide-react';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 
 interface EntityHeaderProps {
@@ -25,10 +25,6 @@ export function EntityHeader({ onSearch, onNewEntity, filterType, onFilterChange
                         </div>
                     </div>
                     <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/70">Intelligence Hub</span>
-                        </div>
                         <h1 className="text-4xl font-black text-foreground tracking-tight leading-none">{t('entities.title')}</h1>
                         <p className="text-muted-foreground font-medium text-sm mt-2">{t('entities.desc')}</p>
                     </div>

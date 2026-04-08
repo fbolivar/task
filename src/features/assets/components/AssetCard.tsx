@@ -91,7 +91,7 @@ function QrModal({ dataUrl, assetName, onClose }: QrModalProps) {
                 </button>
 
                 <div>
-                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-center mb-1">
+                    <p className="text-xs font-medium text-muted-foreground text-center mb-1">
                         Código QR
                     </p>
                     <p className="text-sm font-black text-foreground tracking-tight text-center">{assetName}</p>
@@ -107,7 +107,7 @@ function QrModal({ dataUrl, assetName, onClose }: QrModalProps) {
                 <button
                     type="button"
                     onClick={handleDownload}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-[10px] font-black uppercase tracking-wider hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30 w-full justify-center"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30 w-full justify-center"
                 >
                     <Download className="w-4 h-4" />
                     Descargar QR
@@ -212,7 +212,7 @@ export function AssetCard({ asset, onEdit, onDelete, isSelected = false, onToggl
                                     {asset.name}
                                 </Link>
                             </h3>
-                            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
+                            <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                                 <Tag className="w-3 h-3" />
                                 {asset.category}
                             </div>
@@ -267,16 +267,16 @@ export function AssetCard({ asset, onEdit, onDelete, isSelected = false, onToggl
                     {/* Serial */}
                     <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-transparent dark:border-white/5">
                         <Hash className="w-4 h-4 text-slate-400" />
-                        <span className="text-xs font-black text-slate-600 dark:text-slate-300 tracking-wider">
-                            {asset.serial_number || 'SIN SERIAL'}
+                        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                            {asset.serial_number || 'Sin serial'}
                         </span>
                     </div>
 
                     {/* Location */}
                     <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                         <MapPin className="w-4 h-4 text-slate-400" />
-                        <span className="text-xs font-black text-slate-600 dark:text-slate-300 tracking-wider uppercase">
-                            {asset.location || 'SIN UBICACIÓN'}
+                        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                            {asset.location || 'Sin ubicación'}
                         </span>
                     </div>
 
@@ -300,14 +300,14 @@ export function AssetCard({ asset, onEdit, onDelete, isSelected = false, onToggl
                             <User className="w-5 h-5 text-slate-500" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest leading-tight">Asignado A</span>
-                            <span className="text-xs font-black text-foreground uppercase tracking-tight">
-                                {asset.assignee?.full_name?.split(' ')[0] || 'NADIE'}
+                            <span className="text-xs font-medium text-muted-foreground leading-tight">Asignado a</span>
+                            <span className="text-sm font-semibold text-foreground">
+                                {asset.assignee?.full_name?.split(' ')[0] || 'Nadie'}
                             </span>
                         </div>
                     </div>
 
-                    <div className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider ${statusColors[asset.status]}`}>
+                    <div className={`px-4 py-1.5 rounded-xl text-xs font-medium border ${statusColors[asset.status]}`}>
                         {asset.status}
                     </div>
                 </div>
@@ -337,8 +337,8 @@ function InfoItem({ icon, label, text }: { icon: any, label: string, text: strin
                 </div>
             </div>
             <div className="min-w-0">
-                <p className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground/50 leading-none mb-1.5">{label}</p>
-                <p className="font-black text-foreground tracking-tight text-[11px] uppercase truncate">{text}</p>
+                <p className="text-xs font-medium text-muted-foreground leading-none mb-1.5">{label}</p>
+                <p className="font-semibold text-foreground text-sm truncate">{text}</p>
             </div>
         </div>
     );

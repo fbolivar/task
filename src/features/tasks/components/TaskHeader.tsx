@@ -115,7 +115,7 @@ export function TaskHeader({
                             type="button"
                             key={status}
                             onClick={() => onStatusFilter(status)}
-                            className={`flex-1 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${status === currentStatus
+                            className={`flex-1 px-4 py-2.5 rounded-xl text-[11px] font-semibold transition-all duration-300 ${status === currentStatus
                                 ? 'bg-primary text-white shadow-lg shadow-primary/30'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-white/5'
                                 }`}
@@ -139,30 +139,6 @@ export function TaskHeader({
                     </button>
                 </div>
 
-                <div className="md:col-span-4 flex items-center gap-2 p-1.5 bg-slate-100/30 dark:bg-white/5 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-white/5 overflow-x-auto no-scrollbar">
-                    {(['all', 'Alta', 'Media', 'Baja'] as const).map((priority) => {
-                        const colorMap: Record<string, string> = {
-                            Alta: 'bg-red-500 text-white shadow-lg shadow-red-500/30',
-                            Media: 'bg-amber-500 text-white shadow-lg shadow-amber-500/30',
-                            Baja: 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30',
-                            all: 'bg-primary text-white shadow-lg shadow-primary/30',
-                        };
-                        return (
-                            <button
-                                type="button"
-                                key={priority}
-                                onClick={() => onPriorityFilter(priority)}
-                                className={`flex-1 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${priority === currentPriority
-                                    ? colorMap[priority]
-                                    : 'text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-white/5'
-                                    }`}
-                            >
-                                {priority === 'all' ? 'Todas' : priority}
-                            </button>
-                        );
-                    })}
-                </div>
-
                 {/* Advanced filters toggle */}
                 {(onProjectFilter || onSubStatusFilter) && (
                     <div className="md:col-span-8 flex justify-end">
@@ -171,14 +147,14 @@ export function TaskHeader({
                             onClick={() => setShowAdvanced(!showAdvanced)}
                             aria-expanded={showAdvanced ? ('true' as const) : ('false' as const)}
                             aria-controls="advanced-filters"
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 border ${
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 border ${
                                 showAdvanced || hasActiveAdvanced
                                     ? 'bg-primary/10 text-primary border-primary/30'
                                     : 'bg-white dark:bg-slate-900 text-muted-foreground border-slate-200 dark:border-white/10 hover:border-primary/40 hover:text-primary'
                             }`}
                         >
                             <Filter className="w-3.5 h-3.5" />
-                            Filtros Avanzados
+                            Filtros
                             {hasActiveAdvanced && (
                                 <span className="w-1.5 h-1.5 rounded-full bg-primary" aria-hidden="true" />
                             )}

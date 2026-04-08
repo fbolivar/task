@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, Plus, Filter, Package, Laptop, Car, Smartphone, Sofa, Sparkles, Download } from 'lucide-react';
+import { Search, Plus, Filter, Package, Laptop, Car, Smartphone, Sofa, Download } from 'lucide-react';
 import { AssetCategory, AssetStatus } from '../types';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 
@@ -59,10 +59,6 @@ export function AssetHeader({
                         </div>
                     </div>
                     <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/70">Resource Management</span>
-                        </div>
                         <h1 className="text-4xl font-black text-foreground tracking-tight leading-none">{t('inventory.subtitle')}</h1>
                         <p className="text-muted-foreground font-medium text-sm mt-2">{t('inventory.subdesc')}</p>
                     </div>

@@ -60,7 +60,7 @@ export function ProjectCard({ project, onEdit, onDelete, onClone, taskCount }: P
     return (
         <div className="card-premium group relative">
             {/* Top Priority Badge */}
-            <div className={`absolute top-0 right-0 px-4 py-1.5 rounded-bl-2xl text-[9px] font-black uppercase tracking-[0.2em] border-l border-b transition-all duration-500 z-10 group-hover:scale-105 ${getPriorityStyles(project.priority)} shadow-sm`}>
+            <div className={`absolute top-0 right-0 px-4 py-1.5 rounded-bl-2xl text-xs font-medium border-l border-b transition-all duration-500 z-10 ${getPriorityStyles(project.priority)} shadow-sm`}>
                 {project.priority}
             </div>
 
@@ -79,7 +79,7 @@ export function ProjectCard({ project, onEdit, onDelete, onClone, taskCount }: P
                                     {project.name}
                                 </h3>
                             </Link>
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-widest">
+                            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                                 <Building2 className="w-3 h-3 text-primary" />
                                 <span className="truncate max-w-[150px]">{project.entity?.name || 'Corporativo'}</span>
                             </div>
@@ -100,7 +100,7 @@ export function ProjectCard({ project, onEdit, onDelete, onClone, taskCount }: P
                             <div className="absolute right-0 mt-3 w-52 glass-card shadow-2xl z-20 p-1.5 border border-white/20 animate-in fade-in zoom-in-95">
                                 <Link
                                     href={`/proyectos/${project.id}`}
-                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-medium hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
                                     onClick={() => setShowMenu(false)}
                                 >
                                     <Eye className="w-4 h-4" /> Ver Detalle
@@ -108,7 +108,7 @@ export function ProjectCard({ project, onEdit, onDelete, onClone, taskCount }: P
                                 <button
                                     type="button"
                                     onClick={() => { onEdit(project); setShowMenu(false); }}
-                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-medium hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
                                 >
                                     <Edit2 className="w-4 h-4" /> Modificar
                                 </button>
@@ -116,7 +116,7 @@ export function ProjectCard({ project, onEdit, onDelete, onClone, taskCount }: P
                                     <button
                                         type="button"
                                         onClick={() => { onClone(project); setShowMenu(false); }}
-                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-indigo-500/10 hover:text-indigo-500 rounded-xl transition-all"
+                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-medium hover:bg-indigo-500/10 hover:text-indigo-500 rounded-xl transition-all"
                                     >
                                         <Copy className="w-4 h-4" /> Usar como Plantilla
                                     </button>
@@ -124,7 +124,7 @@ export function ProjectCard({ project, onEdit, onDelete, onClone, taskCount }: P
                                 <button
                                     type="button"
                                     onClick={() => { onDelete(project.id); setShowMenu(false); }}
-                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-red-500/10 text-red-500 rounded-xl transition-all"
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-medium hover:bg-red-500/10 text-red-500 rounded-xl transition-all"
                                 >
                                     <Trash2 className="w-4 h-4" /> Archivar
                                 </button>
@@ -139,9 +139,9 @@ export function ProjectCard({ project, onEdit, onDelete, onClone, taskCount }: P
 
                 {/* Progress Section */}
                 <div className="space-y-3 mb-8">
-                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em]">
-                        <span className="text-muted-foreground/60">Estado de Ejecución</span>
-                        <span className="text-primary">{progressPct}%</span>
+                    <div className="flex items-center justify-between text-xs font-medium">
+                        <span className="text-muted-foreground">Estado de Ejecución</span>
+                        <span className="text-primary font-semibold">{progressPct}%</span>
                     </div>
                     <div className="h-2.5 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden shadow-inner">
                         <div className={`h-full bg-gradient-to-r from-primary to-indigo-400 rounded-full transition-all duration-1000 ${progressWidthClass[progressStep]}`} />
@@ -155,7 +155,7 @@ export function ProjectCard({ project, onEdit, onDelete, onClone, taskCount }: P
                             <Star className="w-4 h-4 text-emerald-500" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">Rating</span>
+                            <span className="text-xs font-medium text-muted-foreground">Rating</span>
                             <span className="text-sm font-black text-foreground tracking-tight">{project.customer_satisfaction || 0}/10</span>
                         </div>
                     </div>
@@ -165,7 +165,7 @@ export function ProjectCard({ project, onEdit, onDelete, onClone, taskCount }: P
                             <CheckSquare className="w-4 h-4 text-indigo-500" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">Tareas</span>
+                            <span className="text-xs font-medium text-muted-foreground">Tareas</span>
                             <span className="text-sm font-black text-foreground tracking-tight">{taskCount ?? 0} Tareas</span>
                         </div>
                     </div>
@@ -173,12 +173,12 @@ export function ProjectCard({ project, onEdit, onDelete, onClone, taskCount }: P
 
                 {/* Date & Status */}
                 <div className="mt-8 flex items-center justify-between">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100/50 dark:bg-white/5 text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100/50 dark:bg-white/5 text-xs font-medium text-muted-foreground">
                         <Calendar className="w-3.5 h-3.5 text-primary" />
                         {project.end_date ? new Date(project.end_date).toLocaleDateString('es-CO', { month: 'short', day: 'numeric' }) : 'Indefinido'}
                     </div>
 
-                    <div className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-sm transition-all group-hover:translate-x-[-4px] ${getStatusStyles(project.status)}`}>
+                    <div className={`px-4 py-1.5 rounded-xl text-xs font-medium shadow-sm ${getStatusStyles(project.status)}`}>
                         {project.status}
                     </div>
                 </div>

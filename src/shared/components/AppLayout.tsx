@@ -22,16 +22,17 @@ interface AppLayoutProps {
 
 /** Maps a pathname to a human-readable page title. */
 function getPageTitle(pathname: string): string {
-    if (pathname === '/dashboard') return 'Panel de Control';
-    if (pathname.startsWith('/proyectos')) return 'Gestión de Proyectos';
-    if (pathname.startsWith('/tareas')) return 'Tablero de Tareas';
-    if (pathname.startsWith('/entidades')) return 'Ecosistema de Entidades';
-    if (pathname.startsWith('/reportes')) return 'Centro de Reportes';
-    if (pathname.startsWith('/configuracion')) return 'Ajustes del Sistema';
-    if (pathname.startsWith('/inventario')) return 'Inventario';
+    if (pathname === '/dashboard') return '';
+    if (pathname.startsWith('/proyectos')) return 'Proyectos';
+    if (pathname.startsWith('/tareas')) return 'Tareas';
+    if (pathname.startsWith('/entidades')) return 'Empresas';
+    if (pathname.startsWith('/reportes')) return 'Reportes';
+    if (pathname.startsWith('/configuracion')) return 'Ajustes';
+    if (pathname.startsWith('/inventario')) return 'Activos';
     if (pathname.startsWith('/analisis')) return 'Análisis';
     if (pathname.startsWith('/contratacion')) return 'Contratación';
-    return 'Resumen';
+    if (pathname.startsWith('/perfil')) return 'Mi Perfil';
+    return '';
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
@@ -41,6 +42,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [expiryMinutes, setExpiryMinutes] = useState(0);
     const [showSessionWarning, setShowSessionWarning] = useState(false);
+    const [pendingTaskCount, setPendingTaskCount] = useState<number | null>(null);
 
     // Fetch session expiry setting
     useEffect(() => {
@@ -59,6 +61,21 @@ export function AppLayout({ children }: AppLayoutProps) {
         if (profile) {
             fetchSecuritySettings();
         }
+    }, [profile]);
+
+    // Fetch pending task count for the current user
+    useEffect(() => {
+        if (!profile) return;
+        const fetchPendingTasks = async () => {
+            const supabase = createClient();
+            const { count } = await supabase
+                .from('tasks')
+                .select('*', { count: 'exact', head: true })
+                .eq('assigned_to', profile.id)
+                .eq('status', 'Pendiente');
+            setPendingTaskCount(count ?? 0);
+        };
+        fetchPendingTasks();
     }, [profile]);
 
     const handleIdleWarning = useCallback(() => {
@@ -149,7 +166,11 @@ export function AppLayout({ children }: AppLayoutProps) {
                                 Hola, {profile?.full_name?.split(' ')[0] || 'Usuario'}
                             </h1>
                             <p className="text-xs text-muted-foreground">
-                                {new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                {pendingTaskCount === null
+                                    ? ''
+                                    : pendingTaskCount === 0
+                                        ? 'Todo al día'
+                                        : `Tienes ${pendingTaskCount} ${pendingTaskCount === 1 ? 'tarea pendiente' : 'tareas pendientes'}`}
                             </p>
                         </div>
                     </div>
