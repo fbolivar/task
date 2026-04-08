@@ -133,8 +133,11 @@ export const taskService = {
     async updateTask(id: string, updates: Partial<TaskFormData>): Promise<Task> {
         const supabase = createClient();
         try {
-            // Remove null or undefined relations if they're accidentally included
-            const cleanUpdates = { ...updates };
+            // Remove undefined values that Supabase would reject
+            const cleanUpdates: Record<string, unknown> = {};
+            for (const [key, value] of Object.entries(updates)) {
+                if (value !== undefined) cleanUpdates[key] = value;
+            }
 
             // Get current user info for notification
             const { data: { user } } = await supabase.auth.getUser();
