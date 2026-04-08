@@ -8,7 +8,7 @@ import {
     Building2,
     Target,
     Star,
-    Layers,
+    CheckSquare,
     Eye,
     Copy
 } from 'lucide-react';
@@ -21,9 +21,10 @@ interface ProjectCardProps {
     onEdit: (project: Project) => void;
     onDelete: (id: string) => void;
     onClone?: (project: Project) => void;
+    taskCount?: number;
 }
 
-export function ProjectCard({ project, onEdit, onDelete, onClone }: ProjectCardProps) {
+export function ProjectCard({ project, onEdit, onDelete, onClone, taskCount }: ProjectCardProps) {
     const [showMenu, setShowMenu] = useState(false);
 
     const getPriorityStyles = (priority: string) => {
@@ -161,11 +162,11 @@ export function ProjectCard({ project, onEdit, onDelete, onClone }: ProjectCardP
 
                     <div className="flex items-center gap-3 group/stat">
                         <div className="p-2.5 rounded-xl bg-indigo-500/5 group-hover/stat:bg-indigo-500/10 transition-colors">
-                            <Layers className="w-4 h-4 text-indigo-500" />
+                            <CheckSquare className="w-4 h-4 text-indigo-500" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">Hitos</span>
-                            <span className="text-sm font-black text-foreground tracking-tight">{project.sub_projects?.length || 0} Fases</span>
+                            <span className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">Tareas</span>
+                            <span className="text-sm font-black text-foreground tracking-tight">{taskCount ?? 0} Tareas</span>
                         </div>
                     </div>
                 </div>

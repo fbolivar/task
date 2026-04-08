@@ -15,7 +15,6 @@ import {
     CalendarCheck,
     ChevronRight,
     Briefcase,
-    FileText,
     RefreshCw,
     ShieldCheck,
     Headphones,
@@ -24,14 +23,19 @@ import {
     FolderGit2,
     ReceiptText,
     Flag,
+    Star,
 } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { createClient } from '@/lib/supabase/client';
 import { ActivityTimeline } from '@/shared/components/ActivityTimeline';
 import { MilestonesSection } from '@/features/projects/components/MilestonesSection';
-import { GanttChart } from '@/features/projects/components/GanttChart';
-import type { Project, SubProject, RecurrentExpense } from '@/features/projects/types';
+import { GanttChart, type GanttMilestone } from '@/features/projects/components/GanttChart';
+import { ProjectModal } from '@/features/projects/components/ProjectModal';
+import { SubProjectsSection } from '@/features/projects/components/SubProjectsSection';
+import { ProjectNotes } from '@/features/projects/components/ProjectNotes';
+import { ProjectHealthCard } from '@/features/projects/components/ProjectHealthCard';
+import type { Project, SubProject, RecurrentExpense, ProjectFormData } from '@/features/projects/types';
 import type { Task } from '@/features/tasks/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -85,12 +89,6 @@ const FREQUENCY_LABELS: Record<string, string> = {
     mensual: 'Mensual',
     anual:   'Anual',
     unico:   'Único',
-};
-
-const SUBPROJECT_STATUS_STYLES: Record<string, string> = {
-    'Activo':     'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20',
-    'Pausado':    'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20',
-    'Completado': 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -284,43 +282,6 @@ function TasksSection({ tasks }: { tasks: Task[] }) {
     );
 }
 
-// ─── Sub-projects Section ─────────────────────────────────────────────────────
-
-function SubProjectsSection({ subProjects }: { subProjects: SubProject[] }) {
-    if (subProjects.length === 0) {
-        return (
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-8 text-center">
-                <FolderGit2 className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">Este proyecto no tiene sub-proyectos.</p>
-            </div>
-        );
-    }
-
-    return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {subProjects.map((sp) => (
-                <div
-                    key={sp.id}
-                    className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 hover:shadow-md dark:hover:shadow-slate-900/50 transition-shadow"
-                >
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 className="text-sm font-semibold text-foreground leading-tight">{sp.name}</h3>
-                        <Badge
-                            label={sp.status}
-                            className={SUBPROJECT_STATUS_STYLES[sp.status] ?? 'bg-slate-100 text-slate-600 border border-slate-200'}
-                        />
-                    </div>
-                    {sp.description && (
-                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{sp.description}</p>
-                    )}
-                    <p className="mt-2 text-[10px] text-muted-foreground/60 uppercase tracking-wide">
-                        Creado {formatDate(sp.created_at)}
-                    </p>
-                </div>
-            ))}
-        </div>
-    );
-}
 
 // ─── Expenses Section ─────────────────────────────────────────────────────────
 
@@ -388,8 +349,12 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
 
     const [project, setProject] = useState<ProjectWithRelations | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
+    const [milestones, setMilestones] = useState<GanttMilestone[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [satisfactionValue, setSatisfactionValue] = useState<number>(0);
+    const [savingSatisfaction, setSavingSatisfaction] = useState(false);
 
     const fetchData = async () => {
         setLoading(true);
@@ -398,7 +363,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
         try {
             const supabase = createClient();
 
-            const [projectResult, tasksResult] = await Promise.all([
+            const [projectResult, tasksResult, milestonesResult] = await Promise.all([
                 supabase
                     .from('projects')
                     .select(`
@@ -417,16 +382,46 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                     `)
                     .eq('project_id', id)
                     .order('created_at', { ascending: false }),
+                supabase
+                    .from('project_milestones')
+                    .select('id, title, due_date, is_completed')
+                    .eq('project_id', id)
+                    .order('sort_order', { ascending: true }),
             ]);
 
             if (projectResult.error) throw projectResult.error;
 
-            setProject(projectResult.data as ProjectWithRelations);
+            const proj = projectResult.data as ProjectWithRelations;
+            setProject(proj);
+            setSatisfactionValue(proj.customer_satisfaction ?? 0);
             setTasks((tasksResult.data ?? []) as Task[]);
+            setMilestones((milestonesResult.data ?? []) as GanttMilestone[]);
         } catch {
             setError(true);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSaveEdit = async (data: ProjectFormData) => {
+        const supabase = createClient();
+        await supabase.from('projects').update(data).eq('id', id);
+        await fetchData();
+        setShowEditModal(false);
+    };
+
+    const handleSatisfactionChange = async (value: number) => {
+        setSatisfactionValue(value);
+        setSavingSatisfaction(true);
+        try {
+            const supabase = createClient();
+            await supabase
+                .from('projects')
+                .update({ customer_satisfaction: value })
+                .eq('id', id);
+            setProject((prev) => prev ? { ...prev, customer_satisfaction: value } : prev);
+        } finally {
+            setSavingSatisfaction(false);
         }
     };
 
@@ -446,6 +441,16 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
     const completedSubProjects = project.sub_projects.filter((sp) => sp.status === 'Completado').length;
     const totalSubProjects = project.sub_projects.length;
     const subProjectPct = totalSubProjects > 0 ? Math.round((completedSubProjects / totalSubProjects) * 100) : 0;
+
+    // ── Expense-based actual cost ──
+    const expenseActualCost = (project.expenses ?? []).reduce((sum, e) => {
+        if (e.frequency === 'mensual') return sum + e.amount * 12;
+        return sum + e.amount;
+    }, 0);
+
+    // ── Milestone stats (from the already-fetched milestones array) ──
+    const totalMilestones = milestones.length;
+    const completedMilestones = milestones.filter((m) => m.is_completed).length;
 
     const durationDays =
         project.start_date && project.end_date
@@ -516,26 +521,15 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                         <span className="hidden sm:inline">Volver</span>
                     </button>
                     <button
-                        onClick={() => router.push('/proyectos')}
+                        onClick={() => setShowEditModal(true)}
                         className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
                         aria-label="Editar proyecto"
                     >
                         <Pencil className="w-4 h-4" />
-                        <span className="hidden sm:inline">Editar</span>
+                        <span className="hidden sm:inline">Editar Proyecto</span>
                     </button>
                 </div>
             </div>
-
-            {/* ── Description ── */}
-            {project.description && (
-                <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5">
-                    <div className="flex items-center gap-2 mb-2">
-                        <FileText className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Descripcion</span>
-                    </div>
-                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{project.description}</p>
-                </div>
-            )}
 
             {/* ── Stats row ── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -572,6 +566,15 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                     accent="bg-amber-500/10"
                 />
             </div>
+
+            {/* ── Project Health Card ── */}
+            <ProjectHealthCard
+                tasks={tasks}
+                budget={project.budget ?? 0}
+                actualCost={expenseActualCost > 0 ? expenseActualCost : project.actual_cost}
+                milestoneCount={totalMilestones}
+                completedMilestones={completedMilestones}
+            />
 
             {/* ── Budget progress bar ── */}
             {project.has_budget && project.budget && budgetUsedPct !== null && (
@@ -639,9 +642,36 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                     <Headphones className="w-3.5 h-3.5" />
                     <span>Soporte: <strong className="text-foreground">{project.has_support ? 'Si' : 'No'}</strong></span>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>Satisfaccion: <strong className="text-foreground">{project.customer_satisfaction}/10</strong></span>
+            </div>
+
+            {/* ── Customer Satisfaction ── */}
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5">
+                <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                        <Star className="w-3.5 h-3.5 text-amber-500" />
+                        Satisfaccion del cliente
+                    </span>
+                    <span className={`text-sm font-bold transition-colors ${satisfactionValue >= 8 ? 'text-emerald-600 dark:text-emerald-400' : satisfactionValue >= 5 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
+                        {satisfactionValue}/10
+                        {savingSatisfaction && <span className="ml-2 text-[10px] text-muted-foreground font-normal">Guardando...</span>}
+                    </span>
+                </div>
+                <input
+                    type="range"
+                    min={0}
+                    max={10}
+                    step={1}
+                    value={satisfactionValue}
+                    onChange={(e) => setSatisfactionValue(Number(e.target.value))}
+                    onMouseUp={(e) => handleSatisfactionChange(Number((e.target as HTMLInputElement).value))}
+                    onTouchEnd={(e) => handleSatisfactionChange(Number((e.target as HTMLInputElement).value))}
+                    className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-100 dark:bg-slate-800 accent-primary"
+                    aria-label="Nivel de satisfaccion del cliente (0-10)"
+                />
+                <div className="flex justify-between mt-1 text-[10px] text-muted-foreground">
+                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                        <span key={n}>{n}</span>
+                    ))}
                 </div>
             </div>
 
@@ -659,6 +689,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                         tasks={tasks}
                         projectStartDate={project.start_date ?? undefined}
                         projectEndDate={project.end_date ?? undefined}
+                        milestones={milestones}
                     />
                 </section>
             )}
@@ -669,10 +700,18 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                 <MilestonesSection projectId={id} editable={true} />
             </section>
 
+            {/* ── Project Notes ── */}
+            <section aria-labelledby="notes-heading">
+                <ProjectNotes
+                    projectId={id}
+                    initialDescription={project.description}
+                />
+            </section>
+
             {/* ── Sub-projects Section ── */}
             <section aria-labelledby="subprojects-heading">
-                <SectionHeader icon={FolderGit2} title="Sub-proyectos" count={totalSubProjects} />
-                <SubProjectsSection subProjects={project.sub_projects} />
+                <SectionHeader icon={FolderGit2} title="Sub-proyectos" />
+                <SubProjectsSection projectId={id} />
             </section>
 
             {/* ── Expenses Section ── */}
@@ -685,6 +724,14 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
             <section aria-labelledby="activity-heading">
                 <ActivityTimeline entityType="project" entityId={id} />
             </section>
+
+            {/* ── Edit Modal ── */}
+            <ProjectModal
+                isOpen={showEditModal}
+                onClose={() => setShowEditModal(false)}
+                onSave={handleSaveEdit}
+                project={project}
+            />
 
         </div>
     );

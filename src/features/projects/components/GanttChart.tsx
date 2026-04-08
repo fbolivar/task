@@ -11,6 +11,7 @@ import {
     isToday,
     isBefore,
     isAfter,
+    isPast,
     startOfDay,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -26,10 +27,18 @@ interface GanttTask {
     assignee?: { full_name: string } | null;
 }
 
+export interface GanttMilestone {
+    id: string;
+    title: string;
+    due_date?: string | null;
+    is_completed: boolean;
+}
+
 export interface GanttChartProps {
     tasks: GanttTask[];
     projectStartDate?: string;
     projectEndDate?: string;
+    milestones?: GanttMilestone[];
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -67,7 +76,23 @@ function clamp(value: number, min: number, max: number): number {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function GanttChart({ tasks, projectStartDate, projectEndDate }: GanttChartProps) {
+// ─── Milestone helpers ────────────────────────────────────────────────────────
+
+function getMilestoneStatus(m: GanttMilestone): 'completed' | 'overdue' | 'upcoming' {
+    if (m.is_completed) return 'completed';
+    if (m.due_date && isPast(parseISO(m.due_date))) return 'overdue';
+    return 'upcoming';
+}
+
+const MILESTONE_DIAMOND: Record<'completed' | 'overdue' | 'upcoming', string> = {
+    completed: 'text-emerald-500 dark:text-emerald-400',
+    overdue:   'text-red-500 dark:text-red-400',
+    upcoming:  'text-blue-500 dark:text-blue-400',
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export function GanttChart({ tasks, projectStartDate, projectEndDate, milestones = [] }: GanttChartProps) {
     if (tasks.length === 0) {
         return (
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-8 text-center">
@@ -92,16 +117,28 @@ export function GanttChart({ tasks, projectStartDate, projectEndDate }: GanttCha
         return { ...task, resolvedStart: start, resolvedEnd: end };
     });
 
-    // Calculate chart date range (min start → max end, padded by a few days)
+    // Milestones with a parsed date (skip those without due_date)
+    const resolvedMilestones = milestones
+        .map((m) => ({ ...m, resolvedDate: parseDateSafe(m.due_date) }))
+        .filter((m): m is typeof m & { resolvedDate: Date } => m.resolvedDate !== null);
+
+    // Calculate chart date range (min start → max end, padded)
     const allStarts = resolvedTasks.map((t) => t.resolvedStart);
     const allEnds   = resolvedTasks.map((t) => t.resolvedEnd);
 
+    // Expand range to include milestone dates if they fall outside task range
+    const allDates = [
+        ...allStarts,
+        ...allEnds,
+        ...resolvedMilestones.map((m) => m.resolvedDate),
+    ];
+
     const chartStart = startOfWeek(
-        allStarts.reduce((min, d) => (isBefore(d, min) ? d : min), allStarts[0]),
+        allDates.reduce((min, d) => (isBefore(d, min) ? d : min), allDates[0]),
         { locale: es }
     );
     const chartEnd = addDays(
-        allEnds.reduce((max, d) => (isAfter(d, max) ? d : max), allEnds[0]),
+        allDates.reduce((max, d) => (isAfter(d, max) ? d : max), allDates[0]),
         7 // pad
     );
 
@@ -118,6 +155,8 @@ export function GanttChart({ tasks, projectStartDate, projectEndDate }: GanttCha
     const todayOffset = clamp(differenceInDays(today, chartStart) / totalDays, 0, 1) * 100;
     const showTodayMarker = isAfter(today, chartStart) && isBefore(today, chartEnd);
 
+    const hasMilestones = resolvedMilestones.length > 0;
+
     return (
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
 
@@ -129,6 +168,22 @@ export function GanttChart({ tasks, projectStartDate, projectEndDate }: GanttCha
                         <span className="text-xs text-muted-foreground">{status}</span>
                     </div>
                 ))}
+                {hasMilestones && (
+                    <>
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-emerald-500 text-xs leading-none">◆</span>
+                            <span className="text-xs text-muted-foreground">Hito completado</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-blue-500 text-xs leading-none">◆</span>
+                            <span className="text-xs text-muted-foreground">Hito próximo</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-red-500 text-xs leading-none">◆</span>
+                            <span className="text-xs text-muted-foreground">Hito vencido</span>
+                        </div>
+                    </>
+                )}
                 {showTodayMarker && (
                     <div className="flex items-center gap-1.5 ml-auto">
                         <span className="inline-block w-0.5 h-3 bg-red-500" />
@@ -169,6 +224,42 @@ export function GanttChart({ tasks, projectStartDate, projectEndDate }: GanttCha
                             )}
                         </div>
                     ))}
+
+                    {/* Milestone section divider in label column */}
+                    {hasMilestones && (
+                        <>
+                            <div className="h-px bg-slate-200 dark:bg-slate-700" />
+                            <div className="h-6 flex items-center px-3 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800">
+                                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                    Hitos
+                                </span>
+                            </div>
+                            {resolvedMilestones.map((m, i) => {
+                                const status = getMilestoneStatus(m);
+                                return (
+                                    <div
+                                        key={m.id}
+                                        className={`flex items-center gap-2 px-3 h-10 border-b border-slate-100 dark:border-slate-800 ${
+                                            i % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-slate-50/50 dark:bg-slate-800/20'
+                                        }`}
+                                    >
+                                        <span
+                                            className={`flex-shrink-0 text-sm leading-none ${MILESTONE_DIAMOND[status]}`}
+                                            aria-hidden="true"
+                                        >
+                                            ◆
+                                        </span>
+                                        <span
+                                            className="text-xs font-medium text-foreground truncate leading-tight"
+                                            title={m.title}
+                                        >
+                                            {m.title}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </>
+                    )}
                 </div>
 
                 {/* Scrollable timeline */}
@@ -242,13 +333,92 @@ export function GanttChart({ tasks, projectStartDate, projectEndDate }: GanttCha
                                         title={`${task.title} — ${task.status}`}
                                         aria-label={`${task.title}: ${task.status}`}
                                     >
-                                        <span className={`text-[10px] font-semibold text-white truncate leading-none select-none`}>
+                                        <span className="text-[10px] font-semibold text-white truncate leading-none select-none">
                                             {task.title}
                                         </span>
                                     </div>
                                 </div>
                             );
                         })}
+
+                        {/* Milestone rows */}
+                        {hasMilestones && (
+                            <>
+                                {/* Thin divider row */}
+                                <div className="h-px bg-slate-200 dark:bg-slate-700" />
+
+                                {/* Section label row */}
+                                <div className="relative h-6 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800">
+                                    {/* Grid lines behind label */}
+                                    {weekStarts.map((_, wi) => (
+                                        <div
+                                            key={wi}
+                                            className="absolute top-0 bottom-0 border-r border-slate-100 dark:border-slate-800/60"
+                                            style={{ left: `${(wi / weekStarts.length) * 100}%`, width: '80px' }}
+                                        />
+                                    ))}
+                                    {showTodayMarker && (
+                                        <div
+                                            className="absolute top-0 bottom-0 w-px bg-red-500/30 z-10"
+                                            style={{ left: `${todayOffset}%` }}
+                                            aria-hidden="true"
+                                        />
+                                    )}
+                                </div>
+
+                                {resolvedMilestones.map((m, i) => {
+                                    const status = getMilestoneStatus(m);
+                                    const diamondClass = MILESTONE_DIAMOND[status];
+                                    const offset = clamp(
+                                        differenceInDays(m.resolvedDate, chartStart) / totalDays,
+                                        0, 1
+                                    ) * 100;
+                                    const dueDateLabel = format(m.resolvedDate, 'd MMM yyyy', { locale: es });
+
+                                    return (
+                                        <div
+                                            key={m.id}
+                                            className={`relative flex items-center h-10 border-b border-slate-100 dark:border-slate-800 ${
+                                                i % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-slate-50/50 dark:bg-slate-800/20'
+                                            }`}
+                                        >
+                                            {/* Column grid lines */}
+                                            {weekStarts.map((_, wi) => (
+                                                <div
+                                                    key={wi}
+                                                    className="absolute top-0 bottom-0 border-r border-slate-100 dark:border-slate-800/60"
+                                                    style={{ left: `${(wi / weekStarts.length) * 100}%`, width: '80px' }}
+                                                />
+                                            ))}
+
+                                            {/* Today marker */}
+                                            {showTodayMarker && (
+                                                <div
+                                                    className="absolute top-0 bottom-0 w-px bg-red-500 z-10"
+                                                    style={{ left: `${todayOffset}%` }}
+                                                    aria-hidden="true"
+                                                />
+                                            )}
+
+                                            {/* Diamond marker */}
+                                            <div
+                                                className="absolute z-20 -translate-x-1/2"
+                                                style={{ left: `${offset}%` }}
+                                                title={`${m.title} — ${dueDateLabel}`}
+                                                aria-label={`Hito: ${m.title}, fecha: ${dueDateLabel}`}
+                                            >
+                                                <span
+                                                    className={`block text-base leading-none select-none cursor-default transition-transform hover:scale-125 ${diamondClass}`}
+                                                    aria-hidden="true"
+                                                >
+                                                    ◆
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
@@ -260,7 +430,10 @@ export function GanttChart({ tasks, projectStartDate, projectEndDate }: GanttCha
                     {' — '}
                     {format(chartEnd, 'd MMM yyyy', { locale: es })}
                 </span>
-                <span className="ml-auto">{tasks.length} tarea{tasks.length !== 1 ? 's' : ''}</span>
+                <span>
+                    {tasks.length} tarea{tasks.length !== 1 ? 's' : ''}
+                    {hasMilestones && ` · ${resolvedMilestones.length} hito${resolvedMilestones.length !== 1 ? 's' : ''}`}
+                </span>
             </div>
         </div>
     );

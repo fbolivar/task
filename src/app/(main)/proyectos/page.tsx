@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useProjects } from '@/features/projects/hooks/useProjects';
 import { ProjectHeader } from '@/features/projects/components/ProjectHeader';
 import { ProjectCard } from '@/features/projects/components/ProjectCard';
@@ -8,15 +8,57 @@ import { ProjectModal } from '@/features/projects/components/ProjectModal';
 import { Project, ProjectFormData } from '@/features/projects/types';
 import { Loader2, Briefcase, Plus, Sparkles } from 'lucide-react';
 import { useSettings } from '@/shared/contexts/SettingsContext';
+import { createClient } from '@/lib/supabase/client';
+
+interface EntityOption {
+    id: string;
+    name: string;
+}
 
 export default function ProyectosPage() {
     const { projects, loading, createProject, updateProject, deleteProject } = useProjects();
     const { t } = useSettings();
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [entityFilter, setEntityFilter] = useState('all');
     const [sortAsc, setSortAsc] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProject, setEditingProject] = useState<Project | null>(null);
+    const [entities, setEntities] = useState<EntityOption[]>([]);
+    const [taskCounts, setTaskCounts] = useState<Record<string, number>>({});
+
+    // Fetch entities for the filter dropdown
+    useEffect(() => {
+        const supabase = createClient();
+        supabase
+            .from('entities')
+            .select('id, name')
+            .order('name')
+            .then(({ data }: { data: EntityOption[] | null }) => {
+                if (data) setEntities(data);
+            });
+    }, []);
+
+    // Fetch task counts grouped by project_id
+    useEffect(() => {
+        if (projects.length === 0) return;
+        const supabase = createClient();
+        const projectIds = projects.map((p) => p.id);
+        supabase
+            .from('tasks')
+            .select('project_id')
+            .in('project_id', projectIds)
+            .then(({ data }: { data: { project_id: string }[] | null }) => {
+                if (!data) return;
+                const counts: Record<string, number> = {};
+                for (const row of data) {
+                    if (row.project_id) {
+                        counts[row.project_id] = (counts[row.project_id] ?? 0) + 1;
+                    }
+                }
+                setTaskCounts(counts);
+            });
+    }, [projects]);
 
     const filteredProjects = useMemo(() => {
         const filtered = projects.filter(project => {
@@ -26,8 +68,9 @@ export default function ProyectosPage() {
                 project.entity?.name.toLowerCase().includes(searchQuery.toLowerCase());
 
             const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+            const matchesEntity = entityFilter === 'all' || project.entity_id === entityFilter;
 
-            return matchesSearch && matchesStatus;
+            return matchesSearch && matchesStatus && matchesEntity;
         });
 
         return filtered.sort((a, b) => {
@@ -37,7 +80,7 @@ export default function ProyectosPage() {
             if (aValue > bValue) return sortAsc ? 1 : -1;
             return 0;
         });
-    }, [projects, searchQuery, statusFilter, sortAsc]);
+    }, [projects, searchQuery, statusFilter, entityFilter, sortAsc]);
 
     const handleOpenCreateModal = () => {
         setEditingProject(null);
@@ -61,6 +104,27 @@ export default function ProyectosPage() {
         if (window.confirm('¿Estás seguro de que deseas eliminar este proyecto? Esta acción no se puede deshacer.')) {
             await deleteProject(id);
         }
+    };
+
+    const handleExport = () => {
+        const headers = ['Nombre', 'Entidad', 'Estado', 'Prioridad', 'Presupuesto', 'Fecha Inicio', 'Fecha Fin'];
+        const rows = filteredProjects.map((p) => [
+            `"${p.name.replace(/"/g, '""')}"`,
+            `"${(p.entity?.name ?? '').replace(/"/g, '""')}"`,
+            p.status,
+            p.priority,
+            p.budget ?? 0,
+            p.start_date ?? '',
+            p.end_date ?? '',
+        ]);
+        const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `proyectos_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
     };
 
     const handleClone = async (project: Project) => {
@@ -107,6 +171,10 @@ export default function ProyectosPage() {
                 onSort={() => setSortAsc(!sortAsc)}
                 totalProjects={projects.length}
                 currentStatus={statusFilter}
+                entities={entities}
+                currentEntity={entityFilter}
+                onEntityFilter={setEntityFilter}
+                onExport={handleExport}
             />
 
             {filteredProjects.length > 0 ? (
@@ -118,6 +186,7 @@ export default function ProyectosPage() {
                             onEdit={handleOpenEditModal}
                             onDelete={handleDelete}
                             onClone={handleClone}
+                            taskCount={taskCounts[project.id] ?? 0}
                         />
                     ))}
                 </div>
