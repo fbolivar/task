@@ -8,8 +8,30 @@ import { createClient } from '@/lib/supabase/client';
 import { LoginCredentials, SignupCredentials } from '../types';
 
 export function useAuth() {
-    const { user, profile, loading, initialized, setUser, setProfile, setLoading, setInitialized } = useAuthStore();
+    const { user, profile, loading, initialized, setUser, setProfile, setLoading, setInitialized, setActiveEntityId, activeEntityId } = useAuthStore();
     const router = useRouter();
+
+    // Auto-select entity for users with access to only one entity
+    const autoSelectEntity = (userProfile: any) => {
+        if (!userProfile) return;
+        // Admin with global access stays on 'all'
+        if (userProfile.has_all_entities_access) return;
+        // Get user's entities from profile_entities
+        const entities = userProfile.profile_entities || [];
+        const entityIds = entities
+            .map((pe: any) => {
+                const entity = Array.isArray(pe.entity) ? pe.entity[0] : pe.entity;
+                return entity?.id;
+            })
+            .filter(Boolean);
+        // If user has exactly 1 entity, auto-select it
+        if (entityIds.length === 1) {
+            setActiveEntityId(entityIds[0]);
+        } else if (entityIds.length > 1 && activeEntityId === 'all') {
+            // If multiple entities but still on 'all', select the first one
+            setActiveEntityId(entityIds[0]);
+        }
+    };
 
     useEffect(() => {
         if (initialized) return;
@@ -27,9 +49,11 @@ export function useAuth() {
 
                 if (mounted && session?.user) {
                     setUser(session.user);
-                    // Load profile
                     const userProfile = await authService.getProfile(session.user.id);
-                    if (mounted) setProfile(userProfile);
+                    if (mounted) {
+                        setProfile(userProfile);
+                        autoSelectEntity(userProfile);
+                    }
                 }
 
                 // Listen for changes
@@ -39,6 +63,7 @@ export function useAuth() {
                         if (session?.user) {
                             const userProfile = await authService.getProfile(session.user.id);
                             setProfile(userProfile);
+                            autoSelectEntity(userProfile);
                         } else {
                             setProfile(null);
                         }
