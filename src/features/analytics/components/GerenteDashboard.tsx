@@ -710,7 +710,7 @@ export function GerenteDashboard() {
                         supabase
                             .from('tasks')
                             .select(
-                                'id, title, status, sub_status, priority, end_date, assigned_to, estimated_hours, actual_hours, project_id, created_at, assignee:profiles(full_name)'
+                                'id, title, status, sub_status, priority, end_date, assigned_to, estimated_hours, actual_hours, project_id, created_at, assignee:profiles!tasks_assigned_to_fkey(full_name)'
                             ),
                         'project_id'
                     ),
