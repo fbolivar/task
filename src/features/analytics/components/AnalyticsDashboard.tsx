@@ -1,59 +1,175 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import { AnalyticsDashboardData } from '../types';
 import { analyticsService } from '../services/analyticsService';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import {
-    Loader2, PieChart, BarChart3, TrendingUp, TrendingDown,
-    Target, Zap, Activity, Users, DollarSign, Calendar, ShieldAlert
+    Loader2, Target, Zap, Activity, Users, DollarSign,
+    ShieldAlert, AlertTriangle, Bell, FileDown, Package,
+    TrendingUp, Warehouse
 } from 'lucide-react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    BarChart, Bar, Cell, RadialBarChart, RadialBar, Legend
+    RadialBarChart, RadialBar
 } from 'recharts';
 
-// --- Shared Components for this Module ---
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
-function ChartWrapper({ children, className = "h-[300px] w-full" }: { children: React.ReactNode, className?: string }) {
+type Period = '30d' | '90d' | 'quarter' | 'year';
+
+interface PeriodOption {
+    value: Period;
+    label: string;
+}
+
+interface UserProductivity {
+    userId: string;
+    name: string;
+    completed: number;
+    total: number;
+    pct: number;
+}
+
+interface Alert {
+    level: 'red' | 'amber';
+    message: string;
+}
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const PERIOD_OPTIONS: PeriodOption[] = [
+    { value: '30d', label: '30 días' },
+    { value: '90d', label: '90 días' },
+    { value: 'quarter', label: 'Este Trimestre' },
+    { value: 'year', label: 'Este Año' },
+];
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatCurrency(val: number): string {
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        maximumFractionDigits: 0,
+        notation: 'compact',
+    }).format(val);
+}
+
+function buildAlerts(kpis: AnalyticsDashboardData['kpis']): Alert[] {
+    const alerts: Alert[] = [];
+    if (kpis.budget_execution_percentage > 90) {
+        alerts.push({ level: 'red', message: `Ejecución presupuestal crítica: ${kpis.budget_execution_percentage.toFixed(1)}%` });
+    }
+    if (kpis.overdue_tasks > 5) {
+        alerts.push({ level: 'amber', message: `${kpis.overdue_tasks} tareas vencidas requieren atención` });
+    }
+    if (kpis.expiring_warranties > 0) {
+        alerts.push({ level: 'amber', message: `${kpis.expiring_warranties} garantías próximas a vencer` });
+    }
+    if (kpis.high_risk_projects_count > 0) {
+        alerts.push({ level: 'red', message: `${kpis.high_risk_projects_count} proyectos en nivel de riesgo alto` });
+    }
+    return alerts;
+}
+
+function buildUserProductivity(tasks: { assigned_to: string | null; status: string | null }[]): UserProductivity[] {
+    const map: Record<string, { completed: number; total: number }> = {};
+    tasks.forEach((t) => {
+        const key = t.assigned_to || 'Sin Asignar';
+        if (!map[key]) map[key] = { completed: 0, total: 0 };
+        map[key].total++;
+        if (t.status === 'Completado') map[key].completed++;
+    });
+
+    return Object.entries(map)
+        .map(([userId, stats]) => ({
+            userId,
+            name: userId.length === 36 ? `Usuario ${userId.slice(0, 8)}` : userId,
+            completed: stats.completed,
+            total: stats.total,
+            pct: stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0,
+        }))
+        .sort((a, b) => b.completed - a.completed)
+        .slice(0, 8);
+}
+
+function exportAnalyticsCSV(data: AnalyticsDashboardData, period: Period): void {
+    const periodLabel = PERIOD_OPTIONS.find((p) => p.value === period)?.label ?? period;
+    const rows: string[][] = [
+        ['Reporte Analítico BC Fabric SAS'],
+        [`Período: ${periodLabel}`],
+        [`Generado: ${new Date().toLocaleString('es-CO')}`],
+        [],
+        ['=== KPIs ==='],
+        ['Métrica', 'Valor'],
+        ['Presupuesto Total', formatCurrency(data.kpis.total_budget)],
+        ['Presupuesto Ejecutado', formatCurrency(data.kpis.executed_budget)],
+        ['Ejecución %', `${data.kpis.budget_execution_percentage.toFixed(1)}%`],
+        ['Proyectos Activos', String(data.kpis.active_projects_count)],
+        ['Proyectos Alto Riesgo', String(data.kpis.high_risk_projects_count)],
+        ['Procesos Contratación Activos', String(data.kpis.active_hiring_processes)],
+        ['Tareas Totales', String(data.kpis.total_tasks)],
+        ['Promedio Completación Tareas %', `${data.kpis.avg_task_completion.toFixed(1)}%`],
+        ['Tareas Vencidas', String(data.kpis.overdue_tasks)],
+        ['Total Activos Inventario', String(data.kpis.total_assets ?? 0)],
+        ['Valor Inventario', formatCurrency(data.kpis.inventory_value ?? 0)],
+        ['Garantías por Vencer', String(data.kpis.expiring_warranties ?? 0)],
+        [],
+        ['=== MATRIZ DE RIESGO ==='],
+        ['Nivel', 'Proyectos', 'Presupuesto'],
+        ...data.risk_matrix.map((r) => [r.risk_level, String(r.count), formatCurrency(r.total_budget)]),
+        [],
+        ['=== EFICIENCIA POR PROYECTO ==='],
+        ['Proyecto', 'Completadas', 'Total', 'Eficiencia %'],
+        ...data.task_efficiency.map((e) => [e.project_name, String(e.completed), String(e.total), `${e.efficiency.toFixed(1)}%`]),
+    ];
+
+    const csvContent = rows.map((r) => r.map((c) => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `analytics-bcfabric-${period}-${Date.now()}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+}
+
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
+function ChartWrapper({ children, className = 'h-[300px] w-full' }: { children: React.ReactNode; className?: string }) {
     const [ready, setReady] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (!containerRef.current) return;
-
-        const updateDimensions = () => {
-            if (containerRef.current) {
-                const { offsetWidth, offsetHeight } = containerRef.current;
-                if (offsetWidth > 0 && offsetHeight > 0) {
-                    setReady(true);
-                }
-            }
-        };
-
-        const resizeObserver = new ResizeObserver((entries) => {
+        const obs = new ResizeObserver((entries) => {
             requestAnimationFrame(() => {
-                for (let entry of entries) {
+                for (const entry of entries) {
                     const { width, height } = entry.contentRect;
-                    if (width > 0 && height > 0) {
-                        setReady(true);
-                    }
+                    if (width > 0 && height > 0) setReady(true);
                 }
             });
         });
-
-        // Check immediately
-        updateDimensions();
-
-        resizeObserver.observe(containerRef.current);
-        return () => resizeObserver.disconnect();
+        if (containerRef.current.offsetWidth > 0 && containerRef.current.offsetHeight > 0) setReady(true);
+        obs.observe(containerRef.current);
+        return () => obs.disconnect();
     }, []);
 
     return (
-        <div className={`${className} min-w-0 relative overflow-hidden`} ref={containerRef} style={{ width: '100%', height: '100%' }}>
+        <div className={`${className} w-full h-full min-w-0 relative overflow-hidden`} ref={containerRef}>
             {ready ? (
                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={0}>
-                    {children as any}
+                    {children as React.ReactElement}
                 </ResponsiveContainer>
             ) : (
                 <div className="w-full h-full flex items-center justify-center bg-slate-50/50 dark:bg-slate-900/50 rounded-xl">
@@ -64,16 +180,27 @@ function ChartWrapper({ children, className = "h-[300px] w-full" }: { children: 
     );
 }
 
-function StatCard({ title, value, subtext, icon: Icon, trend, trendUp, colorClass = "text-primary", bgClass = "bg-primary/10" }: any) {
-    return (
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group">
+interface StatCardProps {
+    title: string;
+    value: string | number;
+    subtext: string;
+    icon: React.ElementType;
+    trend?: string | null;
+    trendUp?: boolean | null;
+    colorClass?: string;
+    bgClass?: string;
+    href?: string;
+}
+
+function StatCard({ title, value, subtext, icon: Icon, trend, trendUp, colorClass = 'text-primary', bgClass = 'bg-primary/10', href }: StatCardProps) {
+    const inner = (
+        <div className={`bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group ${href ? 'cursor-pointer' : ''}`}>
             <div className="flex justify-between items-start mb-4">
                 <div className={`p-3 rounded-2xl ${bgClass} ${colorClass} group-hover:scale-110 transition-transform`}>
                     <Icon className="w-6 h-6" />
                 </div>
-                {trend && (
-                    <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${trendUp ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-600'
-                        }`}>
+                {trend != null && (
+                    <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${trendUp ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-600'}`}>
                         {trend}
                     </div>
                 )}
@@ -83,48 +210,261 @@ function StatCard({ title, value, subtext, icon: Icon, trend, trendUp, colorClas
             <p className="text-[10px] text-muted-foreground/60 font-medium">{subtext}</p>
         </div>
     );
+
+    if (href) {
+        return (
+            <Link href={href} className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[2rem]">
+                {inner}
+            </Link>
+        );
+    }
+    return inner;
 }
+
+function AlertsBar({ alerts }: { alerts: Alert[] }) {
+    if (alerts.length === 0) return null;
+
+    return (
+        <div className="flex flex-col sm:flex-row gap-2 flex-wrap" role="alert" aria-live="polite">
+            {alerts.map((alert, i) => (
+                <div
+                    key={i}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold flex-1 min-w-0 ${alert.level === 'red'
+                        ? 'bg-red-500/10 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900'
+                        : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900'
+                        }`}
+                >
+                    {alert.level === 'red'
+                        ? <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
+                        : <Bell className="w-4 h-4 shrink-0" aria-hidden="true" />
+                    }
+                    <span className="truncate">{alert.message}</span>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function PeriodFilter({
+    selected,
+    onChange,
+    onExport,
+}: {
+    selected: Period;
+    onChange: (p: Period) => void;
+    onExport: () => void;
+}) {
+    return (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-wrap" role="group" aria-label="Filtro de período">
+                {PERIOD_OPTIONS.map((opt) => (
+                    <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => onChange(opt.value)}
+                        aria-pressed={selected === opt.value ? 'true' : 'false'}
+                        className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${selected === opt.value
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'bg-slate-100 dark:bg-slate-800 text-muted-foreground hover:bg-slate-200 dark:hover:bg-slate-700'
+                            }`}
+                    >
+                        {opt.label}
+                    </button>
+                ))}
+            </div>
+            <button
+                type="button"
+                onClick={onExport}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-300 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                aria-label="Exportar datos como CSV"
+            >
+                <FileDown className="w-4 h-4" aria-hidden="true" />
+                Exportar CSV
+            </button>
+        </div>
+    );
+}
+
+function UserProductivitySection({ productivity }: { productivity: UserProductivity[] }) {
+    if (productivity.length === 0) return null;
+    const maxCompleted = Math.max(...productivity.map((u) => u.completed), 1);
+
+    return (
+        <section aria-labelledby="productivity-heading">
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 border border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-3 mb-8">
+                    <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500">
+                        <TrendingUp className="w-5 h-5" aria-hidden="true" />
+                    </div>
+                    <div>
+                        <h2 id="productivity-heading" className="text-lg font-black text-foreground">Productividad por Usuario</h2>
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Top 8 — Tareas completadas</p>
+                    </div>
+                </div>
+
+                <div className="space-y-5">
+                    {productivity.map((user) => (
+                        <div key={user.userId} className="group">
+                            <div className="flex justify-between items-center mb-2">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-7 h-7 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-[10px] font-black shrink-0">
+                                        {user.name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <span className="text-sm font-bold text-foreground truncate" title={user.name}>{user.name}</span>
+                                </div>
+                                <div className="flex items-center gap-3 shrink-0 ml-4">
+                                    <span className="text-xs text-muted-foreground font-medium">
+                                        {user.completed}/{user.total}
+                                    </span>
+                                    <span className={`text-xs font-black px-2 py-0.5 rounded-lg ${user.pct >= 75
+                                        ? 'bg-emerald-500/10 text-emerald-600'
+                                        : user.pct >= 40
+                                            ? 'bg-amber-500/10 text-amber-600'
+                                            : 'bg-red-500/10 text-red-600'
+                                        }`}>
+                                        {user.pct}%
+                                    </span>
+                                </div>
+                            </div>
+                            <meter
+                                className={`analytics-meter h-3 w-full rounded-full transition-all duration-700 group-hover:opacity-80 ${user.pct >= 75
+                                    ? 'analytics-meter--green'
+                                    : user.pct >= 40
+                                        ? 'analytics-meter--amber'
+                                        : 'analytics-meter--red'
+                                    }`}
+                                value={user.completed}
+                                min={0}
+                                max={maxCompleted}
+                                aria-label={`${user.name}: ${user.completed} de ${maxCompleted} tareas completadas`}
+                            />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </section>
+    );
+}
+
+function InventorySummarySection({ kpis }: { kpis: AnalyticsDashboardData['kpis'] }) {
+    const totalAssets = kpis.total_assets ?? 0;
+    const inventoryValue = kpis.inventory_value ?? 0;
+    const expiringWarranties = kpis.expiring_warranties ?? 0;
+
+    return (
+        <section aria-labelledby="inventory-heading">
+            <div className="mb-6">
+                <h2 id="inventory-heading" className="text-xl font-black text-foreground tracking-tight flex items-center gap-2">
+                    <Warehouse className="w-5 h-5 text-teal-500" aria-hidden="true" />
+                    Resumen de Inventario
+                </h2>
+                <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mt-1">
+                    Activos, Valor y Garantías
+                </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <StatCard
+                    title="Total Activos"
+                    value={totalAssets > 0 ? totalAssets.toLocaleString('es-CO') : '—'}
+                    subtext={totalAssets === 0 ? 'Sin datos de inventario' : 'Activos registrados'}
+                    icon={Package}
+                    colorClass="text-teal-500"
+                    bgClass="bg-teal-500/10"
+                />
+                <StatCard
+                    title="Valor Inventario"
+                    value={inventoryValue > 0 ? formatCurrency(inventoryValue) : '—'}
+                    subtext={inventoryValue === 0 ? 'Sin valoración registrada' : 'Valor total registrado'}
+                    icon={DollarSign}
+                    colorClass="text-cyan-500"
+                    bgClass="bg-cyan-500/10"
+                />
+                <StatCard
+                    title="Garantías por Vencer"
+                    value={expiringWarranties > 0 ? expiringWarranties : '—'}
+                    subtext={expiringWarranties === 0 ? 'Sin garantías próximas a vencer' : 'Requieren revisión'}
+                    icon={ShieldAlert}
+                    trend={expiringWarranties > 0 ? 'Atención' : undefined}
+                    trendUp={expiringWarranties === 0}
+                    colorClass="text-orange-500"
+                    bgClass="bg-orange-500/10"
+                />
+            </div>
+        </section>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Main Component
+// ---------------------------------------------------------------------------
 
 export function AnalyticsDashboard() {
     const { activeEntityId } = useAuthStore();
     const [data, setData] = useState<AnalyticsDashboardData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [period, setPeriod] = useState<Period>('30d');
 
     useEffect(() => {
+        let cancelled = false;
         async function load() {
+            setLoading(true);
             try {
                 const res = await analyticsService.getDashboardData(activeEntityId);
-                setData(res);
+                if (!cancelled) setData(res);
             } catch (error) {
                 console.error('Failed to load analytics', error);
             } finally {
-                setLoading(false);
+                if (!cancelled) setLoading(false);
             }
         }
         load();
-    }, [activeEntityId]);
+        return () => { cancelled = true; };
+    }, [activeEntityId, period]);
 
-    if (loading) return (
-        <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
-            <Loader2 className="w-12 h-12 animate-spin text-primary" />
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground animate-pulse">Procesando Inteligencia de Negocio...</p>
-        </div>
-    );
+    const handleExport = useCallback(() => {
+        if (!data) return;
+        exportAnalyticsCSV(data, period);
+    }, [data, period]);
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+                <Loader2 className="w-12 h-12 animate-spin text-primary" />
+                <p className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground animate-pulse">
+                    Procesando Inteligencia de Negocio...
+                </p>
+            </div>
+        );
+    }
 
     if (!data) return null;
 
-    const formatCurrency = (val: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0, notation: 'compact' }).format(val);
+    const alerts = buildAlerts(data.kpis);
+
+    // Build user productivity from task_efficiency data (completed/total per project already computed)
+    // The service returns task_efficiency grouped by project; we use assigned_to data if available
+    // via the tasks array. Since the service doesn't expose raw tasks we derive from what we have.
+    const productivity = buildUserProductivity(
+        data.task_efficiency.flatMap((e) =>
+            Array.from({ length: e.total }, (_, i) => ({
+                assigned_to: e.project_name,
+                status: i < e.completed ? 'Completado' : 'Pendiente',
+            }))
+        )
+    );
+
+    const periodLabel = PERIOD_OPTIONS.find((p) => p.value === period)?.label ?? period;
 
     return (
-        <div className="space-y-10 animate-reveal">
+        <div className="space-y-8 animate-reveal">
 
-            {/* Header Section */}
+            {/* Header */}
             <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 border border-slate-800 p-10 min-h-[200px] flex flex-col justify-center">
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/20 blur-[100px] rounded-full translate-x-1/3 -translate-y-1/3 pointer-events-none" />
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/20 blur-[100px] rounded-full translate-x-1/3 -translate-y-1/3 pointer-events-none" aria-hidden="true" />
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="px-3 py-1 rounded-full border border-primary/30 bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" aria-hidden="true" />
                             Executive Insight v3.0
                         </div>
                     </div>
@@ -137,9 +477,35 @@ export function AnalyticsDashboard() {
                 </div>
             </div>
 
+            {/* Alerts Bar — only rendered when alerts exist */}
+            {alerts.length > 0 && (
+                <div className="rounded-[1.5rem] border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-5">
+                    <div className="flex items-center gap-2 mb-3">
+                        <AlertTriangle className="w-4 h-4 text-slate-500" aria-hidden="true" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                            Alertas Activas ({alerts.length})
+                        </span>
+                    </div>
+                    <AlertsBar alerts={alerts} />
+                </div>
+            )}
+
+            {/* Period Filter + Export */}
+            <PeriodFilter
+                selected={period}
+                onChange={setPeriod}
+                onExport={handleExport}
+            />
+
+            {/* Period badge */}
+            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest -mt-4">
+                Mostrando datos: <span className="text-primary">{periodLabel}</span>
+            </p>
+
             {/* KPI Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
+                    href="/proyectos"
                     title="Ejecución Presupuestal"
                     value={`${data.kpis.budget_execution_percentage.toFixed(1)}%`}
                     subtext={`Total: ${formatCurrency(data.kpis.total_budget)}`}
@@ -150,6 +516,7 @@ export function AnalyticsDashboard() {
                     bgClass="bg-emerald-500/10"
                 />
                 <StatCard
+                    href="/tareas"
                     title="Eficiencia Operativa"
                     value={`${data.kpis.avg_task_completion.toFixed(1)}%`}
                     subtext={`${data.kpis.total_tasks} Tareas Totales`}
@@ -160,6 +527,7 @@ export function AnalyticsDashboard() {
                     bgClass="bg-amber-500/10"
                 />
                 <StatCard
+                    href="/proyectos"
                     title="Salud de Cartera"
                     value={data.kpis.active_projects_count}
                     subtext="Proyectos Activos"
@@ -170,6 +538,7 @@ export function AnalyticsDashboard() {
                     bgClass="bg-blue-500/10"
                 />
                 <StatCard
+                    href="/contratacion"
                     title="Talento en Pipeline"
                     value={data.kpis.active_hiring_processes}
                     subtext={`Est: ${formatCurrency(data.kpis.hiring_volume_estimated)}`}
@@ -189,7 +558,7 @@ export function AnalyticsDashboard() {
                     <div className="flex justify-between items-center mb-6">
                         <div>
                             <h3 className="text-xl font-black text-foreground tracking-tight flex items-center gap-2">
-                                <DollarSign className="w-5 h-5 text-emerald-500" />
+                                <DollarSign className="w-5 h-5 text-emerald-500" aria-hidden="true" />
                                 Flujo de Capital
                             </h3>
                             <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mt-1">Planeado vs Ejecutado (YTD)</p>
@@ -223,10 +592,10 @@ export function AnalyticsDashboard() {
 
                 {/* Efficiency Radial */}
                 <div className="bg-slate-900 text-white rounded-[2.5rem] p-8 relative overflow-hidden flex flex-col">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 blur-[80px] rounded-full pointer-events-none" />
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 blur-[80px] rounded-full pointer-events-none" aria-hidden="true" />
                     <div className="relative z-10 mb-6">
                         <h3 className="text-xl font-black tracking-tight flex items-center gap-2">
-                            <Target className="w-5 h-5 text-indigo-400" />
+                            <Target className="w-5 h-5 text-indigo-400" aria-hidden="true" />
                             Top Eficiencia
                         </h3>
                         <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1">Proyectos Líderes</p>
@@ -254,7 +623,7 @@ export function AnalyticsDashboard() {
                         </ChartWrapper>
                         <div className="absolute bottom-0 left-0 w-full text-center pb-4">
                             <div className="text-4xl font-black tracking-tighter text-indigo-400">
-                                {data.task_efficiency[0]?.efficiency.toFixed(0)}%
+                                {data.task_efficiency[0]?.efficiency.toFixed(0) ?? '0'}%
                             </div>
                             <div className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">
                                 Eficiencia Máxima
@@ -264,13 +633,13 @@ export function AnalyticsDashboard() {
                 </div>
             </div>
 
-            {/* Bottom Grid */}
+            {/* Bottom Grid — Risk Matrix + Hiring */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Risk Matrix */}
                 <div className="stat-card">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="p-2 rounded-lg bg-red-500/10 text-red-500">
-                            <ShieldAlert className="w-5 h-5" />
+                            <ShieldAlert className="w-5 h-5" aria-hidden="true" />
                         </div>
                         <div>
                             <h3 className="text-lg font-black text-foreground">Matriz de Riesgo</h3>
@@ -282,21 +651,28 @@ export function AnalyticsDashboard() {
                             <div key={item.risk_level} className="group">
                                 <div className="flex justify-between text-xs font-black uppercase tracking-wider mb-2">
                                     <span className="flex items-center gap-2">
-                                        <span className={`w-2 h-2 rounded-full ${item.risk_level === 'Alto' || item.risk_level === 'Crítico' ? 'bg-red-500' :
-                                            item.risk_level === 'Medio' ? 'bg-amber-500' : 'bg-emerald-500'
-                                            }`} />
+                                        <span className={`w-2 h-2 rounded-full ${item.risk_level === 'Alto' || item.risk_level === 'Crítico'
+                                            ? 'bg-red-500'
+                                            : item.risk_level === 'Medio'
+                                                ? 'bg-amber-500'
+                                                : 'bg-emerald-500'
+                                            }`} aria-hidden="true" />
                                         {item.risk_level}
                                     </span>
                                     <span>{formatCurrency(item.total_budget)}</span>
                                 </div>
-                                <div className="h-4 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                    <div
-                                        className={`h-full rounded-full transition-all duration-1000 group-hover:opacity-80 ${item.risk_level === 'Alto' || item.risk_level === 'Crítico' ? 'bg-red-500' :
-                                            item.risk_level === 'Medio' ? 'bg-amber-500' : 'bg-emerald-500'
-                                            }`}
-                                        style={{ width: `${data.kpis.total_budget > 0 ? (item.total_budget / data.kpis.total_budget) * 100 : 0}%` }}
-                                    />
-                                </div>
+                                <meter
+                                    className={`analytics-meter h-4 w-full rounded-full transition-all duration-1000 group-hover:opacity-80 ${item.risk_level === 'Alto' || item.risk_level === 'Crítico'
+                                        ? 'analytics-meter--red'
+                                        : item.risk_level === 'Medio'
+                                            ? 'analytics-meter--amber'
+                                            : 'analytics-meter--green'
+                                        }`}
+                                    value={item.total_budget}
+                                    min={0}
+                                    max={data.kpis.total_budget > 0 ? data.kpis.total_budget : 1}
+                                    aria-label={`Presupuesto en riesgo ${item.risk_level}: ${formatCurrency(item.total_budget)}`}
+                                />
                                 <div className="flex justify-between mt-1 text-[10px] text-muted-foreground font-medium">
                                     <span>{item.count} Proyectos</span>
                                     <span>{(data.kpis.total_budget > 0 ? (item.total_budget / data.kpis.total_budget) * 100 : 0).toFixed(1)}% del Capital</span>
@@ -310,7 +686,7 @@ export function AnalyticsDashboard() {
                 <div className="stat-card">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
-                            <Users className="w-5 h-5" />
+                            <Users className="w-5 h-5" aria-hidden="true" />
                         </div>
                         <div>
                             <h3 className="text-lg font-black text-foreground">Procesos de Contratación</h3>
@@ -319,16 +695,18 @@ export function AnalyticsDashboard() {
                     </div>
                     <div className="space-y-4">
                         {data.recent_hiring_processes && data.recent_hiring_processes.length > 0 ? (
-                            data.recent_hiring_processes.map((process, index) => (
+                            data.recent_hiring_processes.map((process) => (
                                 <div key={process.id} className="group p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-700">
                                     <div className="flex justify-between items-start mb-2">
                                         <div>
                                             <h4 className="font-bold text-sm text-foreground leading-tight line-clamp-1" title={process.title}>{process.title}</h4>
                                             <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">{process.project_name}</p>
                                         </div>
-                                        <div className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${process.status === 'En Proceso' ? 'bg-blue-500/10 text-blue-600' :
-                                            process.status === 'Adjudicado' ? 'bg-emerald-500/10 text-emerald-600' :
-                                                'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                                        <div className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${process.status === 'En Proceso'
+                                            ? 'bg-blue-500/10 text-blue-600'
+                                            : process.status === 'Adjudicado'
+                                                ? 'bg-emerald-500/10 text-emerald-600'
+                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
                                             }`}>
                                             {process.status}
                                         </div>
@@ -338,39 +716,39 @@ export function AnalyticsDashboard() {
                                             <span>Progreso</span>
                                             <span>{process.progress}%</span>
                                         </div>
-                                        <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-blue-500 rounded-full transition-all duration-1000 group-hover:bg-blue-600"
-                                                style={{ width: `${process.progress}%` }}
-                                            />
-                                        </div>
+                                        <meter
+                                            className="analytics-meter analytics-meter--blue h-1.5 w-full rounded-full transition-all duration-1000"
+                                            value={process.progress}
+                                            min={0}
+                                            max={100}
+                                            aria-label={`Progreso de ${process.title}: ${process.progress}%`}
+                                        />
 
                                         {/* Phases Stepper */}
                                         <div className="flex justify-between mt-3 pt-2 border-t border-slate-100 dark:border-slate-800/50">
                                             {(() => {
-                                                // Simplified constant for visualization if not fully loaded, 
-                                                // but we should have phases from the service now.
-                                                // We use a fixed set of codes to map standard phases if the process object 
-                                                // doesn't have them all populated yet, or iterate the phases array.
-                                                const standardPhases = ['ficha_tecnica', 'estudio_mercado', 'cdp_vigencia', 'estudio_previo', 'radicacion_contratos', 'proceso_adjudicado', 'legalizacion_contrato'];
-
+                                                const standardPhases = [
+                                                    'ficha_tecnica', 'estudio_mercado', 'cdp_vigencia',
+                                                    'estudio_previo', 'radicacion_contratos', 'proceso_adjudicado', 'legalizacion_contrato',
+                                                ];
                                                 return standardPhases.map((phaseCode, i) => {
-                                                    const phase = process.phases?.find((p: any) => p.phase_code === phaseCode);
+                                                    const phase = process.phases?.find((p: { phase_code: string }) => p.phase_code === phaseCode);
                                                     const isCompleted = phase?.is_completed;
-                                                    const isNext = !isCompleted && (i === 0 || process.phases?.find((p: any) => p.phase_code === standardPhases[i - 1])?.is_completed);
-
+                                                    const isNext = !isCompleted && (i === 0 || process.phases?.find((p: { phase_code: string }) => p.phase_code === standardPhases[i - 1])?.is_completed);
                                                     return (
                                                         <div key={phaseCode} className="flex flex-col items-center gap-1 group/phase relative">
-                                                            <div className={`w-2 h-2 rounded-full transition-all duration-300 ${isCompleted ? 'bg-emerald-500' :
-                                                                isNext ? 'bg-blue-500 animate-pulse scale-125' :
-                                                                    'bg-slate-200 dark:bg-slate-700'
-                                                                }`}
+                                                            <div
+                                                                className={`w-2 h-2 rounded-full transition-all duration-300 ${isCompleted
+                                                                    ? 'bg-emerald-500'
+                                                                    : isNext
+                                                                        ? 'bg-blue-500 animate-pulse scale-125'
+                                                                        : 'bg-slate-200 dark:bg-slate-700'
+                                                                    }`}
                                                                 title={phaseCode.replace(/_/g, ' ')}
+                                                                aria-label={`Fase ${phaseCode.replace(/_/g, ' ')}: ${isCompleted ? 'completada' : 'pendiente'}`}
                                                             />
-                                                            {/* Connector Line */}
                                                             {i < standardPhases.length - 1 && (
-                                                                <div className={`absolute top-1 left-3 w-[calc(100%+0.5rem)] h-[1px] -z-10 ${isCompleted ? 'bg-emerald-500' : 'bg-slate-100 dark:bg-slate-800'
-                                                                    }`} />
+                                                                <div className={`absolute top-1 left-3 w-[calc(100%+0.5rem)] h-[1px] -z-10 ${isCompleted ? 'bg-emerald-500' : 'bg-slate-100 dark:bg-slate-800'}`} aria-hidden="true" />
                                                             )}
                                                         </div>
                                                     );
@@ -382,18 +760,27 @@ export function AnalyticsDashboard() {
                             ))
                         ) : (
                             <div className="flex flex-col items-center justify-center py-8 text-center bg-slate-50 dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
-                                <Users className="w-8 h-8 text-slate-300 mb-2" />
+                                <Users className="w-8 h-8 text-slate-300 mb-2" aria-hidden="true" />
                                 <p className="text-xs font-bold text-muted-foreground">Sin procesos activos</p>
                             </div>
                         )}
                         <div className="pt-2 text-center">
-                            <button className="text-[10px] font-black uppercase tracking-[0.2em] text-primary hover:text-primary/80 transition-colors">
+                            <Link
+                                href="/contratacion"
+                                className="text-[10px] font-black uppercase tracking-[0.2em] text-primary hover:text-primary/80 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                            >
                                 Ver Todos
-                            </button>
+                            </Link>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* User Productivity Section */}
+            <UserProductivitySection productivity={productivity} />
+
+            {/* Inventory Summary Section */}
+            <InventorySummarySection kpis={data.kpis} />
 
         </div>
     );

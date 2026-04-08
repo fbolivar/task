@@ -197,6 +197,49 @@
     .hours-bar-90  { width: 90%; }
     .hours-bar-100 { width: 100%; }
 
+    /* Analytics meter — <meter> element used for progress bars in AnalyticsDashboard.
+       Resets browser defaults and applies colored fills without inline styles. */
+    .analytics-meter {
+        display: block;
+        -webkit-appearance: none;
+        appearance: none;
+        background: transparent;
+        border: none;
+        @apply bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden;
+    }
+
+    /* WebKit (Chrome, Safari, Edge) */
+    .analytics-meter::-webkit-meter-bar {
+        background: transparent;
+        @apply bg-slate-100 dark:bg-slate-800 rounded-full;
+    }
+    .analytics-meter--green::-webkit-meter-optimum-value,
+    .analytics-meter--green::-webkit-meter-suboptimum-value,
+    .analytics-meter--green::-webkit-meter-even-less-good-value {
+        @apply bg-emerald-500 rounded-full;
+    }
+    .analytics-meter--amber::-webkit-meter-optimum-value,
+    .analytics-meter--amber::-webkit-meter-suboptimum-value,
+    .analytics-meter--amber::-webkit-meter-even-less-good-value {
+        @apply bg-amber-500 rounded-full;
+    }
+    .analytics-meter--red::-webkit-meter-optimum-value,
+    .analytics-meter--red::-webkit-meter-suboptimum-value,
+    .analytics-meter--red::-webkit-meter-even-less-good-value {
+        @apply bg-red-500 rounded-full;
+    }
+    .analytics-meter--blue::-webkit-meter-optimum-value,
+    .analytics-meter--blue::-webkit-meter-suboptimum-value,
+    .analytics-meter--blue::-webkit-meter-even-less-good-value {
+        @apply bg-blue-500 rounded-full;
+    }
+
+    /* Firefox */
+    .analytics-meter--green::-moz-meter-bar { @apply bg-emerald-500 rounded-full; }
+    .analytics-meter--amber::-moz-meter-bar  { @apply bg-amber-500 rounded-full; }
+    .analytics-meter--red::-moz-meter-bar    { @apply bg-red-500 rounded-full; }
+    .analytics-meter--blue::-moz-meter-bar   { @apply bg-blue-500 rounded-full; }
+
     /* Animations */
     .animate-float {
         animation: float 6s ease-in-out infinite;

@@ -9,6 +9,14 @@ interface ProjectRow {
     actual_cost: number | null;
     risk_level: string | null;
     status: string | null;
+    created_at: string;
+}
+
+interface AssetRow {
+    id: string;
+    purchase_value: number | null;
+    warranty_expiration: string | null;
+    status: string | null;
 }
 
 interface HiringRow {
@@ -45,21 +53,31 @@ export const analyticsService = {
         const supabase = createClient();
 
         // 1. Fetch Projects with financial data
-        let projectsQuery = supabase.from('projects').select('id, name, budget, actual_cost, risk_level, status');
+        let projectsQuery = supabase.from('projects').select('id, name, budget, actual_cost, risk_level, status, created_at');
         if (entityId !== 'all') projectsQuery = projectsQuery.eq('entity_id', entityId);
 
         // 2. Fetch Hiring Processes with Project info and Phases
         let hiringQuery = supabase.from('hiring_processes').select('id, title, estimated_amount, status, total_progress, updated_at, project:projects(name), phases:hiring_phases_tracking(*)');
         if (entityId !== 'all') hiringQuery = hiringQuery.eq('entity_id', entityId);
 
-        // 3. Fetch Tasks for Efficiency Analysis
-        // Note: In a large scale app, we would aggregate this via RPC or SQL View.
-        // For now, fetching lightweight fields is acceptable for this scale.
-        // let tasksQuery = supabase.from('tasks').select('id, status, end_date, project_id, assigned_to'); // unused directly
+        // 3. Fetch Assets for Inventory Metrics
+        let assetsQuery = supabase.from('assets').select('id, purchase_value, warranty_expiration, status');
+        if (entityId !== 'all') assetsQuery = assetsQuery.eq('entity_id', entityId);
 
-        const [projectsRes, hiringRes] = await Promise.all([projectsQuery, hiringQuery]);
+        // 4. Fetch total active users for resource utilization
+        const usersCountQuery = supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_active', true);
+
+        const [projectsRes, hiringRes, assetsRes, usersCountRes] = await Promise.all([
+            projectsQuery,
+            hiringQuery,
+            assetsQuery,
+            usersCountQuery,
+        ]);
+
         const projects = (projectsRes.data || []) as ProjectRow[];
         const projectIds = projects.map((p) => p.id);
+        const assets = (assetsRes.data || []) as AssetRow[];
+        const totalActiveUsers = usersCountRes.count ?? 0;
 
         // Now fetch tasks for these projects
         let tasksData: TaskRow[] = [];
@@ -79,6 +97,29 @@ export const analyticsService = {
         const totalTasks = tasksData.length;
         const completedTasks = tasksData.filter((t) => t.status === 'Completado').length;
         const overdueTasks = tasksData.filter((t) => t.end_date && new Date(t.end_date) < new Date() && t.status !== 'Completado').length;
+
+        // Resource utilization: unique users with assigned tasks vs total active users
+        const usersWithTasks = new Set(tasksData.map((t) => t.assigned_to).filter(Boolean)).size;
+        const resourceUtilization = totalActiveUsers > 0 ? (usersWithTasks / totalActiveUsers) * 100 : 0;
+
+        // --- Inventory / Asset Metrics ---
+        const now30 = new Date();
+        now30.setDate(now30.getDate() + 30);
+        const today = new Date();
+        const totalAssets = assets.length;
+        const inventoryValue = assets.reduce((sum, a) => sum + (a.purchase_value || 0), 0);
+        const expiringWarranties = assets.filter((a) => {
+            if (!a.warranty_expiration) return false;
+            const exp = new Date(a.warranty_expiration);
+            return exp >= today && exp <= now30;
+        }).length;
+
+        const inventoryStatusMap: Record<string, number> = {};
+        assets.forEach((a) => {
+            const s = a.status || 'Desconocido';
+            inventoryStatusMap[s] = (inventoryStatusMap[s] || 0) + 1;
+        });
+        const inventorySummary = Object.entries(inventoryStatusMap).map(([status, count]) => ({ status, count }));
 
         // --- Risk Matrix ---
         const riskMap: Record<string, RiskBucket> = {};
@@ -136,15 +177,24 @@ export const analyticsService = {
             .sort((a, b) => b.efficiency - a.efficiency)
             .slice(0, 5); // Top 5
 
-        // --- Simulated Financial Trend (since we lack historical tables) ---
-        const financialTrend = [
-            { month: 'Ene', planned: totalBudget * 0.1, actual: executedBudget * 0.12 },
-            { month: 'Feb', planned: totalBudget * 0.25, actual: executedBudget * 0.22 },
-            { month: 'Mar', planned: totalBudget * 0.45, actual: executedBudget * 0.40 },
-            { month: 'Abr', planned: totalBudget * 0.65, actual: executedBudget * 0.68 },
-            { month: 'May', planned: totalBudget * 0.85, actual: executedBudget * 0.82 },
-            { month: 'Jun', planned: totalBudget, actual: executedBudget }
-        ];
+        // --- Real Financial Trend: cumulative budget/cost of projects created per month ---
+        const nowTrend = new Date();
+        const financialTrend: import('../types').FinancialTrend[] = [];
+        for (let i = 5; i >= 0; i--) {
+            const monthDate = new Date(nowTrend.getFullYear(), nowTrend.getMonth() - i, 1);
+            const monthLabel = monthDate.toLocaleDateString('es-CO', { month: 'short' });
+            const endOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59);
+            const projectsUpToMonth = projects.filter((p) => new Date(p.created_at) <= endOfMonth);
+            const cumulativePlanned = projectsUpToMonth.reduce((sum, p) => sum + (p.budget || 0), 0);
+            const cumulativeActual = projectsUpToMonth.reduce((sum, p) => sum + (p.actual_cost || 0), 0);
+            // If no real data, fall back to proportional split of totals
+            const monthFraction = (6 - i) / 6;
+            financialTrend.push({
+                month: monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1),
+                planned: projectsUpToMonth.length > 0 ? Math.round(cumulativePlanned) : Math.round(totalBudget * monthFraction),
+                actual: projectsUpToMonth.length > 0 ? Math.round(cumulativeActual) : Math.round(executedBudget * monthFraction),
+            });
+        }
 
         return {
             kpis: {
@@ -158,13 +208,17 @@ export const analyticsService = {
                 avg_task_completion: totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0,
                 total_tasks: totalTasks,
                 overdue_tasks: overdueTasks,
-                resource_utilization: 0 // Would require profiles fetch, skipping for speed as not critical
+                resource_utilization: Math.round(resourceUtilization),
+                total_assets: totalAssets,
+                inventory_value: inventoryValue,
+                expiring_warranties: expiringWarranties,
             },
             risk_matrix: Object.entries(riskMap).map(([k, v]) => ({ risk_level: k, ...v })),
             hiring_funnel: Object.entries(funnelMap).map(([k, v]) => ({ status: k, ...v })),
             task_efficiency: taskEfficiencyStats,
             financial_trend: financialTrend,
-            recent_hiring_processes: recentHiringProcesses
+            recent_hiring_processes: recentHiringProcesses,
+            inventory_summary: inventorySummary,
         };
     }
 };

@@ -14,6 +14,11 @@ export interface AnalyticsKPI {
     total_tasks: number;
     overdue_tasks: number;
     resource_utilization: number;
+
+    // Inventory Metrics
+    total_assets: number;
+    inventory_value: number;
+    expiring_warranties: number;
 }
 
 export interface ProjectRiskDistribution {
@@ -51,6 +56,11 @@ export interface RecentHiringProcess {
     phases: HiringPhaseTracking[];
 }
 
+export interface InventorySummaryItem {
+    status: string;
+    count: number;
+}
+
 export interface AnalyticsDashboardData {
     kpis: AnalyticsKPI;
     risk_matrix: ProjectRiskDistribution[];
@@ -58,4 +68,5 @@ export interface AnalyticsDashboardData {
     financial_trend: FinancialTrend[];
     task_efficiency: TaskEfficiencyStats[];
     recent_hiring_processes: RecentHiringProcess[];
+    inventory_summary: InventorySummaryItem[];
 }
