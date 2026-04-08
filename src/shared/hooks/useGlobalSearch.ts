@@ -7,7 +7,7 @@ export interface SearchResult {
   id: string;
   label: string;
   sublabel?: string;
-  type: 'project' | 'task' | 'entity' | 'asset' | 'change';
+  type: 'project' | 'task' | 'entity' | 'asset';
   url: string;
 }
 
@@ -16,17 +16,15 @@ export interface GroupedResults {
   tasks: SearchResult[];
   entities: SearchResult[];
   assets: SearchResult[];
-  changes: SearchResult[];
 }
 
-interface DbRow { id: string; name?: string; title?: string; status?: string; category?: string; code?: string }
+interface DbRow { id: string; name?: string; title?: string; status?: string; category?: string }
 
 const EMPTY_RESULTS: GroupedResults = {
   projects: [],
   tasks: [],
   entities: [],
   assets: [],
-  changes: [],
 };
 
 export function useGlobalSearch(query: string) {
@@ -50,7 +48,7 @@ export function useGlobalSearch(query: string) {
         const supabase = createClient();
         const pattern = `%${trimmed}%`;
 
-        const [projectsRes, tasksRes, entitiesRes, assetsRes, changesRes] = await Promise.all([
+        const [projectsRes, tasksRes, entitiesRes, assetsRes] = await Promise.all([
           supabase
             .from('projects')
             .select('id, name, status')
@@ -73,12 +71,6 @@ export function useGlobalSearch(query: string) {
             .from('assets')
             .select('id, name, category')
             .ilike('name', pattern)
-            .limit(5),
-
-          supabase
-            .from('change_requests')
-            .select('id, title, code, status')
-            .or(`title.ilike.${pattern},code.ilike.${pattern}`)
             .limit(5),
         ]);
 
@@ -112,13 +104,6 @@ export function useGlobalSearch(query: string) {
             type: 'asset' as const,
             url: '/inventario',
           })),
-          changes: ((changesRes.data ?? []) as DbRow[]).map((c) => ({
-            id: String(c.id),
-            label: c.title || 'Sin titulo',
-            sublabel: c.code ?? undefined,
-            type: 'change' as const,
-            url: '/cambios',
-          })),
         };
 
         setResults(grouped);
@@ -140,8 +125,7 @@ export function useGlobalSearch(query: string) {
     results.projects.length +
     results.tasks.length +
     results.entities.length +
-    results.assets.length +
-    results.changes.length;
+    results.assets.length;
 
   return { results, loading, totalCount };
 }

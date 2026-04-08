@@ -6,16 +6,12 @@ import { Bell, Info } from 'lucide-react';
 export interface NotificationPreferences {
     email_task_assigned: boolean;
     email_task_completed: boolean;
-    email_change_request: boolean;
-    email_change_approved: boolean;
     inapp_all: boolean;
 }
 
 const DEFAULT_PREFS: NotificationPreferences = {
     email_task_assigned: true,
     email_task_completed: true,
-    email_change_request: true,
-    email_change_approved: true,
     inapp_all: true,
 };
 
@@ -114,25 +110,6 @@ export function NotificationPreferences({ userId }: NotificationPreferencesProps
                         description="Recibir correo cuando una tarea a tu cargo sea marcada como completada"
                         checked={prefs.email_task_completed}
                         onChange={(v) => updatePref('email_task_completed', v)}
-                    />
-                </div>
-
-                {/* Cambios */}
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground pt-4 mb-1">Cambios</p>
-                <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                    <Toggle
-                        id="email_change_request"
-                        label="Solicitud de cambio"
-                        description="Recibir correo cuando se cree una solicitud de cambio"
-                        checked={prefs.email_change_request}
-                        onChange={(v) => updatePref('email_change_request', v)}
-                    />
-                    <Toggle
-                        id="email_change_approved"
-                        label="Cambio aprobado"
-                        description="Recibir correo cuando un cambio sea aprobado o rechazado"
-                        checked={prefs.email_change_approved}
-                        onChange={(v) => updatePref('email_change_approved', v)}
                     />
                 </div>
 

@@ -75,7 +75,6 @@ export function GeneralFilters({
                         <option value="project">Proyectos</option>
                         <option value="asset">Activos</option>
                         <option value="user">Usuarios</option>
-                        <option value="change_request">Cambios</option>
                         <option value="entity">Entidades</option>
                     </select>
                 </div>

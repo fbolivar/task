@@ -19,7 +19,6 @@ interface EmailTemplate {
 const CATEGORY_ICONS: Record<string, any> = {
     'usuarios': Users,
     'tareas': CheckCircle2,
-    'cambios': Zap,
     'general': Layout,
     'email': Mail,
     'alert': Bell
@@ -28,7 +27,6 @@ const CATEGORY_ICONS: Record<string, any> = {
 const CATEGORY_LABELS: Record<string, string> = {
     'usuarios': 'Gestión de Usuarios',
     'tareas': 'Control de Tareas',
-    'cambios': 'Gestión de Cambios',
     'general': 'Configuración General',
     'email': 'Correos Electrónicos',
     'alert': 'Alertas del Sistema'

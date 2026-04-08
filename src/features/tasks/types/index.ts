@@ -43,8 +43,6 @@ export interface ProjectShort {
 
 export interface Task {
     id: string;
-    is_change_control_required?: boolean;
-    change_request_id?: string;
     project_id: string | null;
     title: string;
     notes: string | null;
@@ -78,7 +76,6 @@ export interface TaskFormData {
     evidence_link: string | null;
     estimated_hours?: number;
     actual_hours?: number;
-    is_change_control_required?: boolean;
     created_by?: string;
     is_recurring?: boolean;
     recurrence_pattern?: 'daily' | 'weekly' | 'biweekly' | 'monthly' | null;

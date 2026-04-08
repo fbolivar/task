@@ -8,7 +8,6 @@ import {
   CheckSquare,
   Building2,
   Package,
-  GitBranch,
   X,
   Loader2,
 } from 'lucide-react';
@@ -36,7 +35,6 @@ const SECTIONS: SectionMeta[] = [
   { key: 'tasks',     label: 'Tareas',             Icon: CheckSquare },
   { key: 'entities',  label: 'Entidades',          Icon: Building2   },
   { key: 'assets',    label: 'Inventario',         Icon: Package     },
-  { key: 'changes',   label: 'Cambios',            Icon: GitBranch   },
 ];
 
 // ─── Result row ───────────────────────────────────────────────────────────────

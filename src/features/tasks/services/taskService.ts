@@ -104,7 +104,6 @@ export const taskService = {
                 .from('tasks')
                 .insert({
                     ...task,
-                    is_change_control_required: task.is_change_control_required || false,
                     created_by: user?.id
                 })
                 .select('*, project:projects(id, name, entity_id), assignee:profiles!tasks_assigned_to_fkey(id, full_name)')
@@ -118,25 +117,6 @@ export const taskService = {
                     code: error.code
                 });
                 throw error;
-            }
-
-            // If change control required, create Draft Change Request
-            if (task.is_change_control_required && task.project_id && user) {
-                const { error: crError } = await supabase
-                    .from('change_requests')
-                    .insert({
-                        project_id: task.project_id,
-                        task_id: data.id,
-                        requester_id: user.id,
-                        title: `Cambio: ${task.title}`,
-                        description: `Solicitud automática generada desde la tarea: ${task.title}`,
-                        priority: 'medium',
-                        status: 'draft'
-                    });
-
-                if (crError) {
-                    console.error("Error generating automatic Change Request", crError);
-                }
             }
 
             // Send email notification if task is assigned

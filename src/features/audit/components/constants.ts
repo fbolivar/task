@@ -31,7 +31,6 @@ export const ENTITY_ICONS: Record<string, typeof FileText> = {
     project: FolderKanban,
     asset: Package,
     user: User,
-    change_request: Activity,
 };
 
 export const SECURITY_EVENT_ICONS: Record<string, typeof Shield> = {
