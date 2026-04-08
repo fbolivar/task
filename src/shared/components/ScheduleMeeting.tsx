@@ -80,6 +80,7 @@ function formatMeetingDate(dateStr: string): string {
 
 export function ScheduleMeeting({ entityType, entityId, entityTitle }: ScheduleMeetingProps) {
     const { user } = useAuthStore();
+    const activeEntityId = useAuthStore(state => state.activeEntityId);
     const { toast } = useToast();
 
     const [expanded, setExpanded] = useState(false);
@@ -105,16 +106,40 @@ export function ScheduleMeeting({ entityType, entityId, entityTitle }: ScheduleM
         setLoadingUsers(true);
         try {
             const supabase = createClient();
-            const { data } = await supabase
+
+            let userIds: string[] = [];
+            if (activeEntityId && activeEntityId !== 'all') {
+                const { data: pe } = await supabase
+                    .from('profile_entities')
+                    .select('profile_id')
+                    .eq('entity_id', activeEntityId);
+                userIds = (pe || []).map((p: { profile_id: string }) => p.profile_id);
+
+                const { data: globalUsers } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('has_all_entities_access', true)
+                    .eq('is_active', true);
+                const globalIds = (globalUsers || []).map((u: { id: string }) => u.id);
+                userIds = [...new Set([...userIds, ...globalIds])];
+            }
+
+            let query = supabase
                 .from('profiles')
                 .select('id, full_name, email')
                 .eq('is_active', true)
                 .order('full_name');
+
+            if (userIds.length > 0 && activeEntityId && activeEntityId !== 'all') {
+                query = query.in('id', userIds);
+            }
+
+            const { data } = await query;
             if (data) setAllUsers(data as UserOption[]);
         } finally {
             setLoadingUsers(false);
         }
-    }, []);
+    }, [activeEntityId]);
 
     // ---------------------------------------------------------------------------
     // Fetch meetings for this entity
@@ -168,10 +193,11 @@ export function ScheduleMeeting({ entityType, entityId, entityTitle }: ScheduleM
     // ---------------------------------------------------------------------------
 
     useEffect(() => {
-        if (expanded && allUsers.length === 0) {
+        if (expanded) {
+            setAllUsers([]);
             fetchUsers();
         }
-    }, [expanded, allUsers.length, fetchUsers]);
+    }, [expanded, activeEntityId, fetchUsers]);
 
     useEffect(() => {
         fetchMeetings();

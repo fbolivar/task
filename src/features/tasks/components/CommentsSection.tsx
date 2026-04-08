@@ -6,6 +6,7 @@ import { TaskComment } from '../types';
 import { commentService } from '../services/commentService';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 import { createClient } from '@/lib/supabase/client';
+import { useAuthStore } from '@/features/auth/store/authStore';
 
 interface CommentsSectionProps {
     taskId: string;
@@ -31,6 +32,7 @@ function renderWithMentions(text: string) {
 
 export function CommentsSection({ taskId }: CommentsSectionProps) {
     const { t } = useSettings();
+    const activeEntityId = useAuthStore(state => state.activeEntityId);
     const [comments, setComments] = useState<TaskComment[]>([]);
     const [newComment, setNewComment] = useState('');
     const [loading, setLoading] = useState(false);
@@ -74,16 +76,40 @@ export function CommentsSection({ taskId }: CommentsSectionProps) {
         if (allUsers.length > 0) return;
         try {
             const supabase = createClient();
-            const { data } = await supabase
+
+            let userIds: string[] = [];
+            if (activeEntityId && activeEntityId !== 'all') {
+                const { data: pe } = await supabase
+                    .from('profile_entities')
+                    .select('profile_id')
+                    .eq('entity_id', activeEntityId);
+                userIds = (pe || []).map((p: { profile_id: string }) => p.profile_id);
+
+                const { data: globalUsers } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('has_all_entities_access', true)
+                    .eq('is_active', true);
+                const globalIds = (globalUsers || []).map((u: { id: string }) => u.id);
+                userIds = [...new Set([...userIds, ...globalIds])];
+            }
+
+            let query = supabase
                 .from('profiles')
                 .select('id, full_name')
                 .eq('is_active', true)
                 .order('full_name');
+
+            if (userIds.length > 0 && activeEntityId && activeEntityId !== 'all') {
+                query = query.in('id', userIds);
+            }
+
+            const { data } = await query;
             if (data) setAllUsers(data as MentionUser[]);
         } catch {
             // non-critical
         }
-    }, [allUsers.length]);
+    }, [allUsers.length, activeEntityId]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;

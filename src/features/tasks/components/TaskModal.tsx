@@ -20,6 +20,7 @@ import { Task, TaskFormData, TaskPriority, TaskStatus, TaskSubStatus } from '../
 import { useToast } from '@/shared/components/Toast';
 import { createClient } from '@/lib/supabase/client';
 import { useSettings } from '@/shared/contexts/SettingsContext';
+import { useAuthStore } from '@/features/auth/store/authStore';
 import { TrackingSection } from './TrackingSection';
 import { CommentsSection } from './CommentsSection';
 import { DependenciesSection } from './DependenciesSection';
@@ -88,6 +89,7 @@ const initialFormData: TaskFormData = {
 export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
     const { toast } = useToast();
     const { t } = useSettings();
+    const activeEntityId = useAuthStore(state => state.activeEntityId);
     const [formData, setFormData] = useState<TaskFormData>(initialFormData);
     const [projects, setProjects] = useState<{ id: string, name: string }[]>([]);
     const [users, setUsers] = useState<{ id: string, full_name: string }[]>([]);
@@ -123,16 +125,44 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
         const fetchData = async () => {
             setLoading(true);
             const supabase = createClient();
-            const [projectsRes, usersRes] = await Promise.all([
-                supabase.from('projects').select('id, name'),
-                supabase.from('profiles').select('id, full_name')
-            ]);
+
+            // Filter projects by active entity
+            let projectsQuery = supabase.from('projects').select('id, name');
+            if (activeEntityId && activeEntityId !== 'all') {
+                projectsQuery = projectsQuery.eq('entity_id', activeEntityId);
+            }
+
+            // Build filtered user list by entity membership
+            let userIds: string[] = [];
+            if (activeEntityId && activeEntityId !== 'all') {
+                const { data: pe } = await supabase
+                    .from('profile_entities')
+                    .select('profile_id')
+                    .eq('entity_id', activeEntityId);
+                userIds = (pe || []).map((p: { profile_id: string }) => p.profile_id);
+
+                const { data: globalUsers } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('has_all_entities_access', true)
+                    .eq('is_active', true);
+                const globalIds = (globalUsers || []).map((u: { id: string }) => u.id);
+                userIds = [...new Set([...userIds, ...globalIds])];
+            }
+
+            let usersQuery = supabase.from('profiles').select('id, full_name').eq('is_active', true);
+            if (userIds.length > 0 && activeEntityId && activeEntityId !== 'all') {
+                usersQuery = usersQuery.in('id', userIds);
+            }
+
+            const [projectsRes, usersRes] = await Promise.all([projectsQuery, usersQuery]);
+
             if (projectsRes.data) setProjects(projectsRes.data);
             if (usersRes.data) setUsers(usersRes.data);
             setLoading(false);
         };
         if (isOpen) fetchData();
-    }, [isOpen]);
+    }, [isOpen, activeEntityId]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

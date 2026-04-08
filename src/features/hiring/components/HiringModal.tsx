@@ -15,6 +15,7 @@ import {
 import { HiringProcess, HiringProcessFormData, HiringStatus } from '../types';
 import { PhaseTracker } from './PhaseTracker';
 import { createClient } from '@/lib/supabase/client';
+import { useAuthStore } from '@/features/auth/store/authStore';
 
 interface HiringModalProps {
     isOpen: boolean;
@@ -37,6 +38,7 @@ const initialFormData: HiringProcessFormData = {
 };
 
 export function HiringModal({ isOpen, onClose, onSave, onUpdatePhase, process, entityId, readOnly = false }: HiringModalProps) {
+    const activeEntityId = useAuthStore(state => state.activeEntityId);
     const [formData, setFormData] = useState<HiringProcessFormData>(initialFormData);
     const [isSaving, setIsSaving] = useState(false);
     const [projects, setProjects] = useState<{ id: string, name: string, entity_id: string }[]>([]);
@@ -65,23 +67,44 @@ export function HiringModal({ isOpen, onClose, onSave, onUpdatePhase, process, e
             setLoadingData(true);
             const supabase = createClient();
 
-            // Fix: Handle 'all' entity case
+            // Filter projects by the active entity (prefer activeEntityId, fall back to entityId prop)
+            const effectiveEntityId = (activeEntityId && activeEntityId !== 'all') ? activeEntityId : entityId;
             let projectsQuery = supabase.from('projects').select('id, name, entity_id');
-            if (entityId && entityId !== 'all') {
-                projectsQuery = projectsQuery.eq('entity_id', entityId);
+            if (effectiveEntityId && effectiveEntityId !== 'all') {
+                projectsQuery = projectsQuery.eq('entity_id', effectiveEntityId);
             }
 
-            const [projectsRes, usersRes] = await Promise.all([
-                projectsQuery,
-                supabase.from('profiles').select('id, full_name').eq('is_active', true)
-            ]);
+            // Build filtered user list by entity membership
+            let userIds: string[] = [];
+            if (effectiveEntityId && effectiveEntityId !== 'all') {
+                const { data: pe } = await supabase
+                    .from('profile_entities')
+                    .select('profile_id')
+                    .eq('entity_id', effectiveEntityId);
+                userIds = (pe || []).map((p: { profile_id: string }) => p.profile_id);
+
+                const { data: globalUsers } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('has_all_entities_access', true)
+                    .eq('is_active', true);
+                const globalIds = (globalUsers || []).map((u: { id: string }) => u.id);
+                userIds = [...new Set([...userIds, ...globalIds])];
+            }
+
+            let usersQuery = supabase.from('profiles').select('id, full_name').eq('is_active', true);
+            if (userIds.length > 0 && effectiveEntityId && effectiveEntityId !== 'all') {
+                usersQuery = usersQuery.in('id', userIds);
+            }
+
+            const [projectsRes, usersRes] = await Promise.all([projectsQuery, usersQuery]);
 
             if (projectsRes.data) setProjects(projectsRes.data);
             if (usersRes.data) setUsers(usersRes.data);
             setLoadingData(false);
         };
         if (isOpen) fetchData();
-    }, [isOpen, entityId]);
+    }, [isOpen, entityId, activeEntityId]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
