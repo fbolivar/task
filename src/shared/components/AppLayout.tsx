@@ -102,21 +102,26 @@ export function AppLayout({ children }: AppLayoutProps) {
             <div className="flex-1 flex flex-col min-w-0">
 
                 {/* Top bar */}
-                <header className="flex items-center justify-between px-8 py-5 sticky top-0 z-40 bg-[hsl(var(--background))] border-b border-[hsl(var(--border))]">
-                    {/* Left: mobile hamburger + page title */}
+                <header className="flex items-center justify-between px-6 md:px-8 py-4 sticky top-0 z-40 bg-[hsl(var(--background))]/80 backdrop-blur-sm">
+                    {/* Left: mobile hamburger + greeting */}
                     <div className="flex items-center gap-4">
                         <button
                             type="button"
-                            aria-label="Abrir menú de navegación"
+                            aria-label="Abrir menu de navegacion"
                             onClick={() => setSidebarOpen(true)}
                             className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--muted))] transition-all md:hidden"
                         >
                             <Menu className="w-5 h-5" />
                         </button>
 
-                        <h1 className="font-extrabold text-xl tracking-tight text-foreground">
-                            {pageTitle}
-                        </h1>
+                        <div>
+                            <h1 className="font-bold text-lg text-foreground">
+                                Hola, {profile?.full_name?.split(' ')[0] || 'Usuario'}
+                            </h1>
+                            <p className="text-xs text-muted-foreground">
+                                {new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                            </p>
+                        </div>
                     </div>
 
                     {/* Right: search + actions */}
