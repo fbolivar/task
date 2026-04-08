@@ -14,11 +14,12 @@ export default function ProyectosPage() {
     const { t } = useSettings();
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [sortAsc, setSortAsc] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProject, setEditingProject] = useState<Project | null>(null);
 
     const filteredProjects = useMemo(() => {
-        return projects.filter(project => {
+        const filtered = projects.filter(project => {
             const matchesSearch =
                 project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 project.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -28,7 +29,15 @@ export default function ProyectosPage() {
 
             return matchesSearch && matchesStatus;
         });
-    }, [projects, searchQuery, statusFilter]);
+
+        return filtered.sort((a, b) => {
+            const aValue = a.start_date ?? a.name;
+            const bValue = b.start_date ?? b.name;
+            if (aValue < bValue) return sortAsc ? -1 : 1;
+            if (aValue > bValue) return sortAsc ? 1 : -1;
+            return 0;
+        });
+    }, [projects, searchQuery, statusFilter, sortAsc]);
 
     const handleOpenCreateModal = () => {
         setEditingProject(null);
@@ -73,7 +82,9 @@ export default function ProyectosPage() {
                 onSearch={setSearchQuery}
                 onNewProject={handleOpenCreateModal}
                 onStatusFilter={setStatusFilter}
+                onSort={() => setSortAsc(!sortAsc)}
                 totalProjects={projects.length}
+                currentStatus={statusFilter}
             />
 
             {filteredProjects.length > 0 ? (

@@ -14,10 +14,12 @@ interface ProjectHeaderProps {
     onSearch: (query: string) => void;
     onNewProject: () => void;
     onStatusFilter: (status: string) => void;
+    onSort: () => void;
     totalProjects: number;
+    currentStatus?: string;
 }
 
-export function ProjectHeader({ onSearch, onNewProject, onStatusFilter, totalProjects }: ProjectHeaderProps) {
+export function ProjectHeader({ onSearch, onNewProject, onStatusFilter, onSort, totalProjects, currentStatus = 'all' }: ProjectHeaderProps) {
     const { t } = useSettings();
 
     return (
@@ -56,20 +58,24 @@ export function ProjectHeader({ onSearch, onNewProject, onStatusFilter, totalPro
                 </div>
 
                 <div className="md:col-span-4 flex items-center gap-2 p-1.5 bg-slate-100/30 dark:bg-white/5 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-white/5 overflow-x-auto no-scrollbar">
-                    {['all', 'Activo', 'Completado'].map((status) => (
+                    {['all', 'Activo', 'Pausado', 'Completado', 'Bajo Revisión'].map((status) => (
                         <button
                             key={status}
                             onClick={() => onStatusFilter(status)}
-                            className={`flex-1 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${status === 'all' // This needs a proper check if we had selectedStatus
+                            className={`flex-1 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${status === currentStatus
                                 ? 'bg-primary text-white shadow-lg shadow-primary/30'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-white/5'
                                 }`}
                         >
-                            {status === 'all' ? t('general.all') : status === 'Activo' ? t('general.active') : t('general.completed')}
+                            {status === 'all' ? t('general.all') : status === 'Activo' ? t('general.active') : status === 'Completado' ? t('general.completed') : status}
                         </button>
                     ))}
                     <div className="h-8 w-px bg-slate-200/50 dark:bg-white/10 mx-1 shrink-0" />
-                    <button className="p-2.5 rounded-xl bg-white dark:bg-slate-800 text-muted-foreground hover:text-primary transition-all shadow-sm">
+                    <button
+                        onClick={onSort}
+                        className="p-2.5 rounded-xl bg-white dark:bg-slate-800 text-muted-foreground hover:text-primary transition-all shadow-sm"
+                        aria-label="Ordenar proyectos"
+                    >
                         <SortDesc className="w-5 h-5" />
                     </button>
                 </div>

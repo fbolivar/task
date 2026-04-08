@@ -19,9 +19,11 @@ interface TaskCardProps {
     onEdit: (task: Task) => void;
     onArchive: (id: string) => void;
     onStatusChange: (task: Task, newStatus: string) => void;
+    isSelected?: boolean;
+    onToggleSelect?: (id: string) => void;
 }
 
-export function TaskCard({ task, onEdit, onArchive, onStatusChange }: TaskCardProps) {
+export function TaskCard({ task, onEdit, onArchive, onStatusChange, isSelected = false, onToggleSelect }: TaskCardProps) {
     const [showMenu, setShowMenu] = useState(false);
 
     const getPriorityColor = (priority: string) => {
@@ -44,9 +46,37 @@ export function TaskCard({ task, onEdit, onArchive, onStatusChange }: TaskCardPr
 
     const isOverdue = task.end_date && new Date(task.end_date) < new Date() && task.status !== 'Completado';
 
+    const hoursBarStep = task.estimated_hours > 0
+        ? (Math.round(Math.min((task.actual_hours / task.estimated_hours) * 100, 100) / 10) * 10 as
+            0 | 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100)
+        : 0;
+    const hoursBarClass = `hours-bar-${hoursBarStep}`;
+    const hoursOver = task.actual_hours > task.estimated_hours;
+    const hoursWarn = task.estimated_hours > 0 && (task.actual_hours / task.estimated_hours) >= 0.8;
+    const hoursBarColor = hoursOver ? 'bg-red-500' : hoursWarn ? 'bg-amber-500' : 'bg-emerald-500';
+
     return (
-        <div className="card-premium group relative p-6 transition-all duration-500 hover:translate-y-[-4px]">
+        <div className={`card-premium group relative p-6 transition-all duration-500 hover:translate-y-[-4px] ${isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-transparent' : ''}`}>
             <div className="flex items-start gap-5 relative z-10">
+                {/* Selection checkbox */}
+                {onToggleSelect && (
+                    <button
+                        type="button"
+                        onClick={() => onToggleSelect(task.id)}
+                        className={`mt-1 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-300 ${
+                            isSelected
+                                ? 'bg-primary border-primary shadow-lg shadow-primary/30 scale-110'
+                                : 'border-slate-200 dark:border-white/10 hover:border-primary hover:scale-110'
+                        }`}
+                        aria-label={isSelected ? 'Deseleccionar tarea' : 'Seleccionar tarea'}
+                        aria-pressed={isSelected ? 'true' : 'false'}
+                    >
+                        {isSelected && (
+                            <div className="w-2 h-2 rounded-full bg-white" aria-hidden="true" />
+                        )}
+                    </button>
+                )}
+
                 <button
                     onClick={() => onStatusChange(task, task.status === 'Completado' ? 'Pendiente' : 'Completado')}
                     className={`mt-1 w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all duration-300 ${task.status === 'Completado'
@@ -106,6 +136,19 @@ export function TaskCard({ task, onEdit, onArchive, onStatusChange }: TaskCardPr
                             <Clock className="w-3.5 h-3.5" />
                             {task.end_date ? new Date(task.end_date).toLocaleDateString('es-CO', { month: 'short', day: 'numeric' }) : 'Flexible'}
                         </div>
+
+                        {/* Hours indicator */}
+                        {task.estimated_hours > 0 && (
+                            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl bg-slate-100/50 dark:bg-white/5 text-muted-foreground min-w-[72px]">
+                                <Clock className="w-3.5 h-3.5 shrink-0" />
+                                <div className="flex flex-col gap-0.5 min-w-0">
+                                    <span>{task.actual_hours}/{task.estimated_hours}h</span>
+                                    <div className="h-1 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden w-full">
+                                        <div className={`h-full rounded-full transition-all duration-500 ${hoursBarColor} ${hoursBarClass}`} />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Priority */}
                         <div className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl ${getPriorityColor(task.priority)} shadow-sm`}>

@@ -54,6 +54,8 @@ export interface Task {
     end_date: string | null;
     assigned_to: string | null;
     evidence_link: string | null;
+    estimated_hours: number;
+    actual_hours: number;
     created_at: string;
     created_by?: string;
     archived?: boolean;
@@ -71,6 +73,8 @@ export interface TaskFormData {
     end_date: string | null;
     assigned_to: string | null;
     evidence_link: string | null;
+    estimated_hours?: number;
+    actual_hours?: number;
     is_change_control_required?: boolean;
     created_by?: string;
 }

@@ -13,11 +13,14 @@ interface TaskHeaderProps {
     onSearch: (query: string) => void;
     onNewTask: () => void;
     onStatusFilter: (status: string) => void;
+    onSort: () => void;
+    onPriorityFilter: (priority: string) => void;
     totalTasks: number;
     currentStatus?: string;
+    currentPriority?: string;
 }
 
-export function TaskHeader({ onSearch, onNewTask, onStatusFilter, totalTasks, currentStatus = 'all' }: TaskHeaderProps) {
+export function TaskHeader({ onSearch, onNewTask, onStatusFilter, onSort, onPriorityFilter, totalTasks, currentStatus = 'all', currentPriority = 'all' }: TaskHeaderProps) {
     const { t } = useSettings();
 
     return (
@@ -35,6 +38,7 @@ export function TaskHeader({ onSearch, onNewTask, onStatusFilter, totalTasks, cu
 
                 <div className="flex items-center gap-3">
                     <button
+                        type="button"
                         onClick={onNewTask}
                         className="btn-primary"
                     >
@@ -58,6 +62,7 @@ export function TaskHeader({ onSearch, onNewTask, onStatusFilter, totalTasks, cu
                 <div className="md:col-span-4 flex items-center gap-2 p-1.5 bg-slate-100/30 dark:bg-white/5 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-white/5 overflow-x-auto no-scrollbar">
                     {['all', 'Pendiente', 'En Progreso', 'Revisión', 'Completado'].map((status) => (
                         <button
+                            type="button"
                             key={status}
                             onClick={() => onStatusFilter(status)}
                             className={`flex-1 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${status === currentStatus
@@ -73,9 +78,38 @@ export function TaskHeader({ onSearch, onNewTask, onStatusFilter, totalTasks, cu
                         </button>
                     ))}
                     <div className="h-8 w-px bg-slate-200/50 dark:bg-white/10 mx-1 shrink-0" />
-                    <button className="p-2.5 rounded-xl bg-white dark:bg-slate-800 text-muted-foreground hover:text-primary transition-all shadow-sm">
+                    <button
+                        type="button"
+                        onClick={onSort}
+                        className="p-2.5 rounded-xl bg-white dark:bg-slate-800 text-muted-foreground hover:text-primary transition-all shadow-sm"
+                        title="Ordenar por fecha"
+                    >
                         <SortAsc className="w-5 h-5" />
                     </button>
+                </div>
+
+                <div className="md:col-span-4 flex items-center gap-2 p-1.5 bg-slate-100/30 dark:bg-white/5 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-white/5 overflow-x-auto no-scrollbar">
+                    {(['all', 'Alta', 'Media', 'Baja'] as const).map((priority) => {
+                        const colorMap: Record<string, string> = {
+                            Alta: 'bg-red-500 text-white shadow-lg shadow-red-500/30',
+                            Media: 'bg-amber-500 text-white shadow-lg shadow-amber-500/30',
+                            Baja: 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30',
+                            all: 'bg-primary text-white shadow-lg shadow-primary/30',
+                        };
+                        return (
+                            <button
+                                type="button"
+                                key={priority}
+                                onClick={() => onPriorityFilter(priority)}
+                                className={`flex-1 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${priority === currentPriority
+                                    ? colorMap[priority]
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-white/5'
+                                    }`}
+                            >
+                                {priority === 'all' ? 'Todas' : priority}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
         </div>

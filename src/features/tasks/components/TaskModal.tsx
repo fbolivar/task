@@ -12,13 +12,51 @@ import {
     User as UserIcon,
     Flag,
     AlertCircle,
-    HardDrive
+    HardDrive,
+    Clock
 } from 'lucide-react';
 import { Task, TaskFormData, TaskPriority, TaskStatus, TaskSubStatus } from '../types';
 import { useToast } from '@/shared/components/Toast';
 import { createClient } from '@/lib/supabase/client';
 import { useSettings } from '@/shared/contexts/SettingsContext';
 import { TrackingSection } from './TrackingSection';
+import { CommentsSection } from './CommentsSection';
+import { DependenciesSection } from './DependenciesSection';
+
+interface HoursProgressBarProps {
+    actual: number;
+    estimated: number;
+}
+
+/** Maps a clamped 0-100 percentage to the nearest 10-step CSS class defined in globals.css. */
+function toBarWidthClass(pct: number): string {
+    const step = Math.round(Math.min(pct, 100) / 10) * 10 as
+        0 | 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100;
+    return `hours-bar-${step}`;
+}
+
+function HoursProgressBar({ actual, estimated }: HoursProgressBarProps) {
+    const rawPct = (actual / estimated) * 100;
+    const over = actual > estimated;
+    const warn = rawPct >= 80;
+    const barColor = over ? 'bg-red-500' : warn ? 'bg-amber-500' : 'bg-emerald-500';
+    const textColor = over ? 'text-red-500' : warn ? 'text-amber-500' : 'text-emerald-500';
+    const widthClass = toBarWidthClass(rawPct);
+
+    return (
+        <div className="space-y-1.5 px-1">
+            <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Progreso de horas</span>
+                <span className={`text-[10px] font-black uppercase tracking-wider ${textColor}`}>
+                    {actual}h / {estimated}h ({Math.round(rawPct)}%)
+                </span>
+            </div>
+            <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                <div className={`h-full rounded-full transition-all duration-500 ${barColor} ${widthClass}`} />
+            </div>
+        </div>
+    );
+}
 
 interface TaskModalProps {
     isOpen: boolean;
@@ -37,6 +75,8 @@ const initialFormData: TaskFormData = {
     end_date: null,
     assigned_to: null,
     evidence_link: null,
+    estimated_hours: 0,
+    actual_hours: 0,
     is_change_control_required: false,
 };
 
@@ -63,6 +103,8 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                 end_date: task.end_date,
                 assigned_to: task.assigned_to,
                 evidence_link: task.evidence_link || null,
+                estimated_hours: task.estimated_hours ?? 0,
+                actual_hours: task.actual_hours ?? 0,
                 is_change_control_required: task.is_change_control_required || false,
             });
         } else {
@@ -269,6 +311,68 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                         </label>
                     </div>
 
+                    {/* Hours tracking */}
+                    <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-5">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Horas Estimadas</label>
+                                <div className="relative">
+                                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        value={formData.estimated_hours ?? 0}
+                                        onChange={(e) => setFormData({ ...formData, estimated_hours: parseFloat(e.target.value) || 0 })}
+                                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:border-primary transition-all text-sm font-medium"
+                                        placeholder="0"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Horas Reales</label>
+                                <div className="relative">
+                                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        value={formData.actual_hours ?? 0}
+                                        onChange={(e) => setFormData({ ...formData, actual_hours: parseFloat(e.target.value) || 0 })}
+                                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:border-primary transition-all text-sm font-medium"
+                                        placeholder="0"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Progress bar — only when editing an existing task and estimated_hours > 0 */}
+                        {task && (formData.estimated_hours ?? 0) > 0 && (() => {
+                            const pct = Math.min(((formData.actual_hours ?? 0) / (formData.estimated_hours ?? 1)) * 100, 100);
+                            const over = (formData.actual_hours ?? 0) > (formData.estimated_hours ?? 0);
+                            const warn = (formData.actual_hours ?? 0) / (formData.estimated_hours ?? 1) >= 0.8;
+                            const barColor = over ? 'bg-red-500' : warn ? 'bg-amber-500' : 'bg-emerald-500';
+                            const textColor = over ? 'text-red-500' : warn ? 'text-amber-500' : 'text-emerald-500';
+                            const rawPct = ((formData.actual_hours ?? 0) / (formData.estimated_hours ?? 1)) * 100;
+                            return (
+                                <div className="space-y-1.5 px-1">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Progreso de horas</span>
+                                        <span className={`text-[10px] font-black uppercase tracking-wider ${textColor}`}>
+                                            {formData.actual_hours ?? 0}h / {formData.estimated_hours ?? 0}h ({Math.round(rawPct)}%)
+                                        </span>
+                                    </div>
+                                    <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                        <div
+                                            className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+                                            style={{ width: `${pct}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            );
+                        })()}
+                    </div>
+
                     <div className="space-y-1.5">
                         <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">{t('tasks.form.notes')}</label>
                         <textarea
@@ -283,6 +387,20 @@ export function TaskModal({ isOpen, onClose, onSave, task }: TaskModalProps) {
                     {task && (
                         <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
                             <TrackingSection taskId={task.id} />
+                        </div>
+                    )}
+
+                    {/* Comments Section - Only on Edit Mode */}
+                    {task && (
+                        <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+                            <CommentsSection taskId={task.id} />
+                        </div>
+                    )}
+
+                    {/* Dependencies Section - Only on Edit Mode */}
+                    {task && (
+                        <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+                            <DependenciesSection taskId={task.id} projectId={task.project_id} />
                         </div>
                     )}
 
